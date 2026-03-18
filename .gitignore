@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment secrets
+.env
+.env.production
+
+# Database file (lives on NAS only, never in Git)
+*.db
+
+# OS clutter
+.DS_Store
+Thumbs.db
