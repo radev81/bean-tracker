@@ -1,0 +1,11 @@
+### Health check
+GET http://localhost:3001/api/health
+
+### Get all beans (empty for now)
+GET http://localhost:3001/api/beans
+
+### Get all containers (empty for now)
+GET http://localhost:3001/api/containers
+
+### Get all shops (empty for now)
+GET http://localhost:3001/api/shops
