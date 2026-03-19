@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Database & sensitive data
+backend/data/bean.db
+backend/data/bean.db-shm
+backend/data/bean.db-wal
+backend/data/import/
+frontend/.env

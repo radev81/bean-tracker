@@ -10,6 +10,10 @@ dist/
 
 # Database file (lives on NAS only, never in Git)
 *.db
+backend/data/bean.db
+backend/data/bean.db-shm
+backend/data/bean.db-wal
+backend/data/import/
 
 # OS clutter
 .DS_Store
