@@ -1,0 +1,97 @@
+/*
+  BeanCard.css — collapsed card row
+  Matches the "List · collapsed" mock from beans-tracker-FINAL.html.
+*/
+
+.bean-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-card);
+  padding: 13px 14px 13px 14px;
+  /* No margin here — BeanList handles spacing between cards */
+  transition: border-color 0.15s ease;
+}
+
+.bean-card:hover {
+  border-color: var(--color-border-hi);
+}
+
+/* ── Favourite button ── */
+.bean-card__fav {
+  font-size: 15px;
+  color: var(--color-text-4); /* inactive = light grey */
+  flex-shrink: 0;
+  padding: 2px;
+  line-height: 1;
+  transition: color 0.15s ease;
+  /* Remove default button styles */
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Active favourite: gradient text (CSS trick) */
+.bean-card__fav--on {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Name + meta ── */
+.bean-card__info {
+  flex: 1;
+  min-width: 0; /* allows text-overflow to work inside flex */
+}
+
+.bean-card__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bean-card__meta {
+  font-size: 9px;
+  color: var(--color-text-3);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Container badge ── */
+.bean-card__badge {
+  font-size: 8px;
+  font-weight: 600;
+  color: var(--accent-mid);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  padding: 3px 8px;
+  border-radius: var(--r-badge);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Expand chevron ── */
+.bean-card__chevron {
+  font-size: 18px;
+  color: var(--color-text-4);
+  flex-shrink: 0;
+  line-height: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0 2px 4px;
+  transition: color 0.15s ease;
+}
+
+.bean-card__chevron:hover {
+  color: var(--accent-mid);
+}

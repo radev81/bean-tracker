@@ -1,0 +1,157 @@
+/*
+  BeanList.css
+  Mobile-first layout for the beans list page.
+*/
+
+/* ── Outer wrapper ── */
+.bean-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding-bottom: 80px; /* room for the fixed Add button */
+}
+
+/* ── Search bar area ── */
+.bean-list__search-wrap {
+  padding: 12px 14px;
+  background: var(--color-bg);
+  flex-shrink: 0;
+}
+
+.bean-list__search {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-search);
+  padding: 10px 13px;
+  font-size: 11px;
+  color: var(--color-text-3);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.bean-list__search-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.bean-list__search-placeholder {
+  flex: 1;
+  font-size: 11px;
+  color: var(--color-text-3);
+}
+
+.bean-list__filter-btn {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--color-text-2);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-hi);
+  border-radius: 5px;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.bean-list__filter-btn:hover {
+  border-color: var(--accent-mid);
+  color: var(--accent-mid);
+}
+
+/* ── Section headers (Favourites / All Beans) ── */
+.bean-list__section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 6px;
+}
+
+.bean-list__section-label {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text-3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.bean-list__section-line {
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+/* ── Card list ── */
+.bean-list__cards {
+  list-style: none;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 4px;
+}
+
+/* ── Loading skeletons ── */
+.bean-list--loading {
+  padding: 12px;
+  gap: 8px;
+}
+
+.bean-list__skeleton {
+  height: 52px;
+  border-radius: var(--r-card);
+  background: linear-gradient(
+    90deg,
+    var(--color-border) 25%,
+    var(--color-bg) 50%,
+    var(--color-border) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ── Add button (fixed to bottom of screen) ── */
+.bean-list__add-wrap {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  padding: 9px 12px calc(16px + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+}
+
+.bean-list__add-btn {
+  width: 100%;
+  background: var(--grad);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 14px;
+  border-radius: var(--r-add);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.bean-list__add-btn:hover {
+  opacity: 0.88;
+}
+.bean-list__add-btn:active {
+  opacity: 0.78;
+}
