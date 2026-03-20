@@ -189,19 +189,22 @@ Key rules:
 
 Build order — one component group at a time, each tied to scenario IDs:
 
+**Done:**
+
 1. ✅ `frontend/src/theme.js` — CSS variable token file
 2. ✅ App shell — `App.jsx`, `App.css`, routing, global layout, tab bar
 3. ✅ `frontend/src/index.css` — global reset + CSS custom properties
 4. ✅ `frontend/src/api.js` — centralised fetch wrapper (VITE_API_URL from .env)
 5. ✅ `frontend/src/main.jsx` — entry point, BrowserRouter wrapper
 6. ✅ `EmptyState.jsx` — reusable empty state component
-7. ✅ `BeanList.jsx` — CB-01 (empty state), CB-02 (list with favourites section)
-8. ✅ `BeanCard.jsx` — collapsed card row (CB-02, CB-44)
-9. 🔲 `BeanCard.jsx` expanded view — CB-42 to CB-46 (expand/collapse toggle)
-10. 🔲 Favourites toggle — CB-47 to CB-52 (requires PUT /api/beans/:id on backend)
-11. 🔲 `BeanSearch.jsx` — CB-03 to CB-08 (search bar + clear)
-12. 🔲 `BeanFilter.jsx` — CB-09 to CB-24 (filter panel)
-13. 🔲 `BeanForm.jsx` — CB-25 to CB-41 (add card)
+7. ✅ `BeanList.jsx` — CB-01, CB-02 (empty state + list)
+8. ✅ `BeanCard.jsx` — CB-42–CB-46 (expand/collapse), CB-47–CB-52 (favourite toggle)
+9. ✅ `BeanSearch.jsx` — CB-03–CB-08 (search + clear)
+10. ✅ `BeanFilter.jsx` — CB-09–CB-24 (filter panel)
+11. ✅ `GET /api/beans/:id` — returns bean + tags + recipes
+12. ✅ `PUT /api/beans/:id/favourite` — toggles is_favourite
+    **Next:**
+13. 🔲 BeanForm — CB-25 to CB-41 (Add new card)
 14. 🔲 Edit flow — CB-53 to CB-66
 15. 🔲 Delete flow — CB-67 to CB-71
 16. 🔲 `ContainerQRPage.jsx` — CB-72, CB-73 (QR scan route)
