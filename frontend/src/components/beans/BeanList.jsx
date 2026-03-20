@@ -1,8 +1,9 @@
 // frontend/src/components/beans/BeanList.jsx
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { getBeans } from "../../api";
 import BeanCard from "./BeanCard";
+import BeanSearch from "./BeanSearch";
 import EmptyState from "../common/EmptyState";
 import "./BeanList.css";
 
@@ -10,10 +11,9 @@ export default function BeanList() {
   const [beans, setBeans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // ── Fetch all beans ───────────────────────────────────────────────────────
-  // useCallback so we can safely call loadBeans from handleFavouriteToggle
-  // without creating an infinite re-render loop.
   const loadBeans = useCallback(async () => {
     try {
       setError(null);
@@ -32,19 +32,49 @@ export default function BeanList() {
   }, [loadBeans]);
 
   // ── Favourite toggle ──────────────────────────────────────────────────────
-  // Called by BeanCard when the heart is tapped.
-  // We call the API then re-fetch the list so the card moves to the
-  // correct section (Favourites ↔ All Beans) automatically.
-  const handleFavouriteToggle = useCallback(
-    async (beanId) => {
-      try {
-        await loadBeans();
-      } catch (err) {
-        console.error("handleFavouriteToggle:", err.message);
-      }
-    },
-    [loadBeans],
-  );
+  // BeanCard has already called the API. We just need to re-fetch the list
+  // so the card moves to/from the Favourites section.
+  const handleFavouriteToggle = useCallback(async () => {
+    try {
+      await loadBeans();
+    } catch (err) {
+      console.error("handleFavouriteToggle:", err.message);
+    }
+  }, [loadBeans]);
+
+  // ── Search filtering (CB-04, CB-07) ───────────────────────────────────────
+  // useMemo means this only recalculates when beans or searchQuery changes —
+  // not on every render. Keeps the UI snappy with 30+ cards.
+  const filteredBeans = useMemo(() => {
+    if (!searchQuery.trim()) return beans; // no query → show all
+
+    const q = searchQuery.trim().toLowerCase();
+    return beans.filter((bean) => {
+      // Search across: name, country, region, variety, shop name, processing
+      const haystack = [
+        bean.name,
+        bean.country,
+        bean.region,
+        bean.variety,
+        bean.shop_name,
+        bean.processing,
+      ]
+        .filter(Boolean) // drop nulls/undefined
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(q);
+    });
+  }, [beans, searchQuery]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  const handleSearchChange = (value) => setSearchQuery(value);
+  const handleSearchClear = () => setSearchQuery("");
+
+  // Placeholder — the filter panel will be built in the next phase
+  const handleFilterClick = () => {
+    // TODO: open filter panel (CB-09)
+  };
 
   // ── Render ────────────────────────────────────────────────────────────────
   if (loading) {
@@ -55,32 +85,73 @@ export default function BeanList() {
     return <div className="bean-list__error">{error}</div>;
   }
 
-  // CB-01: empty state
+  // CB-01: completely empty database
   if (beans.length === 0) {
     return (
-      <EmptyState
-        icon="☕"
-        title="No beans yet"
-        subtitle="Add your first bag to start tracking your collection."
-        action="+ Add Coffee Beans"
-      />
+      <>
+        <BeanSearch
+          query={searchQuery}
+          onChange={handleSearchChange}
+          onClear={handleSearchClear}
+          resultCount={0}
+          totalCount={0}
+          onFilterClick={handleFilterClick}
+        />
+        <EmptyState
+          icon="☕"
+          title="No beans yet"
+          subtitle="Add your first bag to start tracking your collection."
+          action="+ Add Coffee Beans"
+        />
+      </>
     );
   }
 
-  // CB-52: favourites appear at the top in their own section
-  const favourites = beans.filter((b) => b.is_favourite === 1);
-  const nonFavourites = beans.filter((b) => b.is_favourite !== 1);
+  // Split filtered list into Favourites / All Beans sections (CB-52)
+  const filteredFavourites = filteredBeans.filter((b) => b.is_favourite === 1);
+  const filteredNonFavourites = filteredBeans.filter(
+    (b) => b.is_favourite !== 1,
+  );
 
   return (
     <div className="bean-list">
-      {/* Favourites section — only shown when at least one bean is a favourite */}
-      {favourites.length > 0 && (
+      {/* ── Search bar (CB-03) ─────────────────────────────────────────── */}
+      <BeanSearch
+        query={searchQuery}
+        onChange={handleSearchChange}
+        onClear={handleSearchClear}
+        resultCount={filteredBeans.length}
+        totalCount={beans.length}
+        onFilterClick={handleFilterClick}
+      />
+
+      {/* ── No-results state (CB-05) ───────────────────────────────────── */}
+      {filteredBeans.length === 0 && (
+        <div className="bean-list__no-results">
+          <div className="bean-list__no-results-icon">☕</div>
+          <div className="bean-list__no-results-title">
+            No beans match "{searchQuery}"
+          </div>
+          <div className="bean-list__no-results-sub">
+            Try a different name, origin, or shop.
+          </div>
+          <button
+            className="bean-list__no-results-clear"
+            onClick={handleSearchClear}
+          >
+            Clear search
+          </button>
+        </div>
+      )}
+
+      {/* ── Favourites section ─────────────────────────────────────────── */}
+      {filteredFavourites.length > 0 && (
         <section className="bean-list__section">
           <div className="bean-list__section-header">
             <span className="bean-list__section-label">Favourites</span>
             <span className="bean-list__section-line" />
           </div>
-          {favourites.map((bean) => (
+          {filteredFavourites.map((bean) => (
             <BeanCard
               key={bean.id}
               bean={bean}
@@ -90,14 +161,14 @@ export default function BeanList() {
         </section>
       )}
 
-      {/* All Beans section — only shown when there are non-favourite beans */}
-      {nonFavourites.length > 0 && (
+      {/* ── All Beans section ──────────────────────────────────────────── */}
+      {filteredNonFavourites.length > 0 && (
         <section className="bean-list__section">
           <div className="bean-list__section-header">
             <span className="bean-list__section-label">All Beans</span>
             <span className="bean-list__section-line" />
           </div>
-          {nonFavourites.map((bean) => (
+          {filteredNonFavourites.map((bean) => (
             <BeanCard
               key={bean.id}
               bean={bean}

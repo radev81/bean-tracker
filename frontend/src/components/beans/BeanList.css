@@ -155,3 +155,45 @@
 .bean-list__add-btn:active {
   opacity: 0.78;
 }
+
+/* ── No-results state (CB-05) ──────────────────────────────────────────── */
+.bean-list__no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.bean-list__no-results-icon {
+  font-size: 28px;
+  margin-bottom: 10px;
+  opacity: 0.25;
+}
+
+.bean-list__no-results-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0a0906;
+  margin-bottom: 6px;
+}
+
+.bean-list__no-results-sub {
+  font-size: 11px;
+  color: #ababab;
+  margin-bottom: 16px;
+}
+
+/* "Clear search" link-style button */
+.bean-list__no-results-clear {
+  background: none;
+  border: none;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4a2015;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
