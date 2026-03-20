@@ -1,174 +1,111 @@
-/**
- * BeanList.jsx — Beans tab main view
- * ────────────────────────────────────
- * BDD scenarios covered:
- *   CB-01  Empty state (no beans in DB)
- *   CB-02  List with beans — all cards shown collapsed
- *          Favourites section at top, All Beans section below (CB-52)
- *
- * Props:
- *   onCountChange  fn(number)  — called whenever the bean count changes
- *                                so App.jsx can update the header pill
- */
+// frontend/src/components/beans/BeanList.jsx
 
-import { useEffect, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getBeans } from "../../api";
 import BeanCard from "./BeanCard";
 import EmptyState from "../common/EmptyState";
 import "./BeanList.css";
 
-export default function BeanList({ onCountChange }) {
-  // ── State ────────────────────────────────────────────────────────────────
+export default function BeanList() {
   const [beans, setBeans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ── Fetch on mount ───────────────────────────────────────────────────────
-  useEffect(() => {
-    loadBeans();
-  }, []);
-
-  async function loadBeans() {
+  // ── Fetch all beans ───────────────────────────────────────────────────────
+  // useCallback so we can safely call loadBeans from handleFavouriteToggle
+  // without creating an infinite re-render loop.
+  const loadBeans = useCallback(async () => {
     try {
-      setLoading(true);
       setError(null);
       const data = await getBeans();
       setBeans(data);
-      onCountChange?.(data.length);
     } catch (err) {
-      setError(err.message);
+      setError("Could not load beans. Is the backend running?");
+      console.error("loadBeans:", err.message);
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  // ── Derived lists (CB-52: favourites first) ──────────────────────────────
-  const favourites = beans.filter((b) => b.is_favourite);
-  const others = beans.filter((b) => !b.is_favourite);
+  useEffect(() => {
+    loadBeans();
+  }, [loadBeans]);
 
-  // ── Event handlers (stubs — full logic in later phases) ──────────────────
-  function handleExpand(bean) {
-    // CB-43 — expand card — coming in Phase 4
-    console.log("expand", bean.id);
-  }
+  // ── Favourite toggle ──────────────────────────────────────────────────────
+  // Called by BeanCard when the heart is tapped.
+  // We call the API then re-fetch the list so the card moves to the
+  // correct section (Favourites ↔ All Beans) automatically.
+  const handleFavouriteToggle = useCallback(
+    async (beanId) => {
+      try {
+        await loadBeans();
+      } catch (err) {
+        console.error("handleFavouriteToggle:", err.message);
+      }
+    },
+    [loadBeans],
+  );
 
-  function handleFavClick(bean) {
-    // CB-47/48 — toggle favourite — coming in Phase 4
-    console.log("fav toggle", bean.id);
-  }
-
-  function handleAddClick() {
-    // CB-25 — show add form — coming in Phase 4
-    console.log("add bean");
-  }
-
-  // ── Render ───────────────────────────────────────────────────────────────
-
-  // Loading skeleton — keeps the UI from jumping
+  // ── Render ────────────────────────────────────────────────────────────────
   if (loading) {
-    return (
-      <div
-        className="bean-list bean-list--loading"
-        aria-busy="true"
-        aria-label="Loading beans…"
-      >
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="bean-list__skeleton" />
-        ))}
-      </div>
-    );
+    return <div className="bean-list__loading">Loading beans…</div>;
   }
 
-  // Error state
   if (error) {
-    return (
-      <EmptyState
-        icon="⚠️"
-        title="Couldn't load beans"
-        body={`${error}. Make sure the backend is running on the configured URL.`}
-        action="Try again"
-        onAction={loadBeans}
-      />
-    );
+    return <div className="bean-list__error">{error}</div>;
   }
 
-  // ── CB-01 — Empty state ──────────────────────────────────────────────────
+  // CB-01: empty state
   if (beans.length === 0) {
     return (
       <EmptyState
         icon="☕"
         title="No beans yet"
-        body="Add your first bag to start tracking your collection."
+        subtitle="Add your first bag to start tracking your collection."
         action="+ Add Coffee Beans"
-        onAction={handleAddClick}
       />
     );
   }
 
-  // ── CB-02 — List with beans ──────────────────────────────────────────────
+  // CB-52: favourites appear at the top in their own section
+  const favourites = beans.filter((b) => b.is_favourite === 1);
+  const nonFavourites = beans.filter((b) => b.is_favourite !== 1);
+
   return (
     <div className="bean-list">
-      {/* Search bar — CB-03 (Phase 4) */}
-      <div className="bean-list__search-wrap">
-        <div className="bean-list__search">
-          <span className="bean-list__search-icon" aria-hidden="true">
-            ⌕
-          </span>
-          <span className="bean-list__search-placeholder">
-            Search beans, origin, shop…
-          </span>
-          <button className="bean-list__filter-btn" aria-label="Open filters">
-            Filter
-          </button>
-        </div>
-      </div>
-
-      {/* ── Favourites section ── */}
+      {/* Favourites section — only shown when at least one bean is a favourite */}
       {favourites.length > 0 && (
-        <section aria-label="Favourite beans">
+        <section className="bean-list__section">
           <div className="bean-list__section-header">
             <span className="bean-list__section-label">Favourites</span>
-            <span className="bean-list__section-line" aria-hidden="true" />
+            <span className="bean-list__section-line" />
           </div>
-          <ul className="bean-list__cards" role="list">
-            {favourites.map((bean) => (
-              <li key={bean.id}>
-                <BeanCard
-                  bean={bean}
-                  onExpand={handleExpand}
-                  onFavClick={handleFavClick}
-                />
-              </li>
-            ))}
-          </ul>
+          {favourites.map((bean) => (
+            <BeanCard
+              key={bean.id}
+              bean={bean}
+              onFavouriteToggle={handleFavouriteToggle}
+            />
+          ))}
         </section>
       )}
 
-      {/* ── All Beans section ── */}
-      <section aria-label="All beans">
-        <div className="bean-list__section-header">
-          <span className="bean-list__section-label">All Beans</span>
-          <span className="bean-list__section-line" aria-hidden="true" />
-        </div>
-        <ul className="bean-list__cards" role="list">
-          {others.map((bean) => (
-            <li key={bean.id}>
-              <BeanCard
-                bean={bean}
-                onExpand={handleExpand}
-                onFavClick={handleFavClick}
-              />
-            </li>
+      {/* All Beans section — only shown when there are non-favourite beans */}
+      {nonFavourites.length > 0 && (
+        <section className="bean-list__section">
+          <div className="bean-list__section-header">
+            <span className="bean-list__section-label">All Beans</span>
+            <span className="bean-list__section-line" />
+          </div>
+          {nonFavourites.map((bean) => (
+            <BeanCard
+              key={bean.id}
+              bean={bean}
+              onFavouriteToggle={handleFavouriteToggle}
+            />
           ))}
-        </ul>
-      </section>
-
-      {/* ── Add button — fixed at bottom ── */}
-      <div className="bean-list__add-wrap">
-        <button className="bean-list__add-btn" onClick={handleAddClick}>
-          + Add Coffee Beans
-        </button>
-      </div>
+        </section>
+      )}
     </div>
   );
 }
