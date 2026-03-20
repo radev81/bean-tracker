@@ -1,0 +1,219 @@
+/* ── Full-screen form shell ─────────────────────────────────────────── */
+.bean-form {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* fills whatever container BeanList gives it */
+  background: var(--color-bg);
+  position: relative;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.bean-form__header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 1.125rem 1.125rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.bean-form__header-brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.bean-form__header-subtitle {
+  font-size: 0.7rem;
+  color: var(--color-text-3);
+  margin-top: 0.3rem;
+}
+
+/* ── Scrollable body ────────────────────────────────────────────────── */
+.bean-form__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.875rem 0.875rem 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Card sections ──────────────────────────────────────────────────── */
+.bf-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-card);
+  padding: 0.875rem;
+  margin-bottom: 0.625rem;
+}
+
+.bf-section-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-3);
+  margin-bottom: 0.75rem;
+}
+
+.bf-section-label--required {
+  color: var(--accent-mid);
+}
+
+/* ── Fields ─────────────────────────────────────────────────────────── */
+.bf-field {
+  margin-bottom: 0.5rem;
+}
+
+.bf-field:last-child {
+  margin-bottom: 0;
+}
+
+.bf-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.bf-row:last-child {
+  margin-bottom: 0;
+}
+
+.bf-label {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-3);
+  margin-bottom: 0.25rem;
+}
+
+.bf-input {
+  width: 100%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-input, 11px);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
+  font-family: var(--font);
+  font-weight: 500;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.bf-input:focus {
+  border-color: var(--accent-mid);
+}
+
+.bf-input::placeholder {
+  color: var(--color-text-3);
+  font-weight: 400;
+}
+
+.bf-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ABABAB' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+.bf-textarea {
+  resize: vertical;
+  min-height: 5rem;
+  font-style: italic;
+  font-weight: 300;
+}
+
+.bf-hint {
+  font-size: 0.65rem;
+  color: var(--color-text-3);
+  margin-top: 0.25rem;
+  padding-left: 0.1rem;
+}
+
+/* ── Shop autocomplete dropdown ─────────────────────────────────────── */
+.bf-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-hi);
+  border-radius: var(--r-input, 11px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  max-height: 160px;
+  overflow-y: auto;
+  margin-top: 3px;
+}
+
+.bf-dropdown__item {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.1s;
+}
+
+.bf-dropdown__item:last-child {
+  border-bottom: none;
+}
+
+.bf-dropdown__item:hover,
+.bf-dropdown__item:active {
+  background: var(--accent-bg);
+  color: var(--accent-mid);
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────── */
+.bean-form__footer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.625rem 0.875rem 1rem;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.bean-form__btn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: var(--r-btn);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+
+.bean-form__btn:active {
+  opacity: 0.75;
+}
+
+.bean-form__btn--cancel {
+  background: transparent;
+  border: 1px solid var(--color-border-hi);
+  color: var(--color-text-2);
+}
+
+.bean-form__btn--save {
+  flex: 2;
+  background: var(--grad);
+  color: #fff;
+}
+
+.bean-form__btn--save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

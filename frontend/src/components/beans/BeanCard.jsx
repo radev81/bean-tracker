@@ -1,6 +1,4 @@
-// frontend/src/components/beans/BeanCard.jsx
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getBeanById, toggleFavourite } from "../../api";
 import "./BeanCard.css";
 
@@ -8,7 +6,6 @@ import "./BeanCard.css";
 //  Small helper: the recipe row (In / Out / Time / Temp)
 // ─────────────────────────────────────────────────────────────────────────────
 function RecipeRow({ recipe }) {
-  // Only build the items that actually have a value
   const items = [
     { key: "In", value: recipe.dose_in_g, unit: "g" },
     { key: "Out", value: recipe.yield_out_g, unit: "g" },
@@ -24,7 +21,7 @@ function RecipeRow({ recipe }) {
         {recipe.shot_type === "double" ? "Double" : "Single"} espresso
       </div>
       <div className="bc-recipe__row">
-        {items.map((item, i) => (
+        {items.map((item) => (
           <div key={item.key} className="bc-recipe__item">
             <span className="bc-recipe__key">{item.key}</span>
             <span className="bc-recipe__val">
@@ -40,45 +37,57 @@ function RecipeRow({ recipe }) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Main BeanCard component
+//
+//  Props:
+//    bean              — the bean object from the list
+//    isExpanded        — controlled by BeanList; true = show body
+//    onToggle          — called with bean.id to flip expanded state in BeanList
+//    onFavouriteToggle — called after a favourite change so BeanList reloads
 // ─────────────────────────────────────────────────────────────────────────────
-export default function BeanCard({ bean, onFavouriteToggle }) {
-  // Whether this card is currently showing its expanded body
-  const [expanded, setExpanded] = useState(false);
-
-  // Full details (tags + recipes) fetched on first expand.
-  // We cache them here so re-expanding is instant.
+export default function BeanCard({
+  bean,
+  isExpanded,
+  onToggle,
+  onFavouriteToggle,
+}) {
+  // Full details (tags + recipes) fetched on first expand and cached here
+  // so re-expanding is instant.
   const [details, setDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
   // Whether the favourite API call is in flight (prevents double-taps)
   const [togglingFav, setTogglingFav] = useState(false);
 
-  // ── Chevron click — expand / collapse ──────────────────────────────────────
-  const handleChevronClick = async () => {
-    if (!expanded && details === null) {
-      // First expand: lazy-load tags + recipes
+  // ── Lazy-load details whenever the card becomes expanded ───────────────────
+  // Using useEffect instead of inside the click handler means programmatic
+  // expansion (after save, or "View existing") also triggers the fetch
+  // correctly, not just manual chevron taps.
+  useEffect(() => {
+    if (isExpanded && details === null && !loadingDetails) {
       setLoadingDetails(true);
-      try {
-        const data = await getBeanById(bean.id);
-        setDetails(data);
-      } catch (err) {
-        console.error("Could not load bean details:", err.message);
-        // Still expand the card — we just won't show tags/recipes
-      } finally {
-        setLoadingDetails(false);
-      }
+      getBeanById(bean.id)
+        .then((data) => setDetails(data))
+        .catch((err) =>
+          console.error("Could not load bean details:", err.message),
+        )
+        .finally(() => setLoadingDetails(false));
     }
-    setExpanded((prev) => !prev);
+  }, [isExpanded]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Note: we intentionally only re-run when isExpanded changes, not on every
+  // render. details/loadingDetails/bean.id are stable within a card's lifetime.
+
+  // ── Chevron click — tell BeanList to toggle this card ─────────────────────
+  const handleChevronClick = () => {
+    onToggle(bean.id);
   };
 
   // ── Heart click — toggle favourite ─────────────────────────────────────────
   const handleFavClick = async (e) => {
-    e.stopPropagation(); // safety: don't accidentally bubble to anything
-    if (togglingFav) return; // ignore rapid double-taps
+    e.stopPropagation();
+    if (togglingFav) return;
     setTogglingFav(true);
     try {
       await toggleFavourite(bean.id);
-      // Tell BeanList to re-fetch so the card moves to the right section
       await onFavouriteToggle(bean.id);
     } catch (err) {
       console.error("Could not toggle favourite:", err.message);
@@ -99,9 +108,12 @@ export default function BeanCard({ bean, onFavouriteToggle }) {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className={`bc ${expanded ? "bc--expanded" : ""}`}>
+    <div
+      id={`bean-${bean.id}`}
+      className={`bc ${isExpanded ? "bc--expanded" : ""}`}
+    >
       {/* Gradient left bar — only visible when expanded (CB-43) */}
-      {expanded && <div className="bc__bar" aria-hidden="true" />}
+      {isExpanded && <div className="bc__bar" aria-hidden="true" />}
 
       {/* ── Header row — always visible ─────────────────────────────────── */}
       <div className="bc__header">
@@ -134,17 +146,17 @@ export default function BeanCard({ bean, onFavouriteToggle }) {
 
         {/* Expand / collapse chevron (CB-42, CB-43, CB-45, CB-46) */}
         <button
-          className={`bc__chevron ${expanded ? "bc__chevron--open" : ""}`}
+          className={`bc__chevron ${isExpanded ? "bc__chevron--open" : ""}`}
           onClick={handleChevronClick}
-          aria-label={expanded ? "Collapse card" : "Expand card"}
-          aria-expanded={expanded}
+          aria-label={isExpanded ? "Collapse card" : "Expand card"}
+          aria-expanded={isExpanded}
         >
           ›
         </button>
       </div>
 
       {/* ── Expanded body ───────────────────────────────────────────────── */}
-      {expanded && (
+      {isExpanded && (
         <div className="bc__body">
           {loadingDetails ? (
             <div className="bc__loading">Loading…</div>
@@ -185,9 +197,7 @@ export default function BeanCard({ bean, onFavouriteToggle }) {
                 </div>
               )}
 
-              {/* Action buttons — Delete and Edit are disabled until those
-                  phases are built. They're shown now so the layout matches
-                  the design reference. */}
+              {/* Action buttons */}
               <div className="bc__actions">
                 <button className="bc__btn bc__btn--ghost" disabled>
                   Delete

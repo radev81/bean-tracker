@@ -5,6 +5,7 @@ import { getBeans } from "../../api";
 import BeanCard from "./BeanCard";
 import BeanSearch from "./BeanSearch";
 import BeanFilter from "./BeanFilter";
+import BeanForm from "./BeanForm"; // ← NEW: add form component
 import EmptyState from "../common/EmptyState";
 import "./BeanList.css";
 
@@ -30,6 +31,12 @@ export default function BeanList() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // ── NEW: Add form + card expansion state ──────────────────────────────────
+  // isAdding:  true while the BeanForm is shown in place of the list
+  // expandedId: the id of whichever card is currently expanded (null = none)
+  const [isAdding, setIsAdding] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
+
   // ── Filter state ──────────────────────────────────────────────────────────
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS);
@@ -53,6 +60,16 @@ export default function BeanList() {
     loadBeans();
   }, [loadBeans]);
 
+  useEffect(() => {
+    if (expandedId === null) return;
+    // Timeout lets React finish rendering the expanded body before scrolling
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`bean-${expandedId}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [expandedId]);
+
   // ── Favourite toggle ──────────────────────────────────────────────────────
   const handleFavouriteToggle = useCallback(async () => {
     try {
@@ -62,40 +79,57 @@ export default function BeanList() {
     }
   }, [loadBeans]);
 
+  // ── NEW: BeanForm handlers ─────────────────────────────────────────────────
+
+  // Called when BeanForm saves successfully (CB-35 / CB-38).
+  // Prepends the new bean to the list (so it appears immediately without a
+  // full reload) and expands its card so the user sees it right away.
+  async function handleBeanSaved(newBean) {
+    setIsAdding(false);
+    await loadBeans();
+    setExpandedId(newBean.id);
+  }
+
+  // Called when the user taps "View existing" in the duplicate warning
+  // dialogue (CB-33). Closes the form and expands the matching card.
+  function handleViewExisting(beanId) {
+    setIsAdding(false);
+    setExpandedId(beanId);
+  }
+
+  // ── Card expand / collapse toggle ─────────────────────────────────────────
+  // Passed down to every BeanCard. Tapping the expand icon on a collapsed
+  // card sets expandedId to that card's id; tapping the collapse icon on
+  // the already-open card sets expandedId back to null (CB-43 / CB-46).
+  function handleCardToggle(beanId) {
+    setExpandedId((prev) => (prev === beanId ? null : beanId));
+  }
+
   // ── Filter panel handlers ─────────────────────────────────────────────────
 
-  // Open panel — copy activeFilters into pending so the panel shows
-  // the current applied state (CB-24 requirement: close without Apply
-  // must restore to whatever was active before opening)
   const handleFilterOpen = () => {
     setPendingFilters(copyFilters(activeFilters));
     setFilterPanelOpen(true);
   };
 
-  // Close panel WITHOUT applying — throw away pendingFilters (CB-24)
   const handleFilterClose = () => {
     setFilterPanelOpen(false);
   };
 
-  // Apply button — copy pending → active, close panel
   const handleFilterApply = () => {
     setActiveFilters(copyFilters(pendingFilters));
     setFilterPanelOpen(false);
   };
 
-  // Clear all button INSIDE the panel — resets pending but doesn't apply (CB-22)
   const handleFilterClearAll = () => {
     setPendingFilters(copyFilters(EMPTY_FILTERS));
   };
 
-  // Clear-all button on the search bar — clears active filters immediately (CB-23)
   const handleFilterClearFromList = () => {
     setActiveFilters(copyFilters(EMPTY_FILTERS));
   };
 
-  // ── Derive available filter options from ALL beans (not filtered) ─────────
-  // We use all beans (not filteredBeans) so the filter lists stay stable
-  // as you make selections — they don't shrink as you narrow down.
+  // ── Derive available filter options from ALL beans ────────────────────────
   const availableShops = useMemo(
     () => [...new Set(beans.map((b) => b.shop_name).filter(Boolean))].sort(),
     [beans],
@@ -117,7 +151,7 @@ export default function BeanList() {
     [beans],
   );
 
-  // ── Count active filter types (drives the badge on the Filter button) ─────
+  // ── Count active filter types ─────────────────────────────────────────────
   const activeFilterCount = useMemo(
     () =>
       (activeFilters.favourites ? 1 : 0) +
@@ -127,23 +161,16 @@ export default function BeanList() {
     [activeFilters],
   );
 
-  // ── Combined filtering: active filters + search query ─────────────────────
-  // Order: apply filters first, then narrow with search on top.
-  // This matches CB-07 (search respects active filters) and CB-08 (clear
-  // search while filters active → filter results remain).
+  // ── Combined filtering ────────────────────────────────────────────────────
   const filteredBeans = useMemo(() => {
     let result = beans;
 
-    // ── Active filters ────────────────────────────────────────────────
-    // CB-13: favourites filter
     if (activeFilters.favourites) {
       result = result.filter((b) => b.is_favourite === 1);
     }
-    // CB-15: shop filter (OR within the type)
     if (activeFilters.shops.length > 0) {
       result = result.filter((b) => activeFilters.shops.includes(b.shop_name));
     }
-    // CB-16 + CB-17: container filter (Unassigned is a special value)
     if (activeFilters.containers.length > 0) {
       result = result.filter((b) => {
         if (!b.container_name) {
@@ -152,14 +179,12 @@ export default function BeanList() {
         return activeFilters.containers.includes(b.container_name);
       });
     }
-    // CB-18: country of origin filter
     if (activeFilters.countries.length > 0) {
       result = result.filter((b) =>
         activeFilters.countries.includes(b.country),
       );
     }
 
-    // ── Search on top of filtered results (CB-07) ─────────────────────
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       result = result.filter((b) => {
@@ -182,6 +207,20 @@ export default function BeanList() {
   }, [beans, searchQuery, activeFilters]);
 
   // ── Render ────────────────────────────────────────────────────────────────
+
+  // NEW: While the add form is open, render it in place of the whole list.
+  // The form fills the same container the list normally occupies, matching
+  // the design reference "New card" screen.
+  if (isAdding) {
+    return (
+      <BeanForm
+        onClose={() => setIsAdding(false)}
+        onSaved={handleBeanSaved}
+        onViewExisting={handleViewExisting}
+      />
+    );
+  }
+
   if (loading) {
     return <div className="bean-list__loading">Loading beans…</div>;
   }
@@ -190,6 +229,9 @@ export default function BeanList() {
     return <div className="bean-list__error">{error}</div>;
   }
 
+  // ── Empty state (CB-01) ───────────────────────────────────────────────────
+  // onAction wires the "Add Coffee Beans" button in the empty state to open
+  // the form — previously this prop was passed but had no handler.
   if (beans.length === 0) {
     return (
       <>
@@ -207,6 +249,7 @@ export default function BeanList() {
           title="No beans yet"
           subtitle="Add your first bag to start tracking your collection."
           action="+ Add Coffee Beans"
+          onAction={() => setIsAdding(true)} // ← NEW: wire button
         />
       </>
     );
@@ -292,6 +335,8 @@ export default function BeanList() {
             <BeanCard
               key={bean.id}
               bean={bean}
+              isExpanded={expandedId === bean.id} // ← NEW
+              onToggle={handleCardToggle} // ← NEW
               onFavouriteToggle={handleFavouriteToggle}
             />
           ))}
@@ -309,11 +354,29 @@ export default function BeanList() {
             <BeanCard
               key={bean.id}
               bean={bean}
+              isExpanded={expandedId === bean.id} // ← NEW
+              onToggle={handleCardToggle} // ← NEW
               onFavouriteToggle={handleFavouriteToggle}
             />
           ))}
         </section>
       )}
+
+      {/* ── Add Coffee Beans button (always visible at bottom) ─────────── */}
+      {/* NEW: Previously missing from the list view. Matches the design
+           reference where the gradient button is pinned to the bottom of
+           the screen whenever the list is shown (CB-02). The button is
+           rendered here inside the scrollable list so it scrolls with the
+           content; if you later want it truly fixed/sticky you can move it
+           to App.jsx and use CSS position:sticky instead. */}
+      <div className="bean-list__add-wrap">
+        <button
+          className="bean-list__add-btn"
+          onClick={() => setIsAdding(true)}
+        >
+          + Add Coffee Beans
+        </button>
+      </div>
     </div>
   );
 }

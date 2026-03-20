@@ -1,0 +1,100 @@
+/* frontend/src/components/shared/Dialog.css */
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 9, 6, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 200;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.dialog {
+  background: var(--color-surface);
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 320px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
+  animation: slideUp 0.18s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.dialog__icon {
+  font-size: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.dialog__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+
+.dialog__body {
+  font-size: 0.8rem;
+  color: var(--color-text-2);
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+.dialog__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dialog__btn {
+  flex: 1;
+  padding: 0.65rem;
+  border-radius: var(--r-btn);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+
+.dialog__btn:active {
+  opacity: 0.75;
+}
+
+.dialog__btn--secondary {
+  background: transparent;
+  border: 1px solid var(--color-border-hi);
+  color: var(--color-text-2);
+}
+
+.dialog__btn--primary {
+  background: var(--grad);
+  color: #fff;
+}
+
+.dialog__btn--danger {
+  background: #c8180f;
+  color: #fff;
+}
