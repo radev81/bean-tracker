@@ -1,15 +1,11 @@
-/* frontend/src/components/beans/BeanSearch.css
-   Search bar + Filter button row
-   Matches the search row in design-reference.html           */
+/* frontend/src/components/beans/BeanSearch.css */
 
-/* ── Outer wrapper ───────────────────────────────────────────────────────── */
 .bs {
   padding: 10px 12px;
   background: #f4f2ee;
-  /* no border-bottom — the card list starts directly below */
 }
 
-/* ── The bar itself (input + icons + buttons) ────────────────────────────── */
+/* ── Bar ─────────────────────────────────────────────────────────────────── */
 .bs__bar {
   display: flex;
   align-items: center;
@@ -21,7 +17,6 @@
   transition: border-color 0.15s;
 }
 
-/* Highlight border when the user has typed something */
 .bs__bar--active {
   border-color: rgba(74, 32, 21, 0.35);
 }
@@ -31,13 +26,11 @@
   font-size: 16px;
   color: #ababab;
   flex-shrink: 0;
-  line-height: 1;
-  /* The ⌕ glyph sits a touch high — nudge it down 1px */
   position: relative;
   top: 1px;
 }
 
-/* ── Text input ──────────────────────────────────────────────────────────── */
+/* ── Input ───────────────────────────────────────────────────────────────── */
 .bs__input {
   flex: 1;
   border: none;
@@ -45,9 +38,8 @@
   background: transparent;
   font-family: "Outfit", system-ui, sans-serif;
   font-size: 12px;
-  font-weight: 400;
   color: #0a0906;
-  min-width: 0; /* allows input to shrink on small screens */
+  min-width: 0;
 }
 
 .bs__input::placeholder {
@@ -63,7 +55,7 @@
   flex-shrink: 0;
 }
 
-/* ── Clear (×) button ────────────────────────────────────────────────────── */
+/* ── Clear search × ──────────────────────────────────────────────────────── */
 .bs__clear {
   background: none;
   border: none;
@@ -80,11 +72,18 @@
   color: #4a2015;
 }
 
-/* ── Filter button ───────────────────────────────────────────────────────── */
+/* ── Filter button area ──────────────────────────────────────────────────── */
+.bs__filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
 .bs__filter {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   background: #f4f2ee;
   border: 1px solid #cccab8;
   border-radius: 6px;
@@ -94,27 +93,52 @@
   font-weight: 500;
   color: #6b6860;
   cursor: pointer;
-  flex-shrink: 0;
   transition: all 0.15s;
+  white-space: nowrap;
 }
 
 .bs__filter:hover {
-  border-color: #4a2015;
+  border-color: rgba(74, 32, 21, 0.35);
   color: #4a2015;
 }
 
-/* When ≥1 filter is active: gradient border + text */
+/* Active state — filters are applied */
 .bs__filter--active {
   background: rgba(74, 32, 21, 0.08);
   border-color: rgba(74, 32, 21, 0.35);
   color: #4a2015;
 }
 
-/* The small dot indicator on the Filter button */
-.bs__filter-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+/* Number badge inside the Filter button */
+.bs__filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 20px;
   background: linear-gradient(135deg, #6a3828, #0e0806);
-  flex-shrink: 0;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Clear-all-filters × button (appears next to Filter when active) */
+.bs__filter-clear {
+  background: none;
+  border: 1px solid rgba(74, 32, 21, 0.25);
+  border-radius: 6px;
+  padding: 3px 7px;
+  font-size: 14px;
+  line-height: 1;
+  color: #4a2015;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.bs__filter-clear:hover {
+  background: rgba(74, 32, 21, 0.1);
+  border-color: rgba(74, 32, 21, 0.45);
 }

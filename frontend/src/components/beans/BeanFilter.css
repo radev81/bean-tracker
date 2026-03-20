@@ -1,0 +1,330 @@
+/* frontend/src/components/beans/BeanFilter.css
+   Bottom-sheet filter panel — Mocha Deep theme               */
+
+/* ── Backdrop ────────────────────────────────────────────────────────────── */
+.bf-backdrop {
+  position: fixed;
+  inset: 0; /* covers the whole viewport */
+  background: rgba(10, 9, 6, 0.45);
+  z-index: 100;
+  /* Fade in */
+  animation: bf-fade-in 0.2s ease;
+}
+
+@keyframes bf-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+.bf-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 101; /* above the backdrop */
+
+  /* On wide screens, centre and cap the width */
+  max-width: 560px;
+  margin: 0 auto;
+
+  background: #ffffff;
+  border-radius: 20px 20px 0 0;
+
+  /* Stack: handle + header + scrollable body + footer */
+  display: flex;
+  flex-direction: column;
+  max-height: 82vh;
+
+  /* Slide up animation */
+  animation: bf-slide-up 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@keyframes bf-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ── Drag handle (decorative) ────────────────────────────────────────────── */
+.bf-panel__handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: #e4e1da;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.bf-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid #e4e1da;
+  flex-shrink: 0;
+}
+
+.bf-panel__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0a0906;
+  flex: 1;
+}
+
+.bf-panel__pending-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: #4a2015;
+  background: rgba(74, 32, 21, 0.1);
+  border: 1px solid rgba(74, 32, 21, 0.22);
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.bf-panel__close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: #ababab;
+  cursor: pointer;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+
+.bf-panel__close:hover {
+  color: #0a0906;
+}
+
+/* ── Scrollable body ─────────────────────────────────────────────────────── */
+.bf-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0 4px;
+  /* Hide scrollbar on mobile while keeping it functional */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Thin scrollbar on desktop */
+.bf-panel__body::-webkit-scrollbar {
+  width: 4px;
+}
+.bf-panel__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.bf-panel__body::-webkit-scrollbar-thumb {
+  background: #e4e1da;
+  border-radius: 2px;
+}
+
+/* ── Divider between sections ────────────────────────────────────────────── */
+.bf-divider {
+  height: 1px;
+  background: #e4e1da;
+  margin: 4px 0;
+}
+
+/* ── Filter section (collapsible group) ──────────────────────────────────── */
+.bf-section {
+  padding: 0;
+}
+
+.bf-section__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 18px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.bf-section__header:hover {
+  background: #f9f8f6;
+}
+
+.bf-section__title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0a0906;
+  flex: 1;
+}
+
+.bf-section__count {
+  font-size: 10px;
+  font-weight: 600;
+  color: #4a2015;
+  background: rgba(74, 32, 21, 0.1);
+  border: 1px solid rgba(74, 32, 21, 0.22);
+  padding: 2px 7px;
+  border-radius: 20px;
+}
+
+.bf-section__chevron {
+  font-size: 16px;
+  color: #ababab;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.bf-section__chevron--open {
+  transform: rotate(90deg);
+}
+
+.bf-section__body {
+  padding: 0 18px 10px;
+}
+
+.bf-section__empty {
+  font-size: 11px;
+  color: #ababab;
+  font-style: italic;
+  padding: 4px 0 6px;
+  display: block;
+}
+
+/* ── Option row (checkbox + label) ──────────────────────────────────────── */
+.bf-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.1s;
+}
+
+/* Featured option (Favourites row) has horizontal padding */
+.bf-option--featured {
+  padding: 11px 18px;
+}
+
+.bf-option:not(.bf-option--featured):hover {
+  background: #f9f8f6;
+  margin: 0 -4px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+/* Hide the native checkbox — we use a custom box */
+.bf-option__input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Custom checkbox box */
+.bf-option__box {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #cccab8;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  background: #ffffff;
+}
+
+/* Checked state */
+.bf-option--checked .bf-option__box {
+  background: linear-gradient(135deg, #6a3828, #0e0806);
+  border-color: transparent;
+}
+
+.bf-option__tick {
+  font-size: 10px;
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bf-option__label {
+  font-size: 12px;
+  color: #0a0906;
+  flex: 1;
+  font-weight: 400;
+}
+
+.bf-option--checked .bf-option__label {
+  font-weight: 500;
+  color: #4a2015;
+}
+
+/* Favourite heart icon on the Favourites row */
+.bf-option__fav {
+  font-size: 14px;
+  background: linear-gradient(135deg, #6a3828, #0e0806);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.bf-panel__footer {
+  display: flex;
+  gap: 10px;
+  padding: 12px 18px;
+  border-top: 1px solid #e4e1da;
+  flex-shrink: 0;
+  /* Respect safe area on phones with a home bar */
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  background: #ffffff;
+}
+
+.bf-panel__clear {
+  flex: 1;
+  padding: 12px;
+  border-radius: 9px;
+  border: 1px solid #cccab8;
+  background: transparent;
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b6860;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.bf-panel__clear:hover:not(:disabled) {
+  border-color: #4a2015;
+  color: #4a2015;
+}
+
+.bf-panel__clear:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bf-panel__apply {
+  flex: 2;
+  padding: 12px;
+  border-radius: 9px;
+  border: none;
+  background: linear-gradient(135deg, #6a3828, #0e0806);
+  font-family: "Outfit", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.bf-panel__apply:hover {
+  opacity: 0.9;
+}
