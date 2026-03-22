@@ -48,6 +48,7 @@ export default function BeanCard({
   bean,
   isExpanded,
   onToggle,
+  onEdit,
   onFavouriteToggle,
 }) {
   // Full details (tags + recipes) fetched on first expand and cached here
@@ -202,7 +203,10 @@ export default function BeanCard({
                 <button className="bc__btn bc__btn--ghost" disabled>
                   Delete
                 </button>
-                <button className="bc__btn bc__btn--primary" disabled>
+                <button
+                  className="bc__btn bc__btn--primary"
+                  onClick={() => onEdit(bean)}
+                >
                   Edit
                 </button>
               </div>

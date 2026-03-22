@@ -9,3 +9,13 @@ GET http://localhost:3001/api/containers
 
 ### Get all shops (empty for now)
 GET http://localhost:3001/api/shops
+
+### Test: edit a bean
+PUT http://localhost:3001/api/beans/34
+Content-Type: application/json
+
+{
+  "name": "Test Bean Updated",
+  "shop_name": "Test Shop",
+  "country": "Ethiopia"
+}

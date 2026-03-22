@@ -35,6 +35,15 @@ export const getBeans = () => apiFetch("/api/beans");
 export const getBeanById = (id) => apiFetch(`/api/beans/${id}`);
 
 /**
+ * Update an existing bean by ID
+ */
+export const updateBean = (id, payload) =>
+  apiFetch(`/api/beans/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+/**
  * Toggle is_favourite for one bean (0 → 1 or 1 → 0).
  * Returns { id, is_favourite } with the NEW value.
  */

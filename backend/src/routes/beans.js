@@ -70,7 +70,7 @@ router.get("/:id", (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  POST /api/beans (CB-25, CB-32, CB-35–CB-41)
-//  ...
+//  Creates a new bean. Required fields: name, shop_name, country.
 // ─────────────────────────────────────────────────────────────────────────────
 router.post("/", (req, res) => {
   const {
@@ -177,6 +177,133 @@ router.post("/", (req, res) => {
   // ── Return the full saved card (using the view) ───────────────────────
   const bean = db.prepare("SELECT * FROM v_beans WHERE id = ?").get(beanId);
   return res.status(201).json(bean);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUT /api/beans/:id  (CB-53 to CB-66)
+// Updates an existing bean. All fields are optional except name, shop_name and country.
+// ─────────────────────────────────────────────────────────────────────────────
+router.put("/:id", (req, res) => {
+  const beanId = parseInt(req.params.id);
+
+  // Check the bean exists
+  const existing = db.prepare("SELECT * FROM beans WHERE id = ?").get(beanId);
+  if (!existing) {
+    return res.status(404).json({ error: "Bean not found" });
+  }
+
+  const {
+    name,
+    shop_name,
+    country,
+    url = null,
+    region = null,
+    altitude = null,
+    variety = null,
+    farm_producer = null,
+    processing = null,
+    sca_score = null,
+    notes = null,
+    container_id = null,
+    flavour_tags = [],
+    replaceContainer = false,
+  } = req.body;
+
+  // ── Validate required fields ───────────────────────────────────────
+  if (!name?.trim() || !shop_name?.trim() || !country?.trim()) {
+    return res
+      .status(400)
+      .json({ error: "name, shop_name and country are required" });
+  }
+
+  // ── Find or create shop ────────────────────────────────────────────
+  let shop = db
+    .prepare("SELECT id FROM shops WHERE name = ? COLLATE NOCASE")
+    .get(shop_name.trim());
+
+  if (!shop) {
+    const r = db
+      .prepare("INSERT INTO shops (name) VALUES (?)")
+      .run(shop_name.trim());
+    shop = { id: r.lastInsertRowid };
+  }
+
+  // ── Container occupied check (CB-64) ──────────────────────────────
+  // Only check if a container is selected, it differs from the current
+  // assignment, and the user hasn't already confirmed replacement
+  const containerChanged =
+    (container_id || null) !== (existing.container_id || null);
+
+  if (container_id && containerChanged && !replaceContainer) {
+    const occupant = db
+      .prepare("SELECT id, name FROM beans WHERE container_id = ? AND id != ?")
+      .get(container_id, beanId);
+
+    if (occupant) {
+      return res.status(409).json({
+        conflict: "container_occupied",
+        occupant: { id: occupant.id, name: occupant.name },
+      });
+    }
+  }
+
+  // ── Replace container occupant if requested (CB-65) ───────────────
+  if (container_id && containerChanged && replaceContainer) {
+    db.prepare(
+      "UPDATE beans SET container_id = NULL WHERE container_id = ? AND id != ?",
+    ).run(container_id, beanId);
+  }
+
+  // ── Unassign from old container if container was removed (CB-62) ──
+  // This is handled implicitly by setting container_id = NULL below
+
+  // ── Update the bean ───────────────────────────────────────────────
+  db.prepare(
+    `
+    UPDATE beans SET
+      name          = ?,
+      shop_id       = ?,
+      country       = ?,
+      url           = ?,
+      region        = ?,
+      altitude      = ?,
+      variety       = ?,
+      farm_producer = ?,
+      processing    = ?,
+      sca_score     = ?,
+      notes         = ?,
+      container_id  = ?
+    WHERE id = ?
+  `,
+  ).run(
+    name.trim(),
+    shop.id,
+    country.trim(),
+    url || null,
+    region || null,
+    altitude || null,
+    variety || null,
+    farm_producer || null,
+    processing || null,
+    sca_score ? parseFloat(sca_score) : null,
+    notes || null,
+    container_id ? parseInt(container_id) : null,
+    beanId,
+  );
+
+  // ── Replace flavour tags ───────────────────────────────────────────
+  // Delete all existing tags for this bean and re-insert from scratch.
+  // Simpler than diffing and avoids orphaned tags.
+  db.prepare("DELETE FROM bean_flavour_tags WHERE bean_id = ?").run(beanId);
+
+  const insertTag = db.prepare(
+    "INSERT INTO bean_flavour_tags (bean_id, tag, sort_order) VALUES (?, ?, ?)",
+  );
+  flavour_tags.forEach((tag, i) => insertTag.run(beanId, tag.trim(), i));
+
+  // ── Return the updated card ────────────────────────────────────────
+  const updated = db.prepare("SELECT * FROM v_beans WHERE id = ?").get(beanId);
+  return res.json(updated);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

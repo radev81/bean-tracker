@@ -1,51 +1,90 @@
+// frontend/src/components/beans/BeanForm.jsx
+
 import { useState, useEffect, useRef } from "react";
-import { apiFetch } from "../../api";
+import { apiFetch, updateBean } from "../../api";
 import Dialog from "../common/Dialog";
 import "./BeanForm.css";
 
-export default function BeanForm({ onClose, onSaved, onViewExisting }) {
-  // ── Required fields ───────────────────────────────────────────────────
-  const [name, setName] = useState("");
-  const [shopInput, setShopInput] = useState("");
-  const [country, setCountry] = useState("");
+// ── Small helper — did the user change anything? ──────────────────────────────
+// Compares current field values against the original bean so we know whether
+// to show the "Discard changes?" warning on cancel (CB-56).
+function hasChanges(bean, fields) {
+  if (!bean) return false; // add mode — no original to compare against
+  return (
+    fields.name !== (bean.name ?? "") ||
+    fields.shopInput !== (bean.shop_name ?? "") ||
+    fields.country !== (bean.country ?? "") ||
+    fields.region !== (bean.region ?? "") ||
+    fields.altitude !== (bean.altitude ?? "") ||
+    fields.variety !== (bean.variety ?? "") ||
+    fields.processing !== (bean.processing ?? "") ||
+    fields.scaScore !==
+      (bean.sca_score != null ? String(bean.sca_score) : "") ||
+    fields.farmProducer !== (bean.farm_producer ?? "") ||
+    fields.url !== (bean.url ?? "") ||
+    fields.notes !== (bean.notes ?? "") ||
+    fields.containerId !==
+      (bean.container_id != null ? String(bean.container_id) : "") ||
+    fields.tagsInput !== (bean.tags?.join(", ") ?? "")
+  );
+}
 
-  // ── Optional fields ───────────────────────────────────────────────────
-  const [region, setRegion] = useState("");
-  const [altitude, setAltitude] = useState("");
-  const [variety, setVariety] = useState("");
-  const [processing, setProcessing] = useState("");
-  const [scaScore, setScaScore] = useState("");
-  const [farmProducer, setFarmProducer] = useState("");
-  const [url, setUrl] = useState("");
-  const [notes, setNotes] = useState("");
-  const [containerId, setContainerId] = useState("");
-  const [tagsInput, setTagsInput] = useState(""); // comma-separated
+export default function BeanForm({
+  bean = null,
+  onClose,
+  onSaved,
+  onViewExisting,
+}) {
+  // ── When bean is provided we're in edit mode ───────────────────────────────
+  const isEditing = bean !== null;
 
-  // ── Dropdown data ─────────────────────────────────────────────────────
+  // ── Required fields — pre-fill from bean if editing ───────────────────────
+  const [name, setName] = useState(bean?.name ?? "");
+  const [shopInput, setShopInput] = useState(bean?.shop_name ?? "");
+  const [country, setCountry] = useState(bean?.country ?? "");
+
+  // ── Optional fields ───────────────────────────────────────────────────────
+  const [region, setRegion] = useState(bean?.region ?? "");
+  const [altitude, setAltitude] = useState(bean?.altitude ?? "");
+  const [variety, setVariety] = useState(bean?.variety ?? "");
+  const [processing, setProcessing] = useState(bean?.processing ?? "");
+  const [scaScore, setScaScore] = useState(
+    bean?.sca_score != null ? String(bean.sca_score) : "",
+  );
+  const [farmProducer, setFarmProducer] = useState(bean?.farm_producer ?? "");
+  const [url, setUrl] = useState(bean?.url ?? "");
+  const [notes, setNotes] = useState(bean?.notes ?? "");
+  const [containerId, setContainerId] = useState(
+    bean?.container_id != null ? String(bean.container_id) : "",
+  );
+  const [tagsInput, setTagsInput] = useState(bean?.tags?.join(", ") ?? "");
+
+  // ── Dropdown data ─────────────────────────────────────────────────────────
   const [shops, setShops] = useState([]);
   const [containers, setContainers] = useState([]);
 
-  // ── Shop autocomplete state ───────────────────────────────────────────
+  // ── Shop autocomplete state ───────────────────────────────────────────────
   const [showShopDropdown, setShowShopDropdown] = useState(false);
   const shopWrapRef = useRef(null);
 
-  // ── Dialog state ──────────────────────────────────────────────────────
-  const [duplicateBean, setDuplicateBean] = useState(null); // CB-32
-  const [occupiedOccupant, setOccupiedOccupant] = useState(null); // CB-39
+  // ── Dialog state ──────────────────────────────────────────────────────────
+  const [duplicateBean, setDuplicateBean] = useState(null);
+  const [occupiedOccupant, setOccupiedOccupant] = useState(null);
   const [pendingPayload, setPendingPayload] = useState(null);
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false); // CB-56
 
   const [saving, setSaving] = useState(false);
 
-  // ── CB-27: Save is only active when all required fields are filled ─────
+  // ── CB-27 / CB-55: Save active only when required fields are filled ────────
   const canSave = name.trim() && shopInput.trim() && country.trim();
 
-  // ── Fetch shops and containers on mount ───────────────────────────────
+  // ── Fetch shops and containers on mount ───────────────────────────────────
   useEffect(() => {
     apiFetch("/api/shops").then(setShops).catch(console.error);
     apiFetch("/api/containers").then(setContainers).catch(console.error);
   }, []);
 
-  // ── Close shop dropdown on outside click (CB-30) ─────────────────────
+  // ── Close shop dropdown on outside click ──────────────────────────────────
   useEffect(() => {
     function handleOutsideClick(e) {
       if (shopWrapRef.current && !shopWrapRef.current.contains(e.target)) {
@@ -56,12 +95,30 @@ export default function BeanForm({ onClose, onSaved, onViewExisting }) {
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  // Shops filtered by what user has typed
   const filteredShops = shops.filter((s) =>
     s.name.toLowerCase().includes(shopInput.toLowerCase()),
   );
 
-  // ── Build payload from current form state ─────────────────────────────
+  // ── Collect current field values for change-detection ─────────────────────
+  function currentFields() {
+    return {
+      name,
+      shopInput,
+      country,
+      region,
+      altitude,
+      variety,
+      processing,
+      scaScore,
+      farmProducer,
+      url,
+      notes,
+      containerId,
+      tagsInput,
+    };
+  }
+
+  // ── Build the payload ─────────────────────────────────────────────────────
   function buildPayload(overrides = {}) {
     return {
       name: name.trim(),
@@ -84,34 +141,37 @@ export default function BeanForm({ onClose, onSaved, onViewExisting }) {
     };
   }
 
-  // ── Core save logic — handles conflict responses ───────────────────────
+  // ── Core save logic ───────────────────────────────────────────────────────
   async function attemptSave(payload) {
     setSaving(true);
     try {
-      const data = await apiFetch("/api/beans", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      let data;
+      if (isEditing) {
+        data = await updateBean(bean.id, payload);
+      } else {
+        data = await apiFetch("/api/beans", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      }
 
-      // CB-32: duplicate bean name detected
+      // CB-32: duplicate bean name (add mode only)
       if (data.conflict === "duplicate_name") {
         setDuplicateBean(data.existingBean);
         setPendingPayload(payload);
         return;
       }
 
-      // CB-39: chosen container is already occupied
+      // CB-39 / CB-64: container occupied
       if (data.conflict === "container_occupied") {
         setOccupiedOccupant(data.occupant);
         setPendingPayload(payload);
         return;
       }
 
-      // Success — CB-35 or CB-38
       onSaved(data);
     } catch (err) {
       console.error("Save failed:", err);
-      // TODO: show user-facing error message in a future polish pass
     } finally {
       setSaving(false);
     }
@@ -121,36 +181,52 @@ export default function BeanForm({ onClose, onSaved, onViewExisting }) {
     attemptSave(buildPayload());
   }
 
-  // ── Duplicate bean dialogue handlers (CB-33, CB-34) ───────────────────
+  // ── Cancel handling (CB-54 / CB-56) ──────────────────────────────────────
+  // In add mode: always close without warning (CB-26 / CB-29).
+  // In edit mode: close without warning if nothing changed (CB-54),
+  //               show discard dialogue if something changed (CB-56).
+  function handleCancel() {
+    if (isEditing && hasChanges(bean, currentFields())) {
+      setShowDiscardDialog(true);
+    } else {
+      onClose();
+    }
+  }
 
+  // ── Discard dialogue handlers (CB-57 / CB-58) ─────────────────────────────
+  function handleKeepEditing() {
+    setShowDiscardDialog(false);
+  }
+
+  function handleDiscard() {
+    setShowDiscardDialog(false);
+    onClose();
+  }
+
+  // ── Duplicate bean dialogue handlers (CB-33 / CB-34) ─────────────────────
   function handleDuplicateCancel() {
-    // CB-34: dismiss warning, return to form with fields intact
     setDuplicateBean(null);
     setPendingPayload(null);
   }
 
   function handleViewExistingBean() {
-    // CB-33: close form, expand the existing card in the list
     setDuplicateBean(null);
     onViewExisting(duplicateBean.id);
     onClose();
   }
 
-  // ── Container occupied dialogue handlers (CB-40, CB-41) ──────────────
-
+  // ── Container occupied dialogue handlers (CB-40 / CB-41 / CB-65 / CB-66) ──
   function handleOccupiedCancel() {
-    // CB-41: dismiss warning, return to form with fields intact
     setOccupiedOccupant(null);
     setPendingPayload(null);
   }
 
   function handleReplaceContainer() {
-    // CB-40: confirm replacement and save
     setOccupiedOccupant(null);
     attemptSave({ ...pendingPayload, replaceContainer: true });
   }
 
-  // ─────────────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="bean-form">
       {/* ── Header ─────────────────────────────────────────────────── */}
@@ -160,7 +236,9 @@ export default function BeanForm({ onClose, onSaved, onViewExisting }) {
           <br />
           Tracker
         </div>
-        <div className="bean-form__header-subtitle">New card</div>
+        <div className="bean-form__header-subtitle">
+          {isEditing ? "Edit card" : "New card"}
+        </div>
       </div>
 
       {/* ── Scrollable body ────────────────────────────────────────── */}
@@ -182,7 +260,7 @@ export default function BeanForm({ onClose, onSaved, onViewExisting }) {
             />
           </div>
 
-          {/* Shop with autocomplete — CB-30, CB-31 */}
+          {/* Shop with autocomplete */}
           <div
             className="bf-field"
             ref={shopWrapRef}
@@ -207,7 +285,6 @@ export default function BeanForm({ onClose, onSaved, onViewExisting }) {
                   <div
                     key={s.id}
                     className="bf-dropdown__item"
-                    // onMouseDown instead of onClick so it fires before the input blur
                     onMouseDown={() => {
                       setShopInput(s.name);
                       setShowShopDropdown(false);
@@ -365,7 +442,7 @@ export default function BeanForm({ onClose, onSaved, onViewExisting }) {
       <div className="bean-form__footer">
         <button
           className="bean-form__btn bean-form__btn--cancel"
-          onClick={onClose}
+          onClick={handleCancel}
         >
           Cancel
         </button>
@@ -374,9 +451,26 @@ export default function BeanForm({ onClose, onSaved, onViewExisting }) {
           disabled={!canSave || saving}
           onClick={handleSave}
         >
-          {saving ? "Saving…" : "Save Bean"}
+          {saving ? "Saving…" : isEditing ? "Save changes" : "Save Bean"}
         </button>
       </div>
+
+      {/* ── Discard changes warning — CB-56 ─────────────────────────── */}
+      {showDiscardDialog && (
+        <Dialog
+          icon="✏️"
+          title="Discard changes?"
+          body="You have unsaved changes. Discard them and close, or keep editing?"
+          actions={[
+            {
+              label: "Keep editing",
+              variant: "secondary",
+              onClick: handleKeepEditing,
+            },
+            { label: "Discard", variant: "danger", onClick: handleDiscard },
+          ]}
+        />
+      )}
 
       {/* ── Duplicate bean warning — CB-32 ──────────────────────────── */}
       {duplicateBean && (
@@ -399,7 +493,7 @@ export default function BeanForm({ onClose, onSaved, onViewExisting }) {
         />
       )}
 
-      {/* ── Container occupied warning — CB-39 ──────────────────────── */}
+      {/* ── Container occupied warning — CB-39 / CB-64 ──────────────── */}
       {occupiedOccupant && (
         <Dialog
           icon="📦"

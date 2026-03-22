@@ -41,6 +41,7 @@ export default function BeanList() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS);
   const [pendingFilters, setPendingFilters] = useState(EMPTY_FILTERS);
+  const [editingBean, setEditingBean] = useState(null);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const loadBeans = useCallback(async () => {
@@ -81,11 +82,12 @@ export default function BeanList() {
 
   // ── NEW: BeanForm handlers ─────────────────────────────────────────────────
 
-  // Called when BeanForm saves successfully (CB-35 / CB-38).
+  // Called when BeanForm saves successfully (CB-35 / CB-38) or is used to update an existing bean
   // Prepends the new bean to the list (so it appears immediately without a
   // full reload) and expands its card so the user sees it right away.
   async function handleBeanSaved(newBean) {
     setIsAdding(false);
+    setEditingBean(null);
     await loadBeans();
     setExpandedId(newBean.id);
   }
@@ -208,13 +210,26 @@ export default function BeanList() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  // NEW: While the add form is open, render it in place of the whole list.
+  // While the add form is open, render it in place of the whole list.
   // The form fills the same container the list normally occupies, matching
   // the design reference "New card" screen.
   if (isAdding) {
     return (
       <BeanForm
         onClose={() => setIsAdding(false)}
+        onSaved={handleBeanSaved}
+        onViewExisting={handleViewExisting}
+      />
+    );
+  }
+
+  if (editingBean) {
+    return (
+      <BeanForm
+        bean={editingBean}
+        onClose={() => {
+          setEditingBean(null);
+        }}
         onSaved={handleBeanSaved}
         onViewExisting={handleViewExisting}
       />
@@ -335,8 +350,9 @@ export default function BeanList() {
             <BeanCard
               key={bean.id}
               bean={bean}
-              isExpanded={expandedId === bean.id} // ← NEW
-              onToggle={handleCardToggle} // ← NEW
+              isExpanded={expandedId === bean.id}
+              onToggle={handleCardToggle}
+              onEdit={setEditingBean}
               onFavouriteToggle={handleFavouriteToggle}
             />
           ))}
@@ -354,8 +370,9 @@ export default function BeanList() {
             <BeanCard
               key={bean.id}
               bean={bean}
-              isExpanded={expandedId === bean.id} // ← NEW
-              onToggle={handleCardToggle} // ← NEW
+              isExpanded={expandedId === bean.id}
+              onToggle={handleCardToggle}
+              onEdit={setEditingBean}
               onFavouriteToggle={handleFavouriteToggle}
             />
           ))}
