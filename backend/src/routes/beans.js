@@ -336,4 +336,24 @@ router.put("/:id/favourite", (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /api/beans/:id  (CB-67 to CB-71)
+// ─────────────────────────────────────────────────────────────────────────────
+router.delete("/:id", (req, res) => {
+  const beanId = parseInt(req.params.id);
+
+  const bean = db.prepare("SELECT * FROM beans WHERE id = ?").get(beanId);
+  if (!bean) {
+    return res.status(404).json({ error: "Bean not found" });
+  }
+
+  // Deleting the bean is enough — the FK on bean_flavour_tags and
+  // bean_recipes is ON DELETE CASCADE so child rows are removed
+  // automatically. container_id on the bean row simply disappears
+  // with the row (CB-70). The shop is NOT deleted (CB-71).
+  db.prepare("DELETE FROM beans WHERE id = ?").run(beanId);
+
+  res.json({ deleted: true, id: beanId });
+});
+
 module.exports = router;

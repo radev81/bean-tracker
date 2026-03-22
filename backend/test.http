@@ -19,3 +19,6 @@ Content-Type: application/json
   "shop_name": "Test Shop",
   "country": "Ethiopia"
 }
+
+### Test: delete a bean
+DELETE http://localhost:3001/api/beans/1000

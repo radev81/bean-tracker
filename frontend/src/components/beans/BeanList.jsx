@@ -80,7 +80,7 @@ export default function BeanList() {
     }
   }, [loadBeans]);
 
-  // ── NEW: BeanForm handlers ─────────────────────────────────────────────────
+  // ── BeanForm handlers ─────────────────────────────────────────────────
 
   // Called when BeanForm saves successfully (CB-35 / CB-38) or is used to update an existing bean
   // Prepends the new bean to the list (so it appears immediately without a
@@ -107,6 +107,11 @@ export default function BeanList() {
     setExpandedId((prev) => (prev === beanId ? null : beanId));
   }
 
+  // Called after a bean is deleted. Closes the card (in case it was open) and reloads the list to reflect the deletion.
+  async function handleBeanDeleted(beanId) {
+    setExpandedId(null); // close the card before it disappears
+    await loadBeans(); // reload the list
+  }
   // ── Filter panel handlers ─────────────────────────────────────────────────
 
   const handleFilterOpen = () => {
@@ -354,6 +359,7 @@ export default function BeanList() {
               onToggle={handleCardToggle}
               onEdit={setEditingBean}
               onFavouriteToggle={handleFavouriteToggle}
+              onDelete={handleBeanDeleted}
             />
           ))}
         </section>
@@ -374,6 +380,7 @@ export default function BeanList() {
               onToggle={handleCardToggle}
               onEdit={setEditingBean}
               onFavouriteToggle={handleFavouriteToggle}
+              onDelete={handleBeanDeleted}
             />
           ))}
         </section>

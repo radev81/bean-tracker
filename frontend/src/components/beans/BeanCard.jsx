@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { getBeanById, toggleFavourite } from "../../api";
+import { getBeanById, toggleFavourite, deleteBean } from "../../api";
+import Dialog from "../common/Dialog";
 import "./BeanCard.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -50,6 +51,7 @@ export default function BeanCard({
   onToggle,
   onEdit,
   onFavouriteToggle,
+  onDelete,
 }) {
   // Full details (tags + recipes) fetched on first expand and cached here
   // so re-expanding is instant.
@@ -58,6 +60,10 @@ export default function BeanCard({
 
   // Whether the favourite API call is in flight (prevents double-taps)
   const [togglingFav, setTogglingFav] = useState(false);
+
+  // Delete confirmation dialog state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // ── Lazy-load details whenever the card becomes expanded ───────────────────
   // Using useEffect instead of inside the click handler means programmatic
@@ -94,6 +100,20 @@ export default function BeanCard({
       console.error("Could not toggle favourite:", err.message);
     } finally {
       setTogglingFav(false);
+    }
+  };
+
+  // ── Delete click — show confirmation dialog ───────────────────────────────
+  const handleDeleteConfirm = async () => {
+    setDeleting(true);
+    try {
+      await deleteBean(bean.id);
+      onDelete(bean.id); // tell BeanList to reload and close the card
+    } catch (err) {
+      console.error("Could not delete bean:", err.message);
+    } finally {
+      setDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
@@ -200,7 +220,10 @@ export default function BeanCard({
 
               {/* Action buttons */}
               <div className="bc__actions">
-                <button className="bc__btn bc__btn--ghost" disabled>
+                <button
+                  className="bc__btn bc__btn--ghost"
+                  onClick={() => setShowDeleteDialog(true)}
+                >
                   Delete
                 </button>
                 <button
@@ -213,6 +236,30 @@ export default function BeanCard({
             </>
           )}
         </div>
+      )}
+
+      {showDeleteDialog && (
+        <Dialog
+          icon="🗑"
+          title={`Delete ${bean.name}?`}
+          body={
+            bean.container_name
+              ? `This will permanently remove the card and unassign it from ${bean.container_name}. This cannot be undone.`
+              : "This will permanently remove the card. This cannot be undone."
+          }
+          actions={[
+            {
+              label: "Cancel",
+              variant: "secondary",
+              onClick: () => setShowDeleteDialog(false),
+            },
+            {
+              label: deleting ? "Deleting…" : "Delete",
+              variant: "danger",
+              onClick: handleDeleteConfirm,
+            },
+          ]}
+        />
       )}
     </div>
   );

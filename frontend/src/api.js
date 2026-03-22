@@ -50,6 +50,12 @@ export const updateBean = (id, payload) =>
 export const toggleFavourite = (id) =>
   apiFetch(`/api/beans/${id}/favourite`, { method: "PUT" });
 
+/**
+ * Deleate a bean by ID
+ */
+export const deleteBean = (id) =>
+  apiFetch(`/api/beans/${id}`, { method: "DELETE" });
+
 // ── Containers ────────────────────────────────────────────────────────────────
 
 export const getContainers = () => apiFetch("/api/containers");
