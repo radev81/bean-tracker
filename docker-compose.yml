@@ -11,7 +11,7 @@ services:
       PORT: 3001
       # In production the frontend is on GitHub Pages, not localhost
       # Replace with your actual GitHub Pages URL in Phase 7
-      ALLOWED_ORIGIN: "https://ravdev81.github.io"
+      ALLOWED_ORIGIN: "https://ra-homelab.synology.me"
     volumes:
       # Mount the SQLite database file from a named Docker volume
       # This means the .db file survives container rebuilds
