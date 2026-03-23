@@ -118,7 +118,7 @@ Full specification lives in `frontend/public/scenario-catalogue.html`.
 
 - **Coffee Beans (CB-01 to CB-73):** List display, search, filtering, add, expand/collapse, favourites, edit, delete, QR code
 - **Containers (CON-01 to CON-21):** List display, add, edit, remove
-- **Shops (SH-01 to SH-08):** List display, add
+- **Shops (SH-01 to SH-08):** List display, add, edit, remove (edit/remove added beyond spec)
 
 Build order follows the catalogue section by section.
 
@@ -138,6 +138,7 @@ Key rules:
 - Duplicate bean name is a UI warning only — not enforced at DB level (CB-32)
 - `is_favourite` drives sort order: favourites first (CB-52)
 - Deleting a container → SET NULL on `beans.container_id` (CON-21)
+- Deleting a shop blocked by DB if beans still reference it (ON DELETE RESTRICT)
 
 ---
 
@@ -162,13 +163,12 @@ Key rules:
 
 - `backend/src/db/schema.sql` — full SQLite schema
 - `backend/src/db/database.js` — connection + schema auto-apply on startup
-- `backend/src/routes/beans.js` — GET `/api/beans`, GET `/api/beans/:id`
-- `backend/src/routes/containers.js` — GET `/api/containers`, GET `/api/containers/:id/current-bean`
-- `backend/src/routes/shops.js` — GET `/api/shops`
+- `backend/src/routes/beans.js` — full CRUD + favourite toggle + tags + recipes
+- `backend/src/routes/containers.js` — full CRUD + GET current-bean (QR page)
+- `backend/src/routes/shops.js` — full CRUD
 - `backend/src/index.js` — Express server, CORS, health check at `/api/health`
 - `backend/.env` — `PORT=3001`, `ALLOWED_ORIGIN=http://localhost:5173`
-- All routes tested with REST Client, returning correct empty arrays
-- Committed: `feat: backend API skeleton with beans, containers and shops routes`
+- All routes tested with REST Client
 
 ### ✅ Design — Mocha Deep locked
 
@@ -185,11 +185,7 @@ Key rules:
 - Ran script: 33 beans, shops, containers, and recipes imported successfully
 - `import.js` and `backend/data/import/` added to `.gitignore` and removed from Git tracking
 
-### 🔲 Phase 3 — React frontend (IN PROGRESS)
-
-Build order — one component group at a time, each tied to scenario IDs:
-
-**Done:**
+### ✅ Phase 3 — React frontend (COMPLETE)
 
 1. ✅ `frontend/src/theme.js` — CSS variable token file
 2. ✅ App shell — `App.jsx`, `App.css`, routing, global layout, tab bar
@@ -197,19 +193,27 @@ Build order — one component group at a time, each tied to scenario IDs:
 4. ✅ `frontend/src/api.js` — centralised fetch wrapper (VITE_API_URL from .env)
 5. ✅ `frontend/src/main.jsx` — entry point, BrowserRouter wrapper
 6. ✅ `EmptyState.jsx` — reusable empty state component
-7. ✅ `BeanList.jsx` — CB-01, CB-02 (empty state + list)
-8. ✅ `BeanCard.jsx` — CB-42–CB-46 (expand/collapse), CB-47–CB-52 (favourite toggle)
-9. ✅ `BeanSearch.jsx` — CB-03–CB-08 (search + clear)
-10. ✅ `BeanFilter.jsx` — CB-09–CB-24 (filter panel)
-11. ✅ `GET /api/beans/:id` — returns bean + tags + recipes
-12. ✅ `PUT /api/beans/:id/favourite` — toggles is_favourite
-    **Next:**
-13. 🔲 BeanForm — CB-25 to CB-41 (Add new card)
-14. 🔲 Edit flow — CB-53 to CB-66
-15. 🔲 Delete flow — CB-67 to CB-71
-16. 🔲 `ContainerQRPage.jsx` — CB-72, CB-73 (QR scan route)
-17. 🔲 Containers tab — CON-01 to CON-21
-18. 🔲 Shops tab — SH-01 to SH-08
+7. ✅ `Dialog.jsx` — reusable dialog component (common/)
+8. ✅ `BeanList.jsx` — CB-01, CB-02 (empty state + list)
+9. ✅ `BeanCard.jsx` — CB-42–CB-46 (expand/collapse), CB-47–CB-52 (favourite toggle)
+10. ✅ `BeanSearch.jsx` — CB-03–CB-08 (search + clear)
+11. ✅ `BeanFilter.jsx` — CB-09–CB-24 (filter panel)
+12. ✅ `BeanForm.jsx` — CB-25–CB-41 (add new card), CB-53–CB-66 (edit flow)
+13. ✅ Delete flow — CB-67–CB-71 (DELETE /api/beans/:id)
+14. ✅ `ContainerQRPage.jsx` — CB-72, CB-73 (QR scan route, standalone — no header/tabs)
+15. ✅ `ContainerList.jsx` — CON-01–CON-21 (list, add, edit, remove)
+16. ✅ `ShopList.jsx` — SH-01–SH-08 + edit and remove (beyond spec)
+
+**App routing notes:**
+
+- `/container/:id` is a standalone route — bypasses AppShell (no header/tabs)
+- All other routes rendered inside AppShell via React Router layout route pattern
+- Components folder is `frontend/src/components/common/` (not shared/)
+
+**API notes:**
+
+- `apiFetch` always throws on non-ok responses, with `error.status` set
+- 409 responses are caught in component `catch` blocks to show duplicate dialogs
 
 ### 🔲 Phase 4 — QR codes
 
@@ -271,7 +275,7 @@ Next task: [describe what to build next]
 
 ```bash
 # Run backend locally
-cd backend && node src/index.js
+cd backend && npm run dev
 
 # Run frontend locally
 cd frontend && npm run dev
@@ -295,57 +299,66 @@ docker compose pull && docker compose up -d
 ```
 bean-tracker/
 ├── .gitignore
-├── ROADMAP.md                          ← this file
-├── docker-compose.yml                  ← Phase 5
+├── ROADMAP.md                               ← this file
+├── docker-compose.yml                       ← Phase 5
 ├── nginx/
-│   └── nginx.conf                      ← Phase 5
+│   └── nginx.conf                           ← Phase 5
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml                  ← Phase 7
+│       └── deploy.yml                       ← Phase 7
 ├── backend/
 │   ├── src/
 │   │   ├── db/
-│   │   │   ├── schema.sql
-│   │   │   └── database.js
+│   │   │   ├── schema.sql                   ✅
+│   │   │   └── database.js                  ✅
 │   │   ├── routes/
-│   │   │   ├── beans.js
-│   │   │   ├── containers.js
-│   │   │   └── shops.js
-│   │   └── index.js
-│   ├── data/                           ← bean.db lives here (not in Git)
-│   ├── .env                            ← not in Git
+│   │   │   ├── beans.js                     ✅ full CRUD
+│   │   │   ├── containers.js                ✅ full CRUD + QR endpoint
+│   │   │   └── shops.js                     ✅ full CRUD
+│   │   └── index.js                         ✅
+│   ├── data/                                ← bean.db lives here (not in Git)
+│   ├── .env                                 ← not in Git
 │   ├── test.http
 │   └── package.json
 └── frontend/
     ├── public/
-    │   ├── design-reference.html       ← locked design
-    │   └── scenario-catalogue.html     ← BDD spec
+    │   ├── design-reference.html            ← locked design
+    │   └── scenario-catalogue.html          ← BDD spec
     ├── src/
-    │   ├── theme.js                    ← CSS variable tokens  ✅
-    │   ├── index.css                   ← global reset + CSS vars  ✅
-    │   ├── api.js                      ← centralised fetch wrapper  ✅
-    │   ├── main.jsx                    ← entry point  ✅
-    │   ├── App.jsx                     ← shell, tabs, routing  ✅
-    │   ├── App.css                     ← shell layout  ✅
+    │   ├── theme.js                         ✅
+    │   ├── index.css                        ✅
+    │   ├── api.js                           ✅
+    │   ├── main.jsx                         ✅
+    │   ├── App.jsx                          ✅ layout route pattern
+    │   ├── App.css                          ✅
+    │   ├── pages/
+    │   │   └── ContainerQRPage.jsx          ✅ CB-72, CB-73
+    │   │   └── ContainerQRPage.css          ✅
     │   └── components/
     │       ├── beans/
-    │       │   ├── BeanList.jsx        ← CB-01, CB-02  ✅
-    │       │   ├── BeanList.css        ✅
-    │       │   ├── BeanCard.jsx        ← collapsed row  ✅
-    │       │   ├── BeanCard.css        ✅
-    │       │   ├── BeanSearch.jsx      ← CB-03 to CB-08  🔲
-    │       │   └── BeanFilter.jsx      ← CB-09 to CB-24  🔲
-    │       ├── shared/
-    │       │   ├── EmptyState.jsx      ✅
-    │       │   ├── EmptyState.css      ✅
-    │       │   └── ConfirmDialog.jsx   ← Phase 3 later  🔲
-    │       ├── containers/             ← Phase 3 later  🔲
-    │       └── shops/                  ← Phase 3 later  🔲
-    ├── pages/
-    │   ├── ContainerQRPage.jsx         ← CB-72, CB-73  🔲
-    │   └── (others inline in App.jsx for now)
-    ├── .env                            ← not in Git  ✅
-    ├── .env.production                 ← not in Git  🔲 Phase 7
+    │       │   ├── BeanList.jsx             ✅ CB-01, CB-02
+    │       │   ├── BeanList.css             ✅
+    │       │   ├── BeanCard.jsx             ✅ CB-42–CB-52
+    │       │   ├── BeanCard.css             ✅
+    │       │   ├── BeanSearch.jsx           ✅ CB-03–CB-08
+    │       │   ├── BeanSearch.css           ✅
+    │       │   ├── BeanFilter.jsx           ✅ CB-09–CB-24
+    │       │   ├── BeanFilter.css           ✅
+    │       │   ├── BeanForm.jsx             ✅ CB-25–CB-66
+    │       │   └── BeanForm.css             ✅
+    │       ├── containers/
+    │       │   ├── ContainerList.jsx        ✅ CON-01–CON-21
+    │       │   └── ContainerList.css        ✅
+    │       ├── shops/
+    │       │   ├── ShopList.jsx             ✅ SH-01–SH-08 + edit/remove
+    │       │   └── ShopList.css             ✅
+    │       └── common/
+    │           ├── EmptyState.jsx           ✅
+    │           ├── EmptyState.css           ✅
+    │           ├── Dialog.jsx               ✅
+    │           └── Dialog.css               ✅
+    ├── .env                                 ← not in Git
+    ├── .env.production                      ← Phase 7
     ├── vite.config.js
     └── package.json
 ```
