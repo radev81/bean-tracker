@@ -22,3 +22,6 @@ Content-Type: application/json
 
 ### Test: delete a bean
 DELETE http://localhost:3001/api/beans/1000
+
+### Test: get current bean in container 
+GET http://localhost:3001/api/containers/2/current-bean

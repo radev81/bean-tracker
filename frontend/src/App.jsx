@@ -1,21 +1,9 @@
-/**
- * App.jsx — Beans Tracker shell
- * ─────────────────────────────
- * Renders:
- *   • Fixed header (brand + bean count pill)
- *   • Tab bar: Beans | Containers | Shops
- *   • A <main> area where each tab's page lives
- *
- * React Router handles which tab is visible.
- * The header is always visible regardless of route.
- */
-
-import { NavLink, Routes, Route, Navigate } from "react-router-dom";
+import { NavLink, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { getBeans } from "./api";
 import BeanList from "./components/beans/BeanList";
+import ContainerQRPage from "./pages/ContainerQRPage";
 
-// Placeholder pages — we'll build these in later phases
 function ContainersPage() {
   return (
     <div
@@ -29,6 +17,7 @@ function ContainersPage() {
     </div>
   );
 }
+
 function ShopsPage() {
   return (
     <div
@@ -43,20 +32,12 @@ function ShopsPage() {
   );
 }
 
-export default function App() {
-  // We keep the bean count here so the header pill always stays accurate
-  // even when BeanList re-fetches. BeanList will call this to notify us.
-  const [beanCount, setBeanCount] = useState(null); // null = loading
-
-  useEffect(() => {
-    getBeans()
-      .then((beans) => setBeanCount(beans.length))
-      .catch(() => setBeanCount(0));
-  }, []);
-
+// ── App shell layout (header + tabs + page area) ──────────────────────────────
+// This is only rendered for /beans, /containers, /shops.
+// The QR page (/container/:id) bypasses this entirely.
+function AppShell({ beanCount, setBeanCount }) {
   return (
     <div className="app">
-      {/* ── Fixed header ── */}
       <header className="app-header">
         <div className="app-header__top">
           <div className="app-brand">
@@ -71,7 +52,6 @@ export default function App() {
           )}
         </div>
 
-        {/* ── Tab bar ── */}
         <nav className="app-tabs" aria-label="Main navigation">
           <NavLink to="/beans" className="app-tab">
             {({ isActive }) => (
@@ -110,30 +90,42 @@ export default function App() {
         </nav>
       </header>
 
-      {/* ── Page content ── */}
+      {/* Outlet renders whichever child route matches */}
       <main className="app-main">
-        <Routes>
-          {/* Redirect root to /beans */}
-          <Route path="/" element={<Navigate to="/beans" replace />} />
-
-          <Route
-            path="/beans"
-            element={
-              <BeanList
-                // When BeanList saves/deletes a bean, it calls this
-                // so the header pill count stays up to date
-                onCountChange={setBeanCount}
-              />
-            }
-          />
-
-          <Route path="/containers" element={<ContainersPage />} />
-          <Route path="/shops" element={<ShopsPage />} />
-
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/beans" replace />} />
-        </Routes>
+        <Outlet />
       </main>
     </div>
+  );
+}
+
+// ── Root component ────────────────────────────────────────────────────────────
+export default function App() {
+  const [beanCount, setBeanCount] = useState(null);
+
+  useEffect(() => {
+    getBeans()
+      .then((beans) => setBeanCount(beans.length))
+      .catch(() => setBeanCount(0));
+  }, []);
+
+  return (
+    <Routes>
+      {/* Standalone route — no header, no tabs */}
+      <Route path="/container/:id" element={<ContainerQRPage />} />
+
+      {/* All other routes share the AppShell layout */}
+      <Route
+        element={<AppShell beanCount={beanCount} setBeanCount={setBeanCount} />}
+      >
+        <Route path="/" element={<Navigate to="/beans" replace />} />
+        <Route
+          path="/beans"
+          element={<BeanList onCountChange={setBeanCount} />}
+        />
+        <Route path="/containers" element={<ContainersPage />} />
+        <Route path="/shops" element={<ShopsPage />} />
+        <Route path="*" element={<Navigate to="/beans" replace />} />
+      </Route>
+    </Routes>
   );
 }
