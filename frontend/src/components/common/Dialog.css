@@ -97,4 +97,5 @@
 .dialog__btn--danger {
   background: #c8180f;
   color: #fff;
+  border: none;
 }

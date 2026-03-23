@@ -15,9 +15,10 @@ export async function apiFetch(path, options = {}) {
 
   const data = await res.json();
 
-  // 409 Conflict is intentional — pass it through so callers can handle it
-  if (!res.ok && res.status !== 409) {
-    throw new Error(data?.error || `API error ${res.status}`);
+  if (!res.ok) {
+    const error = new Error(data?.error || `API error ${res.status}`);
+    error.status = res.status;
+    throw error;
   }
 
   return data;
@@ -58,7 +59,29 @@ export const deleteBean = (id) =>
 
 // ── Containers ────────────────────────────────────────────────────────────────
 
-export const getContainers = () => apiFetch("/api/containers");
+export function getContainers() {
+  return apiFetch("/api/containers");
+}
+
+export function createContainer(name) {
+  return apiFetch("/api/containers", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function updateContainer(id, name) {
+  return apiFetch(`/api/containers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function deleteContainer(id) {
+  return apiFetch(`/api/containers/${id}`, { method: "DELETE" });
+}
 
 // ── Shops ─────────────────────────────────────────────────────────────────────
 

@@ -3,20 +3,7 @@ import { useEffect, useState } from "react";
 import { getBeans } from "./api";
 import BeanList from "./components/beans/BeanList";
 import ContainerQRPage from "./pages/ContainerQRPage";
-
-function ContainersPage() {
-  return (
-    <div
-      style={{
-        padding: "2rem",
-        color: "var(--color-text-3)",
-        textAlign: "center",
-      }}
-    >
-      Containers — coming soon
-    </div>
-  );
-}
+import ContainerList from "./components/containers/ContainerList";
 
 function ShopsPage() {
   return (
@@ -122,7 +109,7 @@ export default function App() {
           path="/beans"
           element={<BeanList onCountChange={setBeanCount} />}
         />
-        <Route path="/containers" element={<ContainersPage />} />
+        <Route path="/containers" element={<ContainerList />} />
         <Route path="/shops" element={<ShopsPage />} />
         <Route path="*" element={<Navigate to="/beans" replace />} />
       </Route>

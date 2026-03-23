@@ -1,0 +1,153 @@
+.ctr-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* ── List ── */
+.ctr-list {
+  flex: 1;
+  padding: 12px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* ── Row ── */
+.ctr-row {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-card);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  transition: border-color 0.15s;
+}
+.ctr-row--edit,
+.ctr-row--new {
+  border-color: var(--accent-mid);
+}
+
+/* Number badge */
+.ctr-num {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--grad);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ctr-num--new {
+  background: var(--color-border);
+  color: var(--color-text-2);
+  font-size: 18px;
+  font-weight: 400;
+}
+
+/* Body */
+.ctr-body {
+  flex: 1;
+  min-width: 0;
+}
+.ctr-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+.ctr-bean {
+  font-size: 11px;
+  color: var(--color-text-3);
+  margin-top: 2px;
+}
+.ctr-bean--empty {
+  font-style: italic;
+}
+
+/* Inline text input */
+.ctr-input {
+  width: 100%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-hi);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--color-text);
+  outline: none;
+}
+.ctr-input:focus {
+  border-color: var(--accent-mid);
+}
+
+/* In-use badge */
+.ctr-badge {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--accent-mid);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  padding: 3px 8px;
+  border-radius: var(--r-badge);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Action buttons */
+.ctr-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.ctr-btn {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--r-btn);
+  padding: 7px 12px;
+  cursor: pointer;
+  border: none;
+}
+.ctr-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.ctr-btn--ghost {
+  background: transparent;
+  border: 1px solid var(--color-border-hi);
+  color: var(--color-text-3);
+}
+.ctr-btn--accent {
+  background: var(--grad);
+  color: #fff;
+}
+.ctr-btn--danger {
+  background: #c8180f;
+  color: #fff;
+}
+
+/* ── Add button strip ── */
+.ctr-add-wrap {
+  padding: 10px 12px 16px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 12px;
+}
+.ctr-add-btn {
+  width: 100%;
+  background: var(--grad);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-add);
+  padding: 14px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
