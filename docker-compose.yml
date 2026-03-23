@@ -1,0 +1,45 @@
+# Docker Compose file — defines all the containers and how they connect
+
+services:
+  # ── Express API ─────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend # build the image from backend/Dockerfile
+    container_name: bean-api
+    restart: unless-stopped # auto-restart if the NAS reboots
+    environment:
+      PORT: 3001
+      # In production the frontend is on GitHub Pages, not localhost
+      # Replace with your actual GitHub Pages URL in Phase 7
+      ALLOWED_ORIGIN: "https://ravdev81.github.io"
+    volumes:
+      # Mount the SQLite database file from a named Docker volume
+      # This means the .db file survives container rebuilds
+      - bean-data:/app/data
+    networks:
+      - bean-net
+    # The API container is NOT exposed to the outside world directly.
+    # Only Nginx talks to it, via the internal Docker network.
+
+  # ── Nginx reverse proxy ──────────────────────────────────────────────────────
+  nginx:
+    image: nginx:alpine # use the official slim Nginx image
+    container_name: bean-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80" # Phase 6 will add "443:443" here
+    volumes:
+      # Mount our nginx.conf into the container
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api # wait for the API to start first
+    networks:
+      - bean-net
+
+# ── Named volume — persists the SQLite .db file ──────────────────────────────
+volumes:
+  bean-data:
+
+# ── Internal network — containers talk to each other, not the outside ─────────
+networks:
+  bean-net:
