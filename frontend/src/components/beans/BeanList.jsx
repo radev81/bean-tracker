@@ -108,7 +108,7 @@ export default function BeanList() {
   }
 
   // Called after a bean is deleted. Closes the card (in case it was open) and reloads the list to reflect the deletion.
-  async function handleBeanDeleted(beanId) {
+  async function handleBeanDeleted() {
     setExpandedId(null); // close the card before it disappears
     await loadBeans(); // reload the list
   }
