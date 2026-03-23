@@ -85,4 +85,26 @@ export function deleteContainer(id) {
 
 // ── Shops ─────────────────────────────────────────────────────────────────────
 
-export const getShops = () => apiFetch("/api/shops");
+export function getShops() {
+  return apiFetch("/api/shops");
+}
+
+export function createShop(name, url = null) {
+  return apiFetch("/api/shops", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, url }),
+  });
+}
+
+export function updateShop(id, name, url = null) {
+  return apiFetch(`/api/shops/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, url }),
+  });
+}
+
+export function deleteShop(id) {
+  return apiFetch(`/api/shops/${id}`, { method: "DELETE" });
+}

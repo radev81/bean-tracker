@@ -1,0 +1,177 @@
+/* ── Page wrapper ─────────────────────────────────────────────────────────── */
+.shop-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* ── List ─────────────────────────────────────────────────────────────────── */
+.shop-list {
+  flex: 1;
+  padding: 12px 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+/* ── Row ──────────────────────────────────────────────────────────────────── */
+.shop-row {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--r-card);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  transition: border-color 0.15s;
+}
+.shop-row--edit {
+  border-color: var(--accent-mid);
+}
+.shop-row--new {
+  border-color: var(--accent-mid);
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+/* ── Icon ─────────────────────────────────────────────────────────────────── */
+.shop-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  padding-top: 1px;
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────────── */
+.shop-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.shop-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shop-meta {
+  font-size: 11px;
+  color: var(--color-text-3);
+  line-height: 1.4;
+}
+.shop-link {
+  color: var(--accent-mid);
+  text-decoration: none;
+}
+.shop-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Bean count badge ─────────────────────────────────────────────────────── */
+.shop-badge {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--accent-mid);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  padding: 3px 8px;
+  border-radius: var(--r-badge);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Text inputs ──────────────────────────────────────────────────────────── */
+.shop-input {
+  width: 100%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-hi);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.shop-input:focus {
+  border-color: var(--accent-mid);
+}
+.shop-input--url {
+  font-size: 12px;
+  color: var(--color-text-2);
+}
+
+/* ── Action buttons ───────────────────────────────────────────────────────── */
+.shop-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* For the new row, push actions to the right */
+.shop-row--new .shop-actions {
+  width: 100%;
+  justify-content: flex-end;
+  padding-top: 2px;
+}
+
+.shop-btn {
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--r-btn);
+  padding: 7px 12px;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+.shop-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.shop-btn--ghost {
+  background: transparent;
+  border: 1px solid var(--color-border-hi);
+  color: var(--color-text-3);
+}
+.shop-btn--ghost:hover:not(:disabled) {
+  border-color: var(--color-text-3);
+  color: var(--color-text-2);
+}
+.shop-btn--accent {
+  background: var(--grad);
+  color: #fff;
+}
+.shop-btn--accent:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+/* ── Add button strip ─────────────────────────────────────────────────────── */
+.shop-add-wrap {
+  padding: 10px 12px 16px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 12px;
+}
+.shop-add-btn {
+  width: 100%;
+  background: var(--grad);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-add);
+  padding: 14px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.shop-add-btn:hover {
+  opacity: 0.88;
+}

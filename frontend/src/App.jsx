@@ -4,20 +4,7 @@ import { getBeans } from "./api";
 import BeanList from "./components/beans/BeanList";
 import ContainerQRPage from "./pages/ContainerQRPage";
 import ContainerList from "./components/containers/ContainerList";
-
-function ShopsPage() {
-  return (
-    <div
-      style={{
-        padding: "2rem",
-        color: "var(--color-text-3)",
-        textAlign: "center",
-      }}
-    >
-      Shops — coming soon
-    </div>
-  );
-}
+import ShopList from "./components/shops/ShopList";
 
 // ── App shell layout (header + tabs + page area) ──────────────────────────────
 // This is only rendered for /beans, /containers, /shops.
@@ -110,7 +97,7 @@ export default function App() {
           element={<BeanList onCountChange={setBeanCount} />}
         />
         <Route path="/containers" element={<ContainerList />} />
-        <Route path="/shops" element={<ShopsPage />} />
+        <Route path="/shops" element={<ShopList />} />
         <Route path="*" element={<Navigate to="/beans" replace />} />
       </Route>
     </Routes>
