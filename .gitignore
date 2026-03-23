@@ -18,3 +18,4 @@ backend/data/import/
 # OS clutter
 .DS_Store
 Thumbs.db
+.vscode/settings.json
