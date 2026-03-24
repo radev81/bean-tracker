@@ -6,7 +6,10 @@ dist/
 
 # Environment secrets
 .env
-.env.production
+.env.local
+.env*.local
+# Allow production config - no secrets in here
+!.env.production
 
 # Database file (lives on NAS only, never in Git)
 *.db
