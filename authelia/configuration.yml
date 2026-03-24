@@ -1,0 +1,50 @@
+server:
+  host: 0.0.0.0
+  port: 9091
+
+log:
+  level: info
+
+# CHANGE THIS — any long random string (e.g. run: openssl rand -hex 32)
+jwt_secret: "S0k5Ug8s4JwxMdnT1oRNcvuAOf3rKzZ69qyma2hEQYGlWeCI"
+
+# After login, if no redirect URL was specified, go here
+default_redirection_url: https://radev81.github.io/bean-tracker/
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+    password:
+      algorithm: argon2id
+
+access_control:
+  default_policy: deny
+  rules:
+    # Allow all requests to your NAS domain after one-factor login
+    - domain: ra-homelab.synology.me
+      policy: one_factor
+
+session:
+  name: authelia_session
+  # CHANGE THIS — any long random string (different from jwt_secret)
+  secret: "cIVaPxGyjQ17SYOd5R489ZLupD0Ck2fvJFBTglHetwi6bXKN"
+  expiration: 12h
+  inactivity: 30m
+  domain: ra-homelab.synology.me
+  # Required so the cookie is sent from GitHub Pages (cross-origin)
+  same_site: none
+
+regulation:
+  max_retries: 5
+  find_time: 2m
+  ban_time: 10m
+
+storage:
+  encryption_key: "TdrN0JcROA1Xg6kte5KCqWb3uaSG9VywvM2jLZFU48iznslp"
+  local:
+    path: /config/db.sqlite3
+
+notifier:
+  # Writes login notifications to a file (no email server needed)
+  filesystem:
+    filename: /config/notification.txt

@@ -19,6 +19,7 @@ app.use(
         callback(new Error(`CORS blocked: ${origin}`));
       }
     },
+    credentials: true,
   }),
 );
 

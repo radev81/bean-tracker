@@ -1,0 +1,7 @@
+users:
+  radev81:
+    displayname: "Rolf"
+    password: "$argon2id$v=19$m=65536,t=3,p=4$80vew9hkqECzRddIxcW8uw$6YRcV+gvEGS/bCy8vo7yfVg3toXSkTgcmk+yTy/Kn44"
+    email: rolf.alsemgeest@pm.me
+    groups:
+      - admins
