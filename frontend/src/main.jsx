@@ -14,7 +14,7 @@ import "./App.css";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/bean-tracker">
       <App />
     </BrowserRouter>
   </StrictMode>,
