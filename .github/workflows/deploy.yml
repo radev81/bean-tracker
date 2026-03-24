@@ -1,0 +1,61 @@
+# This workflow runs every time you push to the main branch.
+# It builds the React app and publishes it to GitHub Pages.
+
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+# Allow the workflow to write to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only allow one deployment at a time
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      # 1. Check out the code
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Set up Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # 3. Install frontend dependencies
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      # 4. Build the React app
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+
+      # 5. Upload the built files as a GitHub Pages artifact
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+      # 6. Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
