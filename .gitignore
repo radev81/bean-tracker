@@ -21,6 +21,9 @@ authelia/db.sqlite3-wal
 authelia/db.sqlite3-shm
 authelia/notification.txt
 
+# Authelia user database — contains credentials, NAS only
+authelia/users_database.yml
+
 # OS clutter
 .DS_Store
 Thumbs.db
