@@ -11,7 +11,14 @@ export async function apiFetch(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
+    credentials: "include",
   });
+
+  if (res.status === 401) {
+    const returnTo = encodeURIComponent(window.location.href);
+    window.location.href = `${BASE}/authelia/?rd=${returnTo}`;
+    return new Promise(() => {}); // halt — navigation is happening
+  }
 
   const data = await res.json();
 

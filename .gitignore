@@ -15,6 +15,12 @@ dist/
 *.db
 backend/data/
 
+# Authelia runtime files
+authelia/db.sqlite3
+authelia/db.sqlite3-wal
+authelia/db.sqlite3-shm
+authelia/notification.txt
+
 # OS clutter
 .DS_Store
 Thumbs.db

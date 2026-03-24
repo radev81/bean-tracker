@@ -34,6 +34,18 @@ services:
     networks:
       - bean-net
 
+  # ── Authelia authentication ─────────────────────────────────────────────────
+  bean-authelia:
+    image: authelia/authelia:latest
+    container_name: bean-authelia
+    volumes:
+      - ./authelia:/config
+    networks:
+      - bean-net
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/Madrid # adjust to your timezone
+
 # ── Named volume — persists the SQLite .db file ──────────────────────────────
 volumes:
   bean-data:
@@ -41,3 +53,4 @@ volumes:
 # ── Internal network — containers talk to each other, not the outside ─────────
 networks:
   bean-net:
+    driver: bridge
