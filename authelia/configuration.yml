@@ -23,10 +23,8 @@ access_control:
       policy: one_factor
 
 session:
-  name: authelia_session
-  # CHANGE THIS — any long random string (different from jwt_secret)
   secret: "cIVaPxGyjQ17SYOd5R489ZLupD0Ck2fvJFBTglHetwi6bXKN"
-    cookies:
+  cookies:
     - name: authelia_session
       domain: ra-homelab.synology.me
       authelia_url: https://ra-homelab.synology.me/authelia/
