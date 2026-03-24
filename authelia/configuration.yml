@@ -9,9 +9,6 @@ log:
 # CHANGE THIS — any long random string (e.g. run: openssl rand -hex 32)
 jwt_secret: "S0k5Ug8s4JwxMdnT1oRNcvuAOf3rKzZ69qyma2hEQYGlWeCI"
 
-# After login, if no redirect URL was specified, go here
-default_redirection_url: https://ra-homelab.synology.me/app
-
 authentication_backend:
   file:
     path: /config/users_database.yml
@@ -29,11 +26,14 @@ session:
   name: authelia_session
   # CHANGE THIS — any long random string (different from jwt_secret)
   secret: "cIVaPxGyjQ17SYOd5R489ZLupD0Ck2fvJFBTglHetwi6bXKN"
-  expiration: 12h
-  inactivity: 30m
-  domain: ra-homelab.synology.me
-  # Required so the cookie is sent from GitHub Pages (cross-origin)
-  same_site: none
+    cookies:
+    - name: authelia_session
+      domain: ra-homelab.synology.me
+      authelia_url: https://ra-homelab.synology.me/authelia/
+      default_redirection_url: https://ra-homelab.synology.me/app
+      expiration: 12h
+      inactivity: 30m
+      same_site: none
 
 regulation:
   max_retries: 5
