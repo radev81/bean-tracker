@@ -4,19 +4,9 @@
     <meta charset="utf-8" />
     <title>Beans Tracker</title>
     <script>
-      // Redirect all 404s back to index.html, preserving the path
-      // so React Router can handle it
-      const path = window.location.pathname;
-      const search = window.location.search;
-      const hash = window.location.hash;
-      const base = "/bean-tracker";
-      window.location.replace(
-        base +
-          "/?p=" +
-          encodeURIComponent(path.replace(base, "") + search) +
-          (hash || ""),
-      );
+      sessionStorage.redirect = location.href;
     </script>
+    <meta http-equiv="refresh" content="0;URL='/bean-tracker/'" />
   </head>
   <body></body>
 </html>
