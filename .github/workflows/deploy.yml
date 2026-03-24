@@ -48,6 +48,8 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: frontend
+        env:
+          VITE_API_URL: https://radev81.synology.me/api
 
       # 5. Upload the built files as a GitHub Pages artifact
       - name: Upload artifact
