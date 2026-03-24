@@ -13,7 +13,10 @@ Phone / browser
 GitHub Pages — React + Vite (static, free hosting)
       │  API calls over HTTPS
       ▼
-Nginx reverse proxy — Docker container on DS220+
+DSM Reverse Proxy — handles SSL termination
+      │  HTTP (port 8080, internal)
+      ▼
+Nginx container — Docker on DS220+
       │
       ▼
 Node + Express API — Docker container on DS220+
@@ -25,9 +28,13 @@ SQLite file — Docker volume on DS220+ disk
 **Key facts:**
 
 - Frontend lives on GitHub Pages, backend lives on the NAS
-- QR codes are plain URLs: `https://yourdomain.com/container/1`
+- QR codes are plain URLs: `https://ra-homelab.synology.me/container/1`
 - The `.db` file never goes into Git — NAS only
 - One Docker Compose file manages Nginx + API + volume together
+- DSM reverse proxy handles HTTPS and SSL certificates (Let's Encrypt via DSM)
+- Nginx runs on port 8080 internally (port 80 reserved by DSM)
+- `BrowserRouter` uses `basename="/bean-tracker"` for correct GitHub Pages routing
+- `VITE_API_URL` is set to `https://ra-homelab.synology.me` (no `/api` suffix — api.js appends paths)
 
 ---
 
@@ -40,9 +47,9 @@ SQLite file — Docker volume on DS220+ disk
 | Backend       | Node + Express          | REST API, one file per resource                    |
 | Database      | SQLite (better-sqlite3) | Single `.db` file, WAL mode                        |
 | Hosting       | GitHub Pages            | Free, auto-deploy via GitHub Actions               |
-| Reverse proxy | Nginx (Docker)          | Handles HTTPS, proxies to Express                  |
-| SSL           | Let's Encrypt / Certbot | Free certificates, auto-renew                      |
-| DDNS          | Synology built-in       | Keeps domain pointing to home IP                   |
+| Reverse proxy | Nginx (Docker)          | Proxies /api/\* to Express on port 8080            |
+| SSL           | DSM built-in            | Let's Encrypt via DSM Control Panel → Certificate  |
+| DDNS          | Synology built-in       | ra-homelab.synology.me → home IP                   |
 | NAS           | Synology DS220+         | Docker + Container Manager already installed       |
 | IDE           | VS Code (Windows 11)    | Extensions: ESLint, Prettier, GitLens, REST Client |
 
@@ -184,6 +191,7 @@ Key rules:
 - Handled: UUID → integer ID remapping, recipe columns → `bean_recipes` table, favourites column, container assignments column, time ranges (e.g. "29-30" → 29)
 - Ran script: 33 beans, shops, containers, and recipes imported successfully
 - `import.js` and `backend/data/import/` added to `.gitignore` and removed from Git tracking
+- `bean.db` copied to Docker volume on NAS via `docker cp` after fixing permissions and removing conflicting WAL files
 
 ### ✅ Phase 3 — React frontend (COMPLETE)
 
@@ -191,7 +199,7 @@ Key rules:
 2. ✅ App shell — `App.jsx`, `App.css`, routing, global layout, tab bar
 3. ✅ `frontend/src/index.css` — global reset + CSS custom properties
 4. ✅ `frontend/src/api.js` — centralised fetch wrapper (VITE_API_URL from .env)
-5. ✅ `frontend/src/main.jsx` — entry point, BrowserRouter wrapper
+5. ✅ `frontend/src/main.jsx` — entry point, BrowserRouter wrapper with `basename="/bean-tracker"`
 6. ✅ `EmptyState.jsx` — reusable empty state component
 7. ✅ `Dialog.jsx` — reusable dialog component (common/)
 8. ✅ `BeanList.jsx` — CB-01, CB-02 (empty state + list)
@@ -209,36 +217,60 @@ Key rules:
 - `/container/:id` is a standalone route — bypasses AppShell (no header/tabs)
 - All other routes rendered inside AppShell via React Router layout route pattern
 - Components folder is `frontend/src/components/common/` (not shared/)
+- `BrowserRouter` uses `basename="/bean-tracker"` — required for correct GitHub Pages routing
 
 **API notes:**
 
 - `apiFetch` always throws on non-ok responses, with `error.status` set
 - 409 responses are caught in component `catch` blocks to show duplicate dialogs
+- `VITE_API_URL` must NOT include `/api` suffix — api.js appends route paths directly
 
-### 🔲 Phase 4 — QR codes
+### ✅ Phase 5 — Docker on the NAS (COMPLETE)
 
-- Generate QR codes for `https://yourdomain.com/container/1` and `/container/2`
-- Print and attach to physical containers
-- No code needed — handled by `ContainerQRPage.jsx` route above
+- `backend/Dockerfile` — Node 24 slim image, production dependencies only
+- `docker-compose.yml` — api + nginx services, bean-data named volume, bean-net internal network
+- `nginx/nginx.conf` — reverse proxy on port 8080 (port 80 reserved by DSM)
+- Repo cloned to `/volume1/apps/bean-tracker` on DS220+
+- `backend/.env` created on NAS via `vi` (not in Git)
+- Containers running: `bean-api` + `bean-nginx`
+- `ALLOWED_ORIGIN` set to `https://radev81.github.io` in docker-compose.yml
 
-### 🔲 Phase 5 — Docker on the NAS
+**NAS deployment notes:**
 
-- `backend/Dockerfile`
-- `docker-compose.yml` (api + nginx services, bean-data volume)
-- `nginx/nginx.conf` (reverse proxy + HTTPS)
-- SSH into DS220+, clone repo, `docker compose up -d`
+- Project lives at `/volume1/apps/bean-tracker` (not `/volume1/apps/` — required `sudo mv` + `sudo chown`)
+- Port 80 conflict with DSM resolved by switching Nginx to port 8080
+- `nano` not available on Synology — use `vi` instead
+- `docker` commands require `sudo` on Synology SSH
 
-### 🔲 Phase 6 — Domain, DDNS & HTTPS
+### ✅ Phase 6 — Domain, DDNS & HTTPS (COMPLETE)
 
-- Configure DDNS in DSM → Control Panel → External Access
-- Port forward 443 + 80 on home router to DS220+ local IP
-- Run Certbot inside Nginx container for Let's Encrypt SSL certificate
+- DDNS configured in DSM → Control Panel → External Access → `ra-homelab.synology.me`
+- Router port forwarding: 443 → NAS:443, 80 → NAS:80 (port 80 needed for Let's Encrypt challenge)
+- SSL certificate obtained via DSM → Control Panel → Security → Certificate (Let's Encrypt)
+- DSM Reverse Proxy configured: HTTPS:443 → localhost:8080
+- Live and verified: `https://ra-homelab.synology.me/api/health` returns `{"status":"ok"}`
 
-### 🔲 Phase 7 — GitHub Pages deploy
+### ✅ Phase 7 — GitHub Pages deploy (COMPLETE)
 
-- `frontend/vite.config.js` — set `base: '/bean-tracker/'`
-- `frontend/.env.production` — `VITE_API_URL=https://yourdomain.com/api`
+- `frontend/vite.config.js` — `base: '/bean-tracker/'`
+- `frontend/src/main.jsx` — `BrowserRouter basename="/bean-tracker"`
+- `frontend/public/404.html` — sessionStorage redirect trick for React Router on GitHub Pages
+- `frontend/index.html` — redirect restore script in `<head>`
 - `.github/workflows/deploy.yml` — auto-build and publish on push to main
+- `VITE_API_URL=https://ra-homelab.synology.me` injected at build time via workflow env
+- Live at: `https://radev81.github.io/bean-tracker/`
+
+**GitHub Pages deployment notes:**
+
+- `VITE_API_URL` must NOT include `/api` — api.js appends route paths itself
+- `BrowserRouter basename` is required — without it React Router strips the `/bean-tracker/` prefix and routes break
+- GitHub Actions workflow injects `VITE_API_URL` at build time (environment variable in deploy.yml)
+
+### ✅ Phase 4 — QR codes
+
+- QR code URLs follow the pattern: `https://ra-homelab.synology.me/container/:id`
+- No code changes needed — handled by `ContainerQRPage.jsx`
+- Generate QR codes and print/attach to physical containers as needed
 
 ---
 
@@ -252,7 +284,7 @@ I'm building a coffee beans tracker app called Beans Tracker.
 Stack: React + Vite frontend on GitHub Pages, Node + Express + SQLite
 backend running in Docker on a Synology DS220+ NAS.
 
-Repo: github.com/YOUR_USERNAME/bean-tracker
+Repo: github.com/radev81/bean-tracker
 Structure:
   bean-tracker/
   ├── frontend/   (Vite + React, React Router)
@@ -264,7 +296,11 @@ Full token set and design reference: frontend/public/design-reference.html
 Full BDD scenario catalogue: frontend/public/scenario-catalogue.html
 Full build plan: ROADMAP.md (project root)
 
-Current status: [paste relevant phase from ROADMAP.md]
+Live URLs:
+  Frontend: https://radev81.github.io/bean-tracker/
+  Backend:  https://ra-homelab.synology.me/api
+
+Current status: All phases complete. App is fully live.
 
 Next task: [describe what to build next]
 ```
@@ -288,8 +324,20 @@ git add .
 git commit -m "feat: description"
 git push
 
-# On NAS — restart containers after update
-docker compose pull && docker compose up -d
+# On NAS — pull latest code and restart containers
+cd /volume1/apps/bean-tracker
+git pull
+docker compose up -d --build
+
+# On NAS — view live logs
+docker logs bean-api -f
+docker logs bean-nginx -f
+
+# On NAS — restart containers only (no rebuild)
+docker compose restart
+
+# On NAS — check container status
+docker ps
 ```
 
 ---
@@ -300,12 +348,12 @@ docker compose pull && docker compose up -d
 bean-tracker/
 ├── .gitignore
 ├── ROADMAP.md                               ← this file
-├── docker-compose.yml                       ← Phase 5
+├── docker-compose.yml                       ✅ Phase 5
 ├── nginx/
-│   └── nginx.conf                           ← Phase 5
+│   └── nginx.conf                           ✅ Phase 5
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml                       ← Phase 7
+│       └── deploy.yml                       ✅ Phase 7
 ├── backend/
 │   ├── src/
 │   │   ├── db/
@@ -323,12 +371,13 @@ bean-tracker/
 └── frontend/
     ├── public/
     │   ├── design-reference.html            ← locked design
-    │   └── scenario-catalogue.html          ← BDD spec
+    │   ├── scenario-catalogue.html          ← BDD spec
+    │   └── 404.html                         ✅ Phase 7 — React Router redirect
     ├── src/
     │   ├── theme.js                         ✅
     │   ├── index.css                        ✅
     │   ├── api.js                           ✅
-    │   ├── main.jsx                         ✅
+    │   ├── main.jsx                         ✅ basename="/bean-tracker"
     │   ├── App.jsx                          ✅ layout route pattern
     │   ├── App.css                          ✅
     │   ├── pages/
@@ -358,7 +407,8 @@ bean-tracker/
     │           ├── Dialog.jsx               ✅
     │           └── Dialog.css               ✅
     ├── .env                                 ← not in Git
-    ├── .env.production                      ← Phase 7
-    ├── vite.config.js
+    ├── .env.production                      ← VITE_API_URL (also set in deploy.yml)
+    ├── index.html                           ✅ redirect restore script in <head>
+    ├── vite.config.js                       ✅ base: '/bean-tracker/'
     └── package.json
 ```
