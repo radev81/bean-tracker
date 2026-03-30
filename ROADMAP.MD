@@ -8,33 +8,30 @@ Single source of truth for the build plan. Reference this at the start of every 
 
 ```
 Phone / browser
-      │  HTTPS (custom domain)
+      │  HTTPS (port 3200)
       ▼
-GitHub Pages — React + Vite (static, free hosting)
-      │  API calls over HTTPS
+Caddy — SSL termination, reverse proxy (shared NAS instance, port 3200)
+      │  HTTP (port 3201 → container port 3000)
       ▼
-DSM Reverse Proxy — handles SSL termination
-      │  HTTP (port 8080, internal)
-      ▼
-Nginx container — Docker on DS220+
-      │
-      ▼
-Node + Express API — Docker container on DS220+
-      │
-      ▼
-SQLite file — Docker volume on DS220+ disk
+bean-tracker container — single Docker container on DS220+
+      ├── Express serves React SPA (built frontend in /public)
+      ├── Express API routes (/api/beans, /api/containers, /api/shops)
+      └── SQLite file (/data/bean.db, bind-mounted from NAS)
+
+Auth:
+      Browser → Logto (port 3301, shared NAS instance)
+             → /callback → app
+      API calls carry Bearer JWT → backend validates against Logto JWKS
 ```
 
 **Key facts:**
 
-- Frontend lives on GitHub Pages, backend lives on the NAS
-- QR codes are plain URLs: `https://ra-homelab.synology.me/container/1`
-- The `.db` file never goes into Git — NAS only
-- One Docker Compose file manages Nginx + API + volume together
-- DSM reverse proxy handles HTTPS and SSL certificates (Let's Encrypt via DSM)
-- Nginx runs on port 8080 internally (port 80 reserved by DSM)
-- `BrowserRouter` uses `basename="/bean-tracker"` for correct GitHub Pages routing
-- `VITE_API_URL` is set to `https://ra-homelab.synology.me` (no `/api` suffix — api.js appends paths)
+- Frontend and backend live in a single Docker container — Express serves the built React app as static files
+- Auth handled by Logto (shared with other NAS apps) — JWT Bearer tokens, no session cookies for API calls
+- QR codes are plain URLs: `https://ra-homelab.synology.me:3200/container/1`
+- The `.db` file never goes into Git — bind-mounted from `/volume1/docker/bean-tracker/data/`
+- Caddy handles HTTPS using the shared Synology certificate
+- No Nginx container, no Authelia container, no GitHub Pages deployment
 
 ---
 
@@ -44,11 +41,10 @@ SQLite file — Docker volume on DS220+ disk
 | ------------- | ----------------------- | -------------------------------------------------- |
 | Frontend      | React + Vite            | No CSS framework — plain CSS with variables        |
 | Routing       | React Router            | Handles QR code URLs (`/container/:id`)            |
-| Backend       | Node + Express          | REST API, one file per resource                    |
+| Backend       | Node + Express (ESM)    | REST API + serves built frontend as static files   |
 | Database      | SQLite (better-sqlite3) | Single `.db` file, WAL mode                        |
-| Hosting       | GitHub Pages            | Free, auto-deploy via GitHub Actions               |
-| Reverse proxy | Nginx (Docker)          | Proxies /api/\* to Express on port 8080            |
-| SSL           | DSM built-in            | Let's Encrypt via DSM Control Panel → Certificate  |
+| Auth          | Logto                   | Shared NAS instance, OIDC/JWT Bearer tokens        |
+| Reverse proxy | Caddy                   | Shared NAS instance, Synology certificate          |
 | DDNS          | Synology built-in       | ra-homelab.synology.me → home IP                   |
 | NAS           | Synology DS220+         | Docker + Container Manager already installed       |
 | IDE           | VS Code (Windows 11)    | Extensions: ESLint, Prettier, GitLens, REST Client |
@@ -233,38 +229,51 @@ Key rules:
 - Repo cloned to `/volume1/apps/bean-tracker` on DS220+
 - `backend/.env` created on NAS via `vi` (not in Git)
 - Containers running: `bean-api` + `bean-nginx`
-- `ALLOWED_ORIGIN` set to `https://radev81.github.io` in docker-compose.yml
-
-**NAS deployment notes:**
-
-- Project lives at `/volume1/apps/bean-tracker` (not `/volume1/apps/` — required `sudo mv` + `sudo chown`)
-- Port 80 conflict with DSM resolved by switching Nginx to port 8080
-- `nano` not available on Synology — use `vi` instead
-- `docker` commands require `sudo` on Synology SSH
 
 ### ✅ Phase 6 — Domain, DDNS & HTTPS (COMPLETE)
 
 - DDNS configured in DSM → Control Panel → External Access → `ra-homelab.synology.me`
-- Router port forwarding: 443 → NAS:443, 80 → NAS:80 (port 80 needed for Let's Encrypt challenge)
+- Router port forwarding: 443 → NAS:443, 80 → NAS:80
 - SSL certificate obtained via DSM → Control Panel → Security → Certificate (Let's Encrypt)
 - DSM Reverse Proxy configured: HTTPS:443 → localhost:8080
-- Live and verified: `https://ra-homelab.synology.me/api/health` returns `{"status":"ok"}`
 
-### ✅ Phase 7 — GitHub Pages deploy (COMPLETE)
+### ✅ Phase 7 — GitHub Pages deploy (superseded by Phase 9)
 
-- `frontend/vite.config.js` — `base: '/bean-tracker/'`
-- `frontend/src/main.jsx` — `BrowserRouter basename="/bean-tracker"`
-- `frontend/public/404.html` — sessionStorage redirect trick for React Router on GitHub Pages
-- `frontend/index.html` — redirect restore script in `<head>`
-- `.github/workflows/deploy.yml` — auto-build and publish on push to main
-- `VITE_API_URL=https://ra-homelab.synology.me` injected at build time via workflow env
-- Live at: `https://radev81.github.io/bean-tracker/`
+- Frontend was hosted on GitHub Pages at `https://radev81.github.io/bean-tracker/`
+- Replaced in Phase 9 — frontend is now served by the backend container
 
-**GitHub Pages deployment notes:**
+### ✅ Phase 9 — Logto migration (COMPLETE)
 
-- `VITE_API_URL` must NOT include `/api` — api.js appends route paths itself
-- `BrowserRouter basename` is required — without it React Router strips the `/bean-tracker/` prefix and routes break
-- GitHub Actions workflow injects `VITE_API_URL` at build time (environment variable in deploy.yml)
+Replaced Authelia + Nginx + GitHub Pages with Logto + Caddy + single container.
+
+**What changed:**
+- Removed: `nginx/`, `authelia/`, `backend/Dockerfile`, `.github/workflows/deploy.yml`
+- Added: root `Dockerfile` (multi-stage, builds frontend + runs backend), `.dockerignore`
+- Backend converted to ESM, added `@logto/express`, `jose`, `express-session`, `cookie-parser`
+- Backend now serves the built React frontend as static files from `/public`
+- Frontend auth: `@logto/react` — `LogtoProvider`, `useHandleSignInCallback`, `useLogto`
+- API auth: JWT Bearer tokens validated against Logto JWKS (no more session cookies)
+- `frontend/src/api.js` replaced with `createApiClient(getAccessToken)` factory + `ApiContext` + `useApi()` hook
+- All components updated to use `useApi()` hook
+- Removed `base: '/bean-tracker/'` from vite.config.js — app now runs at root path
+- Port: external 3200 (Caddy), NAS internal 3201, container 3000
+
+**Logto registrations:**
+- Backend app (Traditional Web): App ID `ry7zxe7m909v1cckpjnjw`
+- Frontend app (SPA): App ID `jvn1aty7z9yc0280f7swm`
+- API Resource identifier: `https://bean-tracker.api`
+
+**NAS setup:**
+- App folder: `/volume1/docker/bean-tracker/`
+- Database: `/volume1/docker/bean-tracker/data/bean.db` (bind mount)
+- Caddy entry added to `/volume1/docker/logto/Caddyfile` at port 3200
+- Router port forwarding: 3200 → NAS:3200
+
+**NAS deployment notes:**
+- `nano` not available on Synology — use `vi` instead
+- `docker` commands require `sudo` on Synology SSH
+- To copy db from local to NAS: `scp -O local/bean.db user@nas:/volume1/docker/bean-tracker/data/bean.db`
+- Stop container before copying db to avoid SQLite locking issues
 
 ### ✅ Phase 4 — QR codes
 
@@ -281,24 +290,23 @@ Paste this block at the top of every new conversation:
 ```
 I'm building a coffee beans tracker app called Beans Tracker.
 
-Stack: React + Vite frontend on GitHub Pages, Node + Express + SQLite
-backend running in Docker on a Synology DS220+ NAS.
+Stack: React + Vite frontend served by a Node + Express + SQLite backend,
+deployed as a single Docker container on a Synology DS220+ NAS.
+Auth via Logto (shared NAS instance). HTTPS via Caddy (shared NAS instance).
 
 Repo: github.com/radev81/bean-tracker
 Structure:
   bean-tracker/
-  ├── frontend/   (Vite + React, React Router)
-  └── backend/    (Node + Express + SQLite, port 3001)
+  ├── frontend/   (Vite + React, React Router, @logto/react)
+  └── backend/    (Node + Express ESM + SQLite, @logto/express, port 3000)
 
 Design: Outfit font, Mocha Deep gradient accent (#6A3828 → #0E0806),
 warm paper background #F4F2EE, white surfaces, 14px card radius.
 Full token set and design reference: frontend/public/design-reference.html
 Full BDD scenario catalogue: frontend/public/scenario-catalogue.html
-Full build plan: ROADMAP.md (project root)
+Full build plan: ROADMAP.MD (project root)
 
-Live URLs:
-  Frontend: https://radev81.github.io/bean-tracker/
-  Backend:  https://ra-homelab.synology.me/api
+Live URL: https://ra-homelab.synology.me:3200
 
 Current status: All phases complete. App is fully live.
 
@@ -316,28 +324,27 @@ cd backend && npm run dev
 # Run frontend locally
 cd frontend && npm run dev
 
-# Test API (use REST Client extension in VS Code)
-# open backend/test.http
-
 # Commit and push
 git add .
 git commit -m "feat: description"
 git push
 
-# On NAS — pull latest code and restart containers
-cd /volume1/apps/bean-tracker
+# On NAS — pull latest code and rebuild
+cd /volume1/docker/bean-tracker
 git pull
 docker compose up -d --build
 
 # On NAS — view live logs
-docker logs bean-api -f
-docker logs bean-nginx -f
+docker logs -f bean-tracker
 
-# On NAS — restart containers only (no rebuild)
-docker compose restart
+# On NAS — restart container only (no rebuild)
+docker restart bean-tracker
 
 # On NAS — check container status
 docker ps
+
+# Copy local db to NAS (stop container first)
+scp -O backend/data/bean.db user@nas-ip:/volume1/docker/bean-tracker/data/bean.db
 ```
 
 ---
@@ -347,68 +354,54 @@ docker ps
 ```
 bean-tracker/
 ├── .gitignore
-├── ROADMAP.md                               ← this file
-├── docker-compose.yml                       ✅ Phase 5
-├── nginx/
-│   └── nginx.conf                           ✅ Phase 5
-├── .github/
-│   └── workflows/
-│       └── deploy.yml                       ✅ Phase 7
+├── ROADMAP.MD                               ← this file
+├── Dockerfile                               ✅ Phase 9 — multi-stage build
+├── .dockerignore                            ✅ Phase 9
+├── docker-compose.yml                       ✅ Phase 9 — single service, port 3201:3000
 ├── backend/
 │   ├── src/
 │   │   ├── db/
 │   │   │   ├── schema.sql                   ✅
-│   │   │   └── database.js                  ✅
+│   │   │   └── database.js                  ✅ ESM
 │   │   ├── routes/
-│   │   │   ├── beans.js                     ✅ full CRUD
-│   │   │   ├── containers.js                ✅ full CRUD + QR endpoint
-│   │   │   └── shops.js                     ✅ full CRUD
-│   │   └── index.js                         ✅
-│   ├── data/                                ← bean.db lives here (not in Git)
+│   │   │   ├── beans.js                     ✅ full CRUD, ESM
+│   │   │   ├── containers.js                ✅ full CRUD + QR endpoint, ESM
+│   │   │   └── shops.js                     ✅ full CRUD, ESM
+│   │   └── index.js                         ✅ Logto auth, static serving, ESM
+│   ├── data/                                ← bean.db lives here locally (not in Git)
 │   ├── .env                                 ← not in Git
 │   ├── test.http
 │   └── package.json
 └── frontend/
     ├── public/
     │   ├── design-reference.html            ← locked design
-    │   ├── scenario-catalogue.html          ← BDD spec
-    │   └── 404.html                         ✅ Phase 7 — React Router redirect
+    │   └── scenario-catalogue.html          ← BDD spec
     ├── src/
     │   ├── theme.js                         ✅
     │   ├── index.css                        ✅
-    │   ├── api.js                           ✅
-    │   ├── main.jsx                         ✅ basename="/bean-tracker"
-    │   ├── App.jsx                          ✅ layout route pattern
+    │   ├── api.js                           ✅ createApiClient + ApiContext + useApi
+    │   ├── main.jsx                         ✅ LogtoProvider + callback handler
+    │   ├── App.jsx                          ✅ auth gate + ApiContext.Provider
     │   ├── App.css                          ✅
     │   ├── pages/
     │   │   └── ContainerQRPage.jsx          ✅ CB-72, CB-73
-    │   │   └── ContainerQRPage.css          ✅
     │   └── components/
     │       ├── beans/
     │       │   ├── BeanList.jsx             ✅ CB-01, CB-02
-    │       │   ├── BeanList.css             ✅
     │       │   ├── BeanCard.jsx             ✅ CB-42–CB-52
-    │       │   ├── BeanCard.css             ✅
     │       │   ├── BeanSearch.jsx           ✅ CB-03–CB-08
-    │       │   ├── BeanSearch.css           ✅
     │       │   ├── BeanFilter.jsx           ✅ CB-09–CB-24
-    │       │   ├── BeanFilter.css           ✅
-    │       │   ├── BeanForm.jsx             ✅ CB-25–CB-66
-    │       │   └── BeanForm.css             ✅
+    │       │   └── BeanForm.jsx             ✅ CB-25–CB-66
     │       ├── containers/
-    │       │   ├── ContainerList.jsx        ✅ CON-01–CON-21
-    │       │   └── ContainerList.css        ✅
+    │       │   └── ContainerList.jsx        ✅ CON-01–CON-21
     │       ├── shops/
-    │       │   ├── ShopList.jsx             ✅ SH-01–SH-08 + edit/remove
-    │       │   └── ShopList.css             ✅
+    │       │   └── ShopList.jsx             ✅ SH-01–SH-08 + edit/remove
     │       └── common/
     │           ├── EmptyState.jsx           ✅
-    │           ├── EmptyState.css           ✅
-    │           ├── Dialog.jsx               ✅
-    │           └── Dialog.css               ✅
-    ├── .env                                 ← not in Git
-    ├── .env.production                      ← VITE_API_URL (also set in deploy.yml)
-    ├── index.html                           ✅ redirect restore script in <head>
-    ├── vite.config.js                       ✅ base: '/bean-tracker/'
+    │           └── Dialog.jsx               ✅
+    ├── .env                                 ← not in Git (dev Logto config)
+    ├── .env.production                      ← committed (no secrets, Vite bakes at build)
+    ├── index.html
+    ├── vite.config.js                       ✅ no base path (serves from root)
     └── package.json
 ```
