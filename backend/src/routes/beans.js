@@ -1,8 +1,9 @@
 // backend/src/routes/beans.js
 
-const express = require("express");
+import express from "express";
+import db from "../db/database.js";
+
 const router = express.Router();
-const db = require("../db/database");
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  GET /api/beans
@@ -356,4 +357,4 @@ router.delete("/:id", (req, res) => {
   res.json({ deleted: true, id: beanId });
 });
 
-module.exports = router;
+export default router;

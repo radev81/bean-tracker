@@ -1,16 +1,12 @@
 import { useState, useEffect } from "react";
-import {
-  getContainers,
-  createContainer,
-  updateContainer,
-  deleteContainer,
-} from "../../api";
+import { useApi } from "../../api";
 import Dialog from "../common/Dialog";
 import EmptyState from "../common/EmptyState";
 import "./ContainerList.css";
 
 // ── Single editable row ───────────────────────────────────────────────────────
 function ContainerRow({ container, onSaved, onRemoved }) {
+  const api = useApi();
   const [mode, setMode] = useState("view"); // "view" | "edit"
   const [nameInput, setNameInput] = useState(container.name);
   const [originalName] = useState(container.name);
@@ -51,7 +47,7 @@ function ContainerRow({ container, onSaved, onRemoved }) {
     const trimmed = nameInput.trim();
     if (!trimmed) return;
     try {
-      const updated = await updateContainer(container.id, trimmed);
+      const updated = await api.updateContainer(container.id, trimmed);
       setDialog(null);
       setMode("view");
       onSaved(updated);
@@ -75,7 +71,7 @@ function ContainerRow({ container, onSaved, onRemoved }) {
 
   // CON-20 / CON-21: confirm remove
   async function handleConfirmRemove() {
-    await deleteContainer(container.id);
+    await api.deleteContainer(container.id);
     setDialog(null);
     onRemoved(container.id);
   }
@@ -204,6 +200,7 @@ function ContainerRow({ container, onSaved, onRemoved }) {
 
 // ── New container row (inline add form) ───────────────────────────────────────
 function NewContainerRow({ onSaved, onCancel }) {
+  const api = useApi();
   const [name, setName] = useState("");
   const [dialog, setDialog] = useState(null);
 
@@ -211,7 +208,7 @@ function NewContainerRow({ onSaved, onCancel }) {
     const trimmed = name.trim();
     if (!trimmed) return;
     try {
-      const created = await createContainer(trimmed);
+      const created = await api.createContainer(trimmed);
       onSaved(created);
     } catch (err) {
       if (err.status === 409) {
@@ -266,15 +263,17 @@ function NewContainerRow({ onSaved, onCancel }) {
 
 // ── Main list ─────────────────────────────────────────────────────────────────
 export default function ContainerList() {
+  const api = useApi();
   const [containers, setContainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    getContainers()
+    api
+      .getContainers()
       .then(setContainers)
       .finally(() => setLoading(false));
-  }, []);
+  }, [api]);
 
   function handleSaved(updated) {
     setContainers((prev) =>

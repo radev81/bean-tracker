@@ -1,19 +1,21 @@
-const Database = require("better-sqlite3");
-const path = require("path");
-const fs = require("fs");
+import Database from "better-sqlite3";
+import path from "path";
+import { fileURLToPath } from "url";
+import { mkdirSync, readFileSync } from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const DB_PATH =
-  process.env.DB_PATH || path.join(__dirname, "../../data/bean.db");
+  process.env.DATABASE_PATH || path.join(__dirname, "../../data/bean.db");
 
-// Create the data folder if it doesn't exist yet
-fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 const db = new Database(DB_PATH);
 
-// Apply the schema (IF NOT EXISTS means this is safe to run every startup)
-const schema = fs.readFileSync(path.join(__dirname, "schema.sql"), "utf8");
+const schema = readFileSync(path.join(__dirname, "schema.sql"), "utf8");
 db.exec(schema);
 
 console.log("Database ready at", DB_PATH);
 
-module.exports = db;
+export default db;

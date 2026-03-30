@@ -1,7 +1,7 @@
 // frontend/src/components/beans/BeanForm.jsx
 
 import { useState, useEffect, useRef } from "react";
-import { apiFetch, updateBean } from "../../api";
+import { useApi } from "../../api";
 import Dialog from "../common/Dialog";
 import "./BeanForm.css";
 
@@ -35,6 +35,8 @@ export default function BeanForm({
   onSaved,
   onViewExisting,
 }) {
+  const api = useApi();
+
   // ── When bean is provided we're in edit mode ───────────────────────────────
   const isEditing = bean !== null;
 
@@ -80,9 +82,9 @@ export default function BeanForm({
 
   // ── Fetch shops and containers on mount ───────────────────────────────────
   useEffect(() => {
-    apiFetch("/api/shops").then(setShops).catch(console.error);
-    apiFetch("/api/containers").then(setContainers).catch(console.error);
-  }, []);
+    api.getShops().then(setShops).catch(console.error);
+    api.getContainers().then(setContainers).catch(console.error);
+  }, [api]);
 
   // ── Close shop dropdown on outside click ──────────────────────────────────
   useEffect(() => {
@@ -147,12 +149,9 @@ export default function BeanForm({
     try {
       let data;
       if (isEditing) {
-        data = await updateBean(bean.id, payload);
+        data = await api.updateBean(bean.id, payload);
       } else {
-        data = await apiFetch("/api/beans", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        });
+        data = await api.createBean(payload);
       }
 
       // CB-32: duplicate bean name (add mode only)

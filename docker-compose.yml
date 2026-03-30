@@ -1,58 +1,18 @@
-# Docker Compose file — defines all the containers and how they connect
-
 services:
-  # ── Express API ─────────────────────────────────────────────────────────────
-  api:
-    build:
-      context: ./backend # build the image from backend/Dockerfile
-    container_name: bean-api
-    restart: unless-stopped # auto-restart if the NAS reboots
-    environment:
-      PORT: 3001
-      ALLOWED_ORIGIN: "https://radev81.github.io"
-    volumes:
-      # Mount the SQLite database file from a named Docker volume
-      # This means the .db file survives container rebuilds
-      - bean-data:/app/data
-    networks:
-      - bean-net
-    # The API container is NOT exposed to the outside world directly.
-    # Only Nginx talks to it, via the internal Docker network.
-
-  # ── Nginx reverse proxy ──────────────────────────────────────────────────────
-  nginx:
-    image: nginx:alpine
-    container_name: bean-nginx
+  bean-tracker:
+    build: .
+    container_name: bean-tracker
     restart: unless-stopped
     ports:
-      - "8080:8080"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      api:
-        condition: service_started
-      bean-authelia:
-        condition: service_healthy
-    networks:
-      - bean-net
-
-  # ── Authelia authentication ─────────────────────────────────────────────────
-  bean-authelia:
-    image: authelia/authelia:latest
-    container_name: bean-authelia
-    volumes:
-      - ./authelia:/config
-    networks:
-      - bean-net
-    restart: unless-stopped
+      - "3201:3000"
     environment:
-      - TZ=Europe/Madrid # adjust to your timezone
-
-# ── Named volume — persists the SQLite .db file ──────────────────────────────
-volumes:
-  bean-data:
-
-# ── Internal network — containers talk to each other, not the outside ─────────
-networks:
-  bean-net:
-    driver: bridge
+      NODE_ENV: production
+      LOGTO_ENDPOINT: ${LOGTO_ENDPOINT}
+      LOGTO_APP_ID: ${LOGTO_APP_ID}
+      LOGTO_APP_SECRET: ${LOGTO_APP_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
+      BASE_URL: ${BASE_URL}
+      API_RESOURCE: ${API_RESOURCE}
+      DATABASE_PATH: /data/bean.db
+    volumes:
+      - ./data:/data

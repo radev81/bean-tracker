@@ -1,6 +1,7 @@
-const express = require("express");
+import express from "express";
+import db from "../db/database.js";
+
 const router = express.Router();
-const db = require("../db/database");
 
 // ── GET /api/shops ────────────────────────────────────────────────────────────
 router.get("/", (req, res) => {
@@ -100,4 +101,4 @@ router.delete("/:id", (req, res) => {
   res.json({ success: true });
 });
 
-module.exports = router;
+export default router;

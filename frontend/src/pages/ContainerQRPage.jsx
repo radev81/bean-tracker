@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiFetch } from "../api";
+import { useApi } from "../api";
 import "./ContainerQRPage.css";
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
@@ -46,6 +46,7 @@ function RecipeRow({ recipe }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ContainerQRPage() {
+  const api = useApi();
   const { id } = useParams(); // the container number from the URL
   const navigate = useNavigate();
 
@@ -60,7 +61,7 @@ export default function ContainerQRPage() {
     setLoading(true);
     setError(null);
 
-    apiFetch(`/api/containers/${id}/current-bean`)
+    api.getContainerCurrentBean(id)
       .then((data) => {
         setContainer(data.container);
         setBean(data.bean); // null if the container is empty

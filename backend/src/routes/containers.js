@@ -1,6 +1,7 @@
-const express = require("express");
+import express from "express";
+import db from "../db/database.js";
+
 const router = express.Router();
-const db = require("../db/database");
 
 // ── GET /api/containers ───────────────────────────────────────────────────────
 // Returns all containers with occupancy info (uses v_containers view).
@@ -140,4 +141,4 @@ router.get("/:id/current-bean", (req, res) => {
   res.json({ container, bean: { ...bean, tags, recipes } });
 });
 
-module.exports = router;
+export default router;

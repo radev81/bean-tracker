@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { getShops, createShop, updateShop, deleteShop } from "../../api";
+import { useApi } from "../../api";
 import Dialog from "../common/Dialog";
 import EmptyState from "../common/EmptyState";
 import "./ShopList.css";
 
 // ── Single shop row ───────────────────────────────────────────────────────────
 function ShopRow({ shop, onSaved, onRemoved }) {
+  const api = useApi();
   const [mode, setMode] = useState("view");
   const [nameInput, setNameInput] = useState(shop.name);
   const [urlInput, setUrlInput] = useState(shop.url || "");
@@ -47,7 +48,7 @@ function ShopRow({ shop, onSaved, onRemoved }) {
     const trimmedName = nameInput.trim();
     if (!trimmedName) return;
     try {
-      const updated = await updateShop(
+      const updated = await api.updateShop(
         shop.id,
         trimmedName,
         urlInput.trim() || null,
@@ -68,7 +69,7 @@ function ShopRow({ shop, onSaved, onRemoved }) {
 
   async function handleConfirmRemove() {
     try {
-      await deleteShop(shop.id);
+      await api.deleteShop(shop.id);
       setDialog(null);
       onRemoved(shop.id);
     } catch (err) {
@@ -252,6 +253,7 @@ function ShopRow({ shop, onSaved, onRemoved }) {
 
 // ── New shop row (inline add form) ────────────────────────────────────────────
 function NewShopRow({ onSaved, onCancel }) {
+  const api = useApi();
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [dialog, setDialog] = useState(null);
@@ -260,7 +262,7 @@ function NewShopRow({ onSaved, onCancel }) {
     const trimmedName = name.trim();
     if (!trimmedName) return;
     try {
-      const created = await createShop(trimmedName, url.trim() || null);
+      const created = await api.createShop(trimmedName, url.trim() || null);
       onSaved(created);
     } catch (err) {
       if (err.status === 409) {
@@ -325,15 +327,17 @@ function NewShopRow({ onSaved, onCancel }) {
 
 // ── Main list ─────────────────────────────────────────────────────────────────
 export default function ShopList() {
+  const api = useApi();
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    getShops()
+    api
+      .getShops()
       .then(setShops)
       .finally(() => setLoading(false));
-  }, []);
+  }, [api]);
 
   function handleSaved(updated) {
     setShops((prev) =>

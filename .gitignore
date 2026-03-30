@@ -9,20 +9,12 @@ dist/
 .env.local
 .env*.local
 # Allow production config - no secrets in here
-!.env.production
+!frontend/.env.production
 
 # Database file (lives on NAS only, never in Git)
 *.db
 backend/data/
-
-# Authelia runtime files
-authelia/db.sqlite3
-authelia/db.sqlite3-wal
-authelia/db.sqlite3-shm
-authelia/notification.txt
-
-# Authelia user database — contains credentials, NAS only
-authelia/users_database.yml
+/data/
 
 # OS clutter
 .DS_Store

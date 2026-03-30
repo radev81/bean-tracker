@@ -1,116 +1,52 @@
-// frontend/src/api.js
-//
-// Centralised fetch wrapper.
-// VITE_API_URL is configured in:
-//   .env.development  →  http://localhost:3001
-//   .env.production   →  https://yourdomain.com
+import { createContext, useContext } from "react";
 
-const BASE = import.meta.env.VITE_API_URL;
+const API_RESOURCE = import.meta.env.VITE_API_RESOURCE || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
-export async function apiFetch(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-    credentials: "include",
-  });
+export const ApiContext = createContext(null);
+export const useApi = () => useContext(ApiContext);
 
-  if (res.status === 401) {
-    window.location.href = `${BASE}/authelia/?rd=${BASE}/app`;
-    return new Promise(() => {});
+export function createApiClient(getAccessToken) {
+  async function request(method, path, body) {
+    const token = await getAccessToken(API_RESOURCE);
+    const res = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    if (res.status === 204) return null;
+    const data = await res.json();
+    if (!res.ok) {
+      const error = new Error(data?.error || `API error ${res.status}`);
+      error.status = res.status;
+      throw error;
+    }
+    return data;
   }
 
-  const data = await res.json();
-
-  if (!res.ok) {
-    const error = new Error(data?.error || `API error ${res.status}`);
-    error.status = res.status;
-    throw error;
-  }
-
-  return data;
-}
-
-// ── Beans ─────────────────────────────────────────────────────────────────────
-
-/** All beans, sorted favourites-first then A–Z. */
-export const getBeans = () => apiFetch("/api/beans");
-
-/**
- * Single bean by ID — includes `tags` (string[]) and `recipes` (array).
- * Called lazily when a card is expanded for the first time.
- */
-export const getBeanById = (id) => apiFetch(`/api/beans/${id}`);
-
-/**
- * Update an existing bean by ID
- */
-export const updateBean = (id, payload) =>
-  apiFetch(`/api/beans/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
-
-/**
- * Toggle is_favourite for one bean (0 → 1 or 1 → 0).
- * Returns { id, is_favourite } with the NEW value.
- */
-export const toggleFavourite = (id) =>
-  apiFetch(`/api/beans/${id}/favourite`, { method: "PUT" });
-
-/**
- * Deleate a bean by ID
- */
-export const deleteBean = (id) =>
-  apiFetch(`/api/beans/${id}`, { method: "DELETE" });
-
-// ── Containers ────────────────────────────────────────────────────────────────
-
-export function getContainers() {
-  return apiFetch("/api/containers");
-}
-
-export function createContainer(name) {
-  return apiFetch("/api/containers", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
-  });
-}
-
-export function updateContainer(id, name) {
-  return apiFetch(`/api/containers/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name }),
-  });
-}
-
-export function deleteContainer(id) {
-  return apiFetch(`/api/containers/${id}`, { method: "DELETE" });
-}
-
-// ── Shops ─────────────────────────────────────────────────────────────────────
-
-export function getShops() {
-  return apiFetch("/api/shops");
-}
-
-export function createShop(name, url = null) {
-  return apiFetch("/api/shops", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, url }),
-  });
-}
-
-export function updateShop(id, name, url = null) {
-  return apiFetch(`/api/shops/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, url }),
-  });
-}
-
-export function deleteShop(id) {
-  return apiFetch(`/api/shops/${id}`, { method: "DELETE" });
+  return {
+    // Beans
+    getBeans: () => request("GET", "/api/beans"),
+    getBeanById: (id) => request("GET", `/api/beans/${id}`),
+    createBean: (payload) => request("POST", "/api/beans", payload),
+    updateBean: (id, payload) => request("PUT", `/api/beans/${id}`, payload),
+    toggleFavourite: (id) => request("PUT", `/api/beans/${id}/favourite`),
+    deleteBean: (id) => request("DELETE", `/api/beans/${id}`),
+    // Containers
+    getContainers: () => request("GET", "/api/containers"),
+    createContainer: (name) => request("POST", "/api/containers", { name }),
+    updateContainer: (id, name) => request("PUT", `/api/containers/${id}`, { name }),
+    deleteContainer: (id) => request("DELETE", `/api/containers/${id}`),
+    getContainerCurrentBean: (id) =>
+      request("GET", `/api/containers/${id}/current-bean`),
+    // Shops
+    getShops: () => request("GET", "/api/shops"),
+    createShop: (name, url = null) => request("POST", "/api/shops", { name, url }),
+    updateShop: (id, name, url = null) =>
+      request("PUT", `/api/shops/${id}`, { name, url }),
+    deleteShop: (id) => request("DELETE", `/api/shops/${id}`),
+  };
 }

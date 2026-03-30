@@ -1,7 +1,7 @@
 // frontend/src/components/beans/BeanList.jsx
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { getBeans } from "../../api";
+import { useApi } from "../../api";
 import BeanCard from "./BeanCard";
 import BeanSearch from "./BeanSearch";
 import BeanFilter from "./BeanFilter";
@@ -26,6 +26,7 @@ const copyFilters = (f) => ({
 });
 
 export default function BeanList() {
+  const api = useApi();
   const [beans, setBeans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -47,7 +48,7 @@ export default function BeanList() {
   const loadBeans = useCallback(async () => {
     try {
       setError(null);
-      const data = await getBeans();
+      const data = await api.getBeans();
       setBeans(data);
     } catch (err) {
       setError("Could not load beans. Is the backend running?");
@@ -55,7 +56,7 @@ export default function BeanList() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [api]);
 
   useEffect(() => {
     loadBeans();

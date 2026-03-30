@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getBeanById, toggleFavourite, deleteBean } from "../../api";
+import { useApi } from "../../api";
 import Dialog from "../common/Dialog";
 import "./BeanCard.css";
 
@@ -53,6 +53,8 @@ export default function BeanCard({
   onFavouriteToggle,
   onDelete,
 }) {
+  const api = useApi();
+
   // Full details (tags + recipes) fetched on first expand and cached here
   // so re-expanding is instant.
   const [details, setDetails] = useState(null);
@@ -72,7 +74,7 @@ export default function BeanCard({
   useEffect(() => {
     if (isExpanded && details === null && !loadingDetails) {
       setLoadingDetails(true);
-      getBeanById(bean.id)
+      api.getBeanById(bean.id)
         .then((data) => setDetails(data))
         .catch((err) =>
           console.error("Could not load bean details:", err.message),
@@ -94,7 +96,7 @@ export default function BeanCard({
     if (togglingFav) return;
     setTogglingFav(true);
     try {
-      await toggleFavourite(bean.id);
+      await api.toggleFavourite(bean.id);
       await onFavouriteToggle(bean.id);
     } catch (err) {
       console.error("Could not toggle favourite:", err.message);
@@ -107,7 +109,7 @@ export default function BeanCard({
   const handleDeleteConfirm = async () => {
     setDeleting(true);
     try {
-      await deleteBean(bean.id);
+      await api.deleteBean(bean.id);
       onDelete(bean.id); // tell BeanList to reload and close the card
     } catch (err) {
       console.error("Could not delete bean:", err.message);
