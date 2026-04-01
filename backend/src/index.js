@@ -75,7 +75,15 @@ app.use("/api/containers", requireAuth, containersRouter);
 app.use("/api/shops", requireAuth, shopsRouter);
 
 // Serve the built React app
-app.use(express.static(path.join(__dirname, "../public")));
+app.use(
+  express.static(path.join(__dirname, "../public"), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".webmanifest")) {
+        res.setHeader("Content-Type", "application/manifest+json");
+      }
+    },
+  }),
+);
 app.get("/{*splat}", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });

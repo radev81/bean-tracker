@@ -21,6 +21,17 @@
     />
     <meta name="apple-mobile-web-app-title" content="Beans Tracker" />
 
+    <!-- GitHub Pages routing fix -->
+    <script>
+      (function () {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          history.replaceState(null, null, redirect);
+        }
+      })();
+    </script>
+
     <!-- PWA -->
     <link rel="manifest" href="/beans/site.webmanifest" />
     <meta name="theme-color" content="#6A3828" />
@@ -30,12 +41,3 @@
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-<script>
-  (function () {
-    var redirect = sessionStorage.redirect;
-    delete sessionStorage.redirect;
-    if (redirect && redirect !== location.href) {
-      history.replaceState(null, null, redirect);
-    }
-  })();
-</script>
