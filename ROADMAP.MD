@@ -147,6 +147,114 @@ Key rules:
 
 ## Phase Status
 
+### 🔲 Phase 10 — PWA (DRAFT)
+
+Make Beans Tracker installable on mobile and desktop with offline app-shell caching.
+
+#### Goals
+- Installable on iOS/Android home screen and desktop Chrome
+- App shell (HTML/CSS/JS/fonts) loads from cache — works even when NAS is unreachable
+- API calls always go to network (no stale bean data)
+- Correct theme colour and splash screen on all platforms
+
+#### Files to create
+
+| File | Purpose |
+|------|---------|
+| `frontend/public/icon-192.png` | Standard app icon |
+| `frontend/public/icon-512.png` | Large app icon (splash screen, app store) |
+| `frontend/public/icon-maskable.png` | Maskable icon for Android adaptive icons — safe zone is inner 80% |
+| `frontend/public/apple-touch-icon.png` | iOS home screen icon — 180×180px, no transparency |
+
+All icons should use the Mocha Deep gradient (`#6a3828 → #0e0806`) as background with a white coffee bean or cup mark centred in the safe zone.
+
+#### Files to modify
+
+**`frontend/package.json`**
+- Add dev dependency: `vite-plugin-pwa`
+
+**`frontend/vite.config.js`**
+- Import and configure `VitePWA`:
+```js
+import { VitePWA } from 'vite-plugin-pwa'
+
+VitePWA({
+  registerType: 'autoUpdate',
+  includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icon-*.png'],
+  manifest: {
+    name: 'Beans Tracker',
+    short_name: 'Beans',
+    description: 'Coffee bean collection manager',
+    theme_color: '#6a3828',
+    background_color: '#f4f2ee',
+    display: 'standalone',
+    start_url: '/',
+    icons: [
+      { src: 'icon-192.png',   sizes: '192x192', type: 'image/png' },
+      { src: 'icon-512.png',   sizes: '512x512', type: 'image/png' },
+      { src: 'icon-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+    ],
+  },
+  workbox: {
+    navigateFallback: '/index.html',
+    runtimeCaching: [
+      {
+        // Never cache API calls — always fetch fresh data
+        urlPattern: /^\/api\//,
+        handler: 'NetworkOnly',
+      },
+      {
+        // Never cache Logto — auth always needs network
+        urlPattern: /ra-homelab\.synology\.me:3301/,
+        handler: 'NetworkOnly',
+      },
+      {
+        urlPattern: /^https:\/\/fonts\.googleapis\.com\//,
+        handler: 'StaleWhileRevalidate',
+        options: { cacheName: 'google-fonts-stylesheets' },
+      },
+      {
+        urlPattern: /^https:\/\/fonts\.gstatic\.com\//,
+        handler: 'CacheFirst',
+        options: {
+          cacheName: 'google-fonts-webfonts',
+          expiration: { maxAgeSeconds: 60 * 60 * 24 * 365 },
+        },
+      },
+    ],
+  },
+})
+```
+
+**`frontend/index.html`**
+- Fix page title: `<title>Beans Tracker</title>`
+- Add meta tags inside `<head>`:
+```html
+<meta name="theme-color" content="#6a3828">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Beans">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+```
+- Remove the dead `<script>` block after `</html>` — this was the GitHub Pages redirect hack, no longer needed
+
+**`frontend/src/index.css`**
+- Add to `body`:
+```css
+overscroll-behavior: none;          /* prevent bounce scroll on iOS */
+padding: env(safe-area-inset-top) env(safe-area-inset-right)
+         env(safe-area-inset-bottom) env(safe-area-inset-left);
+```
+- Ensure all `input`, `select`, `textarea` have `font-size: 16px` minimum — prevents iOS auto-zoom on focus
+
+#### Notes
+- The Logto `/callback` route works correctly through the service worker because `navigateFallback` serves `index.html`, and `useHandleSignInCallback` in `main.jsx` handles the rest client-side
+- On iOS, PWA install is via Share → Add to Home Screen (no browser install prompt)
+- On Android/Chrome, the browser will show an install banner automatically once manifest + SW are valid
+- Service worker only activates in production build (`vite build`) — `npm run dev` bypasses it
+
+---
+
 ### ✅ Phase 0 — Dev environment
 
 - Node.js v24, npm v11, Git v2.53 installed
