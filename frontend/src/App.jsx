@@ -110,7 +110,7 @@ export default function App() {
         </div>
         <button
           className="app-splash__btn"
-          onClick={() => signIn(`${window.location.origin}/callback`)}
+          onClick={() => signIn(`${window.location.origin}/beans/callback`)}
         >
           Sign in
         </button>
