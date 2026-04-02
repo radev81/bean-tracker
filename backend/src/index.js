@@ -27,6 +27,7 @@ const logtoConfig = {
   endpoint: process.env.LOGTO_ENDPOINT,
   baseUrl: process.env.BASE_URL,
   scopes: ["openid", "profile", "email"],
+  postCallbackRedirectUri: "/beans/",
 };
 
 if (process.env.NODE_ENV !== "production") {
@@ -67,6 +68,11 @@ async function requireAuth(req, res, next) {
 // Health check — unprotected
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// Redirect root to app
+app.get("/", (req, res) => {
+  res.redirect("/beans/");
 });
 
 // Protected API routes
