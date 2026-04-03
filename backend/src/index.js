@@ -82,6 +82,7 @@ app.use("/api/shops", requireAuth, shopsRouter);
 
 // Serve the built React app
 app.use(
+  "/beans",
   express.static(path.join(__dirname, "../public"), {
     setHeaders: (res, filePath) => {
       if (filePath.endsWith(".webmanifest")) {
@@ -90,7 +91,7 @@ app.use(
     },
   }),
 );
-app.get("/{*splat}", (req, res) => {
+app.get("/beans/{*splat}", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
