@@ -44,12 +44,11 @@
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
-  color: #d4d2cc; /* inactive: ghost grey */
+  color: #d4d2cc;
   flex-shrink: 0;
   transition: color 0.15s;
 }
 
-/* Active (favourite) state: gradient text via background-clip */
 .bc__fav--active {
   background: linear-gradient(135deg, #6a3828, #0e0806);
   -webkit-background-clip: text;
@@ -65,7 +64,7 @@
 /* ── Bean name + metadata ────────────────────────────────────────────────── */
 .bc__info {
   flex: 1;
-  min-width: 0; /* lets text-overflow: ellipsis work */
+  min-width: 0;
 }
 
 .bc__name {
@@ -115,7 +114,6 @@
     color 0.15s;
 }
 
-/* Rotated = pointing down = expanded */
 .bc__chevron--open {
   transform: rotate(90deg);
   color: #4a2015;
@@ -134,7 +132,7 @@
   color: #ababab;
 }
 
-/* ── Detail grid (Region / Altitude / SCA / Variety / Process / Farm) ─────── */
+/* ── Detail grid ─────────────────────────────────────────────────────────── */
 .bc__grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -189,24 +187,69 @@
   margin-top: 0;
 }
 
-/* ── Espresso recipe ─────────────────────────────────────────────────────── */
-.bc__recipes {
-  /* wrapper — recipes stack vertically if both single + double exist */
-}
-
+/* ── Espresso recipe section ─────────────────────────────────────────────── */
 .bc-recipe {
   margin-bottom: 11px;
 }
 
+/* Header row: "Espresso" label + Double/Single toggle side by side */
+.bc-recipe__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+/* Label used both inside __header and standalone (legacy single-only) */
 .bc-recipe__label {
   font-size: 8px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #ababab;
+  /* No bottom margin here — handled by __header or standalone usage below */
+}
+
+/* When label is used standalone (no header wrapper) keep old spacing */
+.bc-recipe > .bc-recipe__label {
+  display: block;
   margin-bottom: 8px;
 }
 
+/* ── Double / Single pill toggle ─────────────────────────────────────────── */
+.bc-recipe__toggle {
+  display: flex;
+  align-items: center;
+  background: rgba(74, 32, 21, 0.07);
+  border: 1px solid rgba(74, 32, 21, 0.18);
+  border-radius: 20px;
+  padding: 2px;
+  cursor: pointer;
+  gap: 0;
+  /* Reset default button styles */
+  font-family: "Outfit", system-ui, sans-serif;
+}
+
+.bc-recipe__toggle-opt {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: 20px;
+  color: #ababab;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  font-family: "Outfit", system-ui, sans-serif;
+  line-height: 1.4;
+}
+
+.bc-recipe__toggle-opt--active {
+  background: linear-gradient(135deg, #6a3828, #0e0806);
+  color: #ffffff;
+}
+
+/* ── Recipe value row ────────────────────────────────────────────────────── */
 .bc-recipe__row {
   display: flex;
 }
@@ -248,6 +291,31 @@
   color: #ababab;
 }
 
+/* ── View at shop link ───────────────────────────────────────────────────── */
+/* Lives inside bc__info, between the bean name and the meta line.          */
+/* Always visible on the card header (collapsed and expanded).              */
+/* e.stopPropagation() in JSX prevents tapping the link from toggling       */
+/* the card expand/collapse.                                                */
+.bc__shop-link {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 600;
+  color: #4a2015;
+  text-decoration: none;
+  margin: 2px 0 3px;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.bc__shop-link:hover {
+  opacity: 0.7;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* ── Action buttons ──────────────────────────────────────────────────────── */
 .bc__actions {
   display: flex;
@@ -267,7 +335,6 @@
   text-align: center;
 }
 
-/* Disabled state used until Delete / Edit phases are built */
 .bc__btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -284,9 +351,9 @@
   color: #ffffff;
 }
 
-/* ── Responsive: slightly tighter on very small screens ─────────────────── */
+/* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 360px) {
   .bc__grid {
-    grid-template-columns: 1fr 1fr; /* 2 columns on narrow phones */
+    grid-template-columns: 1fr 1fr;
   }
 }

@@ -2,7 +2,7 @@
 .bean-form {
   display: flex;
   flex-direction: column;
-  height: 100%; /* fills whatever container BeanList gives it */
+  height: 100%;
   background: var(--color-bg);
   position: relative;
 }
@@ -106,6 +106,7 @@
   transition: border-color 0.15s;
   -webkit-appearance: none;
   appearance: none;
+  box-sizing: border-box;
 }
 
 .bf-input:focus {
@@ -173,6 +174,44 @@
 .bf-dropdown__item:active {
   background: var(--accent-bg);
   color: var(--accent-mid);
+}
+
+/* ── Auto-calculated ratio display ─────────────────────────────────── */
+/* Shown below the In / Out row in the recipe section when both         */
+/* In and Out are filled in. Read-only — not an input field.            */
+.bf-ratio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  background: rgba(74, 32, 21, 0.05);
+  border: 1px solid rgba(74, 32, 21, 0.14);
+  border-radius: var(--r-input, 11px);
+}
+
+.bf-ratio__label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-3);
+  flex-shrink: 0;
+}
+
+.bf-ratio__value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent-mid);
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+}
+
+.bf-ratio__hint {
+  font-size: 0.6rem;
+  color: var(--color-text-3);
+  font-style: italic;
+  margin-left: auto; /* push to right */
 }
 
 /* ── Footer ─────────────────────────────────────────────────────────── */

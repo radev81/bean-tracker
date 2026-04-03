@@ -68,7 +68,7 @@ export default function BeanList() {
     const timer = setTimeout(() => {
       const el = document.getElementById(`bean-${expandedId}`);
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
+    }, 200);
     return () => clearTimeout(timer);
   }, [expandedId]);
 
@@ -89,6 +89,8 @@ export default function BeanList() {
   async function handleBeanSaved(newBean) {
     setIsAdding(false);
     setEditingBean(null);
+    setActiveFilters(copyFilters(EMPTY_FILTERS));
+    setSearchQuery("");
     await loadBeans();
     setExpandedId(newBean.id);
   }

@@ -1,15 +1,26 @@
 // frontend/src/components/beans/BeanForm.jsx
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useApi } from "../../api";
 import Dialog from "../common/Dialog";
 import "./BeanForm.css";
 
-// ── Small helper — did the user change anything? ──────────────────────────────
-// Compares current field values against the original bean so we know whether
-// to show the "Discard changes?" warning on cancel (CB-56).
-function hasChanges(bean, fields) {
-  if (!bean) return false; // add mode — no original to compare against
+// ─────────────────────────────────────────────────────────────────────────────
+//  hasChanges
+//
+//  Returns true if the user has modified anything relative to the original
+//  bean values. Used to decide whether to show the "Discard changes?" warning
+//  on cancel (CB-56).
+//
+//  originalRecipe is a plain object { in, out, time, temp } of strings,
+//  populated from the DB fetch in edit mode (see useEffect below).
+// ─────────────────────────────────────────────────────────────────────────────
+function hasChanges(
+  bean,
+  fields,
+  originalRecipe = { in: "", out: "", time: "", temp: "" },
+) {
+  if (!bean) return false;
   return (
     fields.name !== (bean.name ?? "") ||
     fields.shopInput !== (bean.shop_name ?? "") ||
@@ -25,7 +36,11 @@ function hasChanges(bean, fields) {
     fields.notes !== (bean.notes ?? "") ||
     fields.containerId !==
       (bean.container_id != null ? String(bean.container_id) : "") ||
-    fields.tagsInput !== (bean.tags?.join(", ") ?? "")
+    fields.tagsInput !== (bean.tags?.join(", ") ?? "") ||
+    fields.recipeIn !== originalRecipe.in ||
+    fields.recipeOut !== originalRecipe.out ||
+    fields.recipeTime !== originalRecipe.time ||
+    fields.recipeTemp !== originalRecipe.temp
   );
 }
 
@@ -36,11 +51,9 @@ export default function BeanForm({
   onViewExisting,
 }) {
   const api = useApi();
-
-  // ── When bean is provided we're in edit mode ───────────────────────────────
   const isEditing = bean !== null;
 
-  // ── Required fields — pre-fill from bean if editing ───────────────────────
+  // ── Required fields ───────────────────────────────────────────────────────
   const [name, setName] = useState(bean?.name ?? "");
   const [shopInput, setShopInput] = useState(bean?.shop_name ?? "");
   const [country, setCountry] = useState(bean?.country ?? "");
@@ -61,6 +74,28 @@ export default function BeanForm({
   );
   const [tagsInput, setTagsInput] = useState(bean?.tags?.join(", ") ?? "");
 
+  // ── Espresso recipe fields (double shot) ──────────────────────────────────
+  // All stored as strings so they bind cleanly to <input type="number">.
+  const [recipeIn, setRecipeIn] = useState("");
+  const [recipeOut, setRecipeOut] = useState("");
+  const [recipeTime, setRecipeTime] = useState("");
+  const [recipeTemp, setRecipeTemp] = useState("");
+
+  // Stores the original recipe values fetched from DB (edit mode only).
+  // Used by hasChanges() to detect whether the recipe was modified.
+  const originalRecipeRef = useRef({ in: "", out: "", time: "", temp: "" });
+
+  // Auto-calculated ratio — shown read-only in the form.
+  // Recomputed whenever In or Out changes.
+  const recipeRatio = useMemo(() => {
+    const inG = parseFloat(recipeIn);
+    const outG = parseFloat(recipeOut);
+    if (inG > 0 && outG > 0) {
+      return `1:${parseFloat((outG / inG).toFixed(1))}`;
+    }
+    return "";
+  }, [recipeIn, recipeOut]);
+
   // ── Dropdown data ─────────────────────────────────────────────────────────
   const [shops, setShops] = useState([]);
   const [containers, setContainers] = useState([]);
@@ -69,15 +104,15 @@ export default function BeanForm({
   const [showShopDropdown, setShowShopDropdown] = useState(false);
   const shopWrapRef = useRef(null);
 
-  // ── Dialog state ──────────────────────────────────────────────────────────
+  // ── Dialog / conflict state ───────────────────────────────────────────────
   const [duplicateBean, setDuplicateBean] = useState(null);
   const [occupiedOccupant, setOccupiedOccupant] = useState(null);
   const [pendingPayload, setPendingPayload] = useState(null);
-  const [showDiscardDialog, setShowDiscardDialog] = useState(false); // CB-56
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
   const [saving, setSaving] = useState(false);
 
-  // ── CB-27 / CB-55: Save active only when required fields are filled ────────
+  // ── CB-27 / CB-55: Save enabled only when required fields are filled ───────
   const canSave = name.trim() && shopInput.trim() && country.trim();
 
   // ── Fetch shops and containers on mount ───────────────────────────────────
@@ -85,6 +120,38 @@ export default function BeanForm({
     api.getShops().then(setShops).catch(console.error);
     api.getContainers().then(setContainers).catch(console.error);
   }, [api]);
+
+  // ── In edit mode: fetch full bean details to pre-fill recipe (and tags) ───
+  // The bean prop passed from BeanList/BeanCard is the list-level object which
+  // does not include recipes or tags. We fetch the full record once on mount.
+  useEffect(() => {
+    if (!isEditing) return;
+    api
+      .getBeanById(bean.id)
+      .then((data) => {
+        // Pre-fill tags only if the prop didn't already supply them
+        if (data.tags?.length > 0 && !tagsInput) {
+          setTagsInput(data.tags.join(", "));
+        }
+
+        // Pre-fill double shot recipe
+        const dr = data.recipes?.find((r) => r.shot_type === "double");
+        if (dr) {
+          const orig = {
+            in: dr.dose_in_g != null ? String(dr.dose_in_g) : "",
+            out: dr.yield_out_g != null ? String(dr.yield_out_g) : "",
+            time: dr.time_seconds != null ? String(dr.time_seconds) : "",
+            temp: dr.temp_celsius != null ? String(dr.temp_celsius) : "",
+          };
+          originalRecipeRef.current = orig;
+          setRecipeIn(orig.in);
+          setRecipeOut(orig.out);
+          setRecipeTime(orig.time);
+          setRecipeTemp(orig.temp);
+        }
+      })
+      .catch(console.error);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Close shop dropdown on outside click ──────────────────────────────────
   useEffect(() => {
@@ -117,11 +184,21 @@ export default function BeanForm({
       notes,
       containerId,
       tagsInput,
+      recipeIn,
+      recipeOut,
+      recipeTime,
+      recipeTemp,
     };
   }
 
-  // ── Build the payload ─────────────────────────────────────────────────────
+  // ── Build the API payload ─────────────────────────────────────────────────
   function buildPayload(overrides = {}) {
+    const hasRecipe =
+      recipeIn.trim() ||
+      recipeOut.trim() ||
+      recipeTime.trim() ||
+      recipeTemp.trim();
+
     return {
       name: name.trim(),
       shop_name: shopInput.trim(),
@@ -134,11 +211,24 @@ export default function BeanForm({
       farm_producer: farmProducer.trim() || null,
       url: url.trim() || null,
       notes: notes.trim() || null,
-      container_id: containerId ? parseInt(containerId) : null,
+      container_id: containerId ? parseInt(containerId, 10) : null,
       flavour_tags: tagsInput
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
+      // Double shot recipe — send as array so the API handles upsert/delete
+      recipes: hasRecipe
+        ? [
+            {
+              shot_type: "double",
+              dose_in_g: recipeIn ? parseFloat(recipeIn) : null,
+              yield_out_g: recipeOut ? parseFloat(recipeOut) : null,
+              time_seconds: recipeTime ? parseInt(recipeTime, 10) : null,
+              temp_celsius: recipeTemp ? parseFloat(recipeTemp) : null,
+              ratio: recipeRatio || null,
+            },
+          ]
+        : [],
       ...overrides,
     };
   }
@@ -154,14 +244,11 @@ export default function BeanForm({
         data = await api.createBean(payload);
       }
 
-      // CB-32: duplicate bean name (add mode only)
       if (data.conflict === "duplicate_name") {
         setDuplicateBean(data.existingBean);
         setPendingPayload(payload);
         return;
       }
-
-      // CB-39 / CB-64: container occupied
       if (data.conflict === "container_occupied") {
         setOccupiedOccupant(data.occupant);
         setPendingPayload(payload);
@@ -180,55 +267,51 @@ export default function BeanForm({
     attemptSave(buildPayload());
   }
 
-  // ── Cancel handling (CB-54 / CB-56) ──────────────────────────────────────
-  // In add mode: always close without warning (CB-26 / CB-29).
-  // In edit mode: close without warning if nothing changed (CB-54),
-  //               show discard dialogue if something changed (CB-56).
+  // ── Cancel / discard logic ────────────────────────────────────────────────
   function handleCancel() {
-    if (isEditing && hasChanges(bean, currentFields())) {
+    if (
+      isEditing &&
+      hasChanges(bean, currentFields(), originalRecipeRef.current)
+    ) {
       setShowDiscardDialog(true);
     } else {
       onClose();
     }
   }
 
-  // ── Discard dialogue handlers (CB-57 / CB-58) ─────────────────────────────
   function handleKeepEditing() {
     setShowDiscardDialog(false);
   }
-
   function handleDiscard() {
     setShowDiscardDialog(false);
     onClose();
   }
 
-  // ── Duplicate bean dialogue handlers (CB-33 / CB-34) ─────────────────────
+  // ── Duplicate bean dialog ─────────────────────────────────────────────────
   function handleDuplicateCancel() {
     setDuplicateBean(null);
     setPendingPayload(null);
   }
-
   function handleViewExistingBean() {
     setDuplicateBean(null);
     onViewExisting(duplicateBean.id);
     onClose();
   }
 
-  // ── Container occupied dialogue handlers (CB-40 / CB-41 / CB-65 / CB-66) ──
+  // ── Container occupied dialog ─────────────────────────────────────────────
   function handleOccupiedCancel() {
     setOccupiedOccupant(null);
     setPendingPayload(null);
   }
-
   function handleReplaceContainer() {
     setOccupiedOccupant(null);
     attemptSave({ ...pendingPayload, replaceContainer: true });
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="bean-form">
-      {/* ── Header ─────────────────────────────────────────────────── */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="bean-form__header">
         <div className="bean-form__header-brand">
           Beans
@@ -240,9 +323,9 @@ export default function BeanForm({
         </div>
       </div>
 
-      {/* ── Scrollable body ────────────────────────────────────────── */}
+      {/* ── Scrollable body ────────────────────────────────────────────── */}
       <div className="bean-form__body">
-        {/* Required section */}
+        {/* ── Required section ──────────────────────────────────────── */}
         <div className="bf-section">
           <div className="bf-section-label bf-section-label--required">
             Required
@@ -308,9 +391,20 @@ export default function BeanForm({
           </div>
         </div>
 
-        {/* Optional section */}
+        {/* ── Optional section ──────────────────────────────────────── */}
         <div className="bf-section">
           <div className="bf-section-label">Optional</div>
+
+          <div className="bf-field">
+            <label className="bf-label">Shop URL</label>
+            <input
+              className="bf-input"
+              type="url"
+              placeholder="https://…"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+            />
+          </div>
 
           <div className="bf-field">
             <label className="bf-label">Container</label>
@@ -423,21 +517,81 @@ export default function BeanForm({
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
+        </div>
 
-          <div className="bf-field">
-            <label className="bf-label">Shop URL</label>
-            <input
-              className="bf-input"
-              type="url"
-              placeholder="https://…"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
+        {/* ── Espresso recipe section (double shot) ─────────────────── */}
+        {/* Only double shot values are stored. The card derives single   */}
+        {/* shot values by halving In and Out. Ratio is auto-calculated. */}
+        <div className="bf-section">
+          <div className="bf-section-label">Espresso recipe · double shot</div>
+
+          <div className="bf-row">
+            <div className="bf-field">
+              <label className="bf-label">In (g)</label>
+              <input
+                className="bf-input"
+                type="number"
+                placeholder="18"
+                min="0"
+                step="0.1"
+                value={recipeIn}
+                onChange={(e) => setRecipeIn(e.target.value)}
+              />
+            </div>
+            <div className="bf-field">
+              <label className="bf-label">Out (g)</label>
+              <input
+                className="bf-input"
+                type="number"
+                placeholder="36"
+                min="0"
+                step="0.1"
+                value={recipeOut}
+                onChange={(e) => setRecipeOut(e.target.value)}
+              />
+            </div>
           </div>
+
+          <div className="bf-row">
+            <div className="bf-field">
+              <label className="bf-label">Time (s)</label>
+              <input
+                className="bf-input"
+                type="number"
+                placeholder="30"
+                min="0"
+                step="1"
+                value={recipeTime}
+                onChange={(e) => setRecipeTime(e.target.value)}
+              />
+            </div>
+            <div className="bf-field">
+              <label className="bf-label">Temp (°C)</label>
+              <input
+                className="bf-input"
+                type="number"
+                placeholder="93"
+                min="0"
+                step="0.5"
+                value={recipeTemp}
+                onChange={(e) => setRecipeTemp(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Auto-calculated ratio — only shown when both In and Out are set */}
+          {recipeRatio && (
+            <div className="bf-ratio">
+              <span className="bf-ratio__label">Ratio</span>
+              <span className="bf-ratio__value">{recipeRatio}</span>
+              <span className="bf-ratio__hint">auto-calculated</span>
+            </div>
+          )}
         </div>
       </div>
+      {/* end bean-form__body */}
 
-      {/* ── Footer buttons ──────────────────────────────────────────── */}
+      {/* ── Footer buttons ────────────────────────────────────────────── */}
       <div className="bean-form__footer">
         <button
           className="bean-form__btn bean-form__btn--cancel"
@@ -454,7 +608,7 @@ export default function BeanForm({
         </button>
       </div>
 
-      {/* ── Discard changes warning — CB-56 ─────────────────────────── */}
+      {/* ── Discard changes warning — CB-56 ───────────────────────────── */}
       {showDiscardDialog && (
         <Dialog
           icon="✏️"
@@ -471,7 +625,7 @@ export default function BeanForm({
         />
       )}
 
-      {/* ── Duplicate bean warning — CB-32 ──────────────────────────── */}
+      {/* ── Duplicate bean warning — CB-32 ────────────────────────────── */}
       {duplicateBean && (
         <Dialog
           icon="⚠️"
@@ -492,7 +646,7 @@ export default function BeanForm({
         />
       )}
 
-      {/* ── Container occupied warning — CB-39 / CB-64 ──────────────── */}
+      {/* ── Container occupied warning — CB-39 / CB-64 ────────────────── */}
       {occupiedOccupant && (
         <Dialog
           icon="📦"

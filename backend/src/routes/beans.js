@@ -88,6 +88,7 @@ router.post("/", (req, res) => {
     notes = null,
     container_id = null,
     flavour_tags = [], // array of strings
+    recipes = [], // array of { shot_type, dose_in_g, yield_out_g, time_seconds, temp_celsius, ratio }
     skipDuplicateCheck = false, // CB-33: user acknowledged duplicate
     replaceContainer = false, // CB-40: user chose to replace occupant
   } = req.body;
@@ -175,6 +176,24 @@ router.post("/", (req, res) => {
   );
   flavour_tags.forEach((tag, i) => insertTag.run(beanId, tag.trim(), i));
 
+  // ── Insert recipes ────────────────────────────────────────────────────
+  const insertRecipe = db.prepare(`
+      INSERT INTO bean_recipes
+        (bean_id, shot_type, dose_in_g, yield_out_g, time_seconds, temp_celsius, ratio)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+  recipes.forEach((r) => {
+    insertRecipe.run(
+      beanId,
+      r.shot_type,
+      r.dose_in_g ?? null,
+      r.yield_out_g ?? null,
+      r.time_seconds ?? null,
+      r.temp_celsius ?? null,
+      r.ratio ?? null,
+    );
+  });
+
   // ── Return the full saved card (using the view) ───────────────────────
   const bean = db.prepare("SELECT * FROM v_beans WHERE id = ?").get(beanId);
   return res.status(201).json(bean);
@@ -207,6 +226,7 @@ router.put("/:id", (req, res) => {
     notes = null,
     container_id = null,
     flavour_tags = [],
+    recipes = [],
     replaceContainer = false,
   } = req.body;
 
@@ -293,14 +313,38 @@ router.put("/:id", (req, res) => {
   );
 
   // ── Replace flavour tags ───────────────────────────────────────────
-  // Delete all existing tags for this bean and re-insert from scratch.
-  // Simpler than diffing and avoids orphaned tags.
   db.prepare("DELETE FROM bean_flavour_tags WHERE bean_id = ?").run(beanId);
 
   const insertTag = db.prepare(
     "INSERT INTO bean_flavour_tags (bean_id, tag, sort_order) VALUES (?, ?, ?)",
   );
   flavour_tags.forEach((tag, i) => insertTag.run(beanId, tag.trim(), i));
+
+  // ── Upsert double shot recipe ──────────────────────────────────────
+  // The form only manages the double shot record. We delete and re-insert
+  // it so clearing all four fields removes the row entirely.
+  // Single-shot legacy records are left completely untouched.
+  db.prepare(
+    "DELETE FROM bean_recipes WHERE bean_id = ? AND shot_type = 'double'",
+  ).run(beanId);
+
+  const doubleRecipe = recipes.find((r) => r.shot_type === "double");
+  if (doubleRecipe) {
+    db.prepare(
+      `
+        INSERT INTO bean_recipes
+          (bean_id, shot_type, dose_in_g, yield_out_g, time_seconds, temp_celsius, ratio)
+        VALUES (?, 'double', ?, ?, ?, ?, ?)
+      `,
+    ).run(
+      beanId,
+      doubleRecipe.dose_in_g ?? null,
+      doubleRecipe.yield_out_g ?? null,
+      doubleRecipe.time_seconds ?? null,
+      doubleRecipe.temp_celsius ?? null,
+      doubleRecipe.ratio ?? null,
+    );
+  }
 
   // ── Return the updated card ────────────────────────────────────────
   const updated = db.prepare("SELECT * FROM v_beans WHERE id = ?").get(beanId);

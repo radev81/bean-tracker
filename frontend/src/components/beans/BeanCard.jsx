@@ -4,30 +4,145 @@ import Dialog from "../common/Dialog";
 import "./BeanCard.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Small helper: the recipe row (In / Out / Time / Temp)
+//  Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-function RecipeRow({ recipe }) {
+
+// Format a number to at most 1 decimal place, stripping trailing zeros.
+// e.g.  9.0 → 9    9.50 → 9.5
+function fmt(val) {
+  if (val == null) return null;
+  return parseFloat(val.toFixed(1));
+}
+
+// Compute ratio string from dose_in_g / yield_out_g.
+// Always derived live so it stays consistent with edits.
+// Returns e.g. "1:2" or "1:2.2", or null when inputs are missing / zero.
+function computeRatio(inG, outG) {
+  if (!inG || !outG || inG <= 0) return null;
+  return `1:${parseFloat((outG / inG).toFixed(1))}`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  RecipeSection
+//
+//  Shows espresso recipe values with a Double / Single pill toggle.
+//
+//  Double (default): values straight from the DB.
+//  Single:           In and Out divided by 2, Time replaced with "?",
+//                    Temp and Ratio unchanged (ratio is scale-invariant:
+//                    (out/2)/(in/2) = out/in).
+//
+//  Legacy single-only records (older imported data) are shown without a
+//  toggle since there is nothing to toggle to.
+//
+//  Toggle state resets to "double" every time the card collapses, because
+//  this component unmounts whenever the expanded body unmounts.
+// ─────────────────────────────────────────────────────────────────────────────
+function RecipeSection({ recipes }) {
+  const [showSingle, setShowSingle] = useState(false);
+
+  const doubleRecipe = recipes?.find((r) => r.shot_type === "double");
+  const singleOnly =
+    !doubleRecipe && recipes?.find((r) => r.shot_type === "single");
+
+  // ── Legacy path: single-only record (no toggle) ───────────────────────────
+  if (singleOnly) {
+    const r = singleOnly;
+    const ratio = computeRatio(r.dose_in_g, r.yield_out_g);
+    const items = [
+      { label: "In", value: r.dose_in_g, unit: "g" },
+      { label: "Out", value: r.yield_out_g, unit: "g" },
+      { label: "Time", value: r.time_seconds, unit: "s" },
+      { label: "Temp", value: r.temp_celsius, unit: "°" },
+      ...(ratio ? [{ label: "Ratio", value: ratio, unit: "" }] : []),
+    ].filter((i) => i.value != null && i.value !== "");
+
+    if (items.length === 0) return null;
+
+    return (
+      <div className="bc-recipe">
+        <div className="bc-recipe__label">Single espresso</div>
+        <div className="bc-recipe__row">
+          {items.map((item) => (
+            <div key={item.label} className="bc-recipe__item">
+              <span className="bc-recipe__key">{item.label}</span>
+              <span className="bc-recipe__val">
+                {item.value}
+                {item.unit && (
+                  <span className="bc-recipe__unit">{item.unit}</span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!doubleRecipe) return null;
+
+  // ── Main path: double recipe with Double / Single toggle ──────────────────
+  const inVal =
+    showSingle && doubleRecipe.dose_in_g != null
+      ? fmt(doubleRecipe.dose_in_g / 2)
+      : doubleRecipe.dose_in_g;
+
+  const outVal =
+    showSingle && doubleRecipe.yield_out_g != null
+      ? fmt(doubleRecipe.yield_out_g / 2)
+      : doubleRecipe.yield_out_g;
+
+  // Time shows "?" in single mode — can't reliably halve extraction time.
+  const timeVal = showSingle ? "?" : doubleRecipe.time_seconds;
+  const timeUnit = showSingle ? "" : "s";
+
+  // Ratio is scale-invariant; always calculated from the double values.
+  const ratio = computeRatio(doubleRecipe.dose_in_g, doubleRecipe.yield_out_g);
+
   const items = [
-    { key: "In", value: recipe.dose_in_g, unit: "g" },
-    { key: "Out", value: recipe.yield_out_g, unit: "g" },
-    { key: "Time", value: recipe.time_seconds, unit: "s" },
-    { key: "Temp", value: recipe.temp_celsius, unit: "°" },
-  ].filter((item) => item.value != null);
+    { label: "In", value: inVal, unit: "g" },
+    { label: "Out", value: outVal, unit: "g" },
+    { label: "Time", value: timeVal, unit: timeUnit },
+    { label: "Temp", value: doubleRecipe.temp_celsius, unit: "°" },
+    ...(ratio ? [{ label: "Ratio", value: ratio, unit: "" }] : []),
+  ].filter((i) => i.value != null && i.value !== "");
 
   if (items.length === 0) return null;
 
   return (
     <div className="bc-recipe">
-      <div className="bc-recipe__label">
-        {recipe.shot_type === "double" ? "Double" : "Single"} espresso
+      {/* Header: label + Double / Single pill toggle */}
+      <div className="bc-recipe__header">
+        <span className="bc-recipe__label">Espresso</span>
+        <button
+          className="bc-recipe__toggle"
+          onClick={() => setShowSingle((prev) => !prev)}
+          aria-label={
+            showSingle ? "Switch to double shot" : "Switch to single shot"
+          }
+        >
+          <span
+            className={`bc-recipe__toggle-opt ${!showSingle ? "bc-recipe__toggle-opt--active" : ""}`}
+          >
+            Double
+          </span>
+          <span
+            className={`bc-recipe__toggle-opt ${showSingle ? "bc-recipe__toggle-opt--active" : ""}`}
+          >
+            Single
+          </span>
+        </button>
       </div>
+
       <div className="bc-recipe__row">
         {items.map((item) => (
-          <div key={item.key} className="bc-recipe__item">
-            <span className="bc-recipe__key">{item.key}</span>
+          <div key={item.label} className="bc-recipe__item">
+            <span className="bc-recipe__key">{item.label}</span>
             <span className="bc-recipe__val">
               {item.value}
-              <span className="bc-recipe__unit">{item.unit}</span>
+              {item.unit && (
+                <span className="bc-recipe__unit">{item.unit}</span>
+              )}
             </span>
           </div>
         ))}
@@ -40,10 +155,12 @@ function RecipeRow({ recipe }) {
 //  Main BeanCard component
 //
 //  Props:
-//    bean              — the bean object from the list
+//    bean              — bean object from the list
 //    isExpanded        — controlled by BeanList; true = show body
-//    onToggle          — called with bean.id to flip expanded state in BeanList
+//    onToggle          — called with bean.id to flip expanded state
 //    onFavouriteToggle — called after a favourite change so BeanList reloads
+//    onEdit            — called with bean to open BeanForm in edit mode
+//    onDelete          — called with bean.id after successful delete
 // ─────────────────────────────────────────────────────────────────────────────
 export default function BeanCard({
   bean,
@@ -55,26 +172,23 @@ export default function BeanCard({
 }) {
   const api = useApi();
 
-  // Full details (tags + recipes) fetched on first expand and cached here
-  // so re-expanding is instant.
+  // Full details (tags + recipes) — fetched once on first expand, then cached.
   const [details, setDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  // Whether the favourite API call is in flight (prevents double-taps)
+  // Guards against double-taps on the favourite heart.
   const [togglingFav, setTogglingFav] = useState(false);
 
-  // Delete confirmation dialog state
+  // Delete confirmation dialog state.
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // ── Lazy-load details whenever the card becomes expanded ───────────────────
-  // Using useEffect instead of inside the click handler means programmatic
-  // expansion (after save, or "View existing") also triggers the fetch
-  // correctly, not just manual chevron taps.
+  // ── Lazy-load full bean details on first expand ───────────────────────────
   useEffect(() => {
     if (isExpanded && details === null && !loadingDetails) {
       setLoadingDetails(true);
-      api.getBeanById(bean.id)
+      api
+        .getBeanById(bean.id)
         .then((data) => setDetails(data))
         .catch((err) =>
           console.error("Could not load bean details:", err.message),
@@ -82,15 +196,10 @@ export default function BeanCard({
         .finally(() => setLoadingDetails(false));
     }
   }, [isExpanded]); // eslint-disable-line react-hooks/exhaustive-deps
-  // Note: we intentionally only re-run when isExpanded changes, not on every
-  // render. details/loadingDetails/bean.id are stable within a card's lifetime.
 
-  // ── Chevron click — tell BeanList to toggle this card ─────────────────────
-  const handleChevronClick = () => {
-    onToggle(bean.id);
-  };
+  // ── Event handlers ────────────────────────────────────────────────────────
+  const handleChevronClick = () => onToggle(bean.id);
 
-  // ── Heart click — toggle favourite ─────────────────────────────────────────
   const handleFavClick = async (e) => {
     e.stopPropagation();
     if (togglingFav) return;
@@ -105,12 +214,11 @@ export default function BeanCard({
     }
   };
 
-  // ── Delete click — show confirmation dialog ───────────────────────────────
   const handleDeleteConfirm = async () => {
     setDeleting(true);
     try {
       await api.deleteBean(bean.id);
-      onDelete(bean.id); // tell BeanList to reload and close the card
+      onDelete(bean.id);
     } catch (err) {
       console.error("Could not delete bean:", err.message);
     } finally {
@@ -119,7 +227,7 @@ export default function BeanCard({
     }
   };
 
-  // ── Build the detail grid items (only non-empty fields) ───────────────────
+  // ── Detail grid — only non-empty fields ──────────────────────────────────
   const gridItems = [
     { label: "Region", value: bean.region },
     { label: "Altitude", value: bean.altitude },
@@ -129,18 +237,17 @@ export default function BeanCard({
     { label: "Farm", value: bean.farm_producer },
   ].filter((item) => item.value != null && item.value !== "");
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
       id={`bean-${bean.id}`}
       className={`bc ${isExpanded ? "bc--expanded" : ""}`}
     >
-      {/* Gradient left bar — only visible when expanded (CB-43) */}
+      {/* Gradient left bar — visible only when expanded */}
       {isExpanded && <div className="bc__bar" aria-hidden="true" />}
 
       {/* ── Header row — always visible ─────────────────────────────────── */}
       <div className="bc__header">
-        {/* Favourite heart (CB-44: visible on collapsed card too) */}
         <button
           className={`bc__fav ${bean.is_favourite ? "bc__fav--active" : ""}`}
           onClick={handleFavClick}
@@ -152,9 +259,19 @@ export default function BeanCard({
           ♥
         </button>
 
-        {/* Name + metadata */}
         <div className="bc__info">
           <div className="bc__name">{bean.name}</div>
+          {bean.url && (
+            <a
+              href={bean.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bc__shop-link"
+              onClick={(e) => e.stopPropagation()}
+            >
+              View at shop →
+            </a>
+          )}
           <div className="bc__meta">
             {[bean.country, bean.processing, bean.shop_name]
               .filter(Boolean)
@@ -162,12 +279,10 @@ export default function BeanCard({
           </div>
         </div>
 
-        {/* Container badge (only if assigned) */}
         {bean.container_name && (
           <span className="bc__badge">{bean.container_name}</span>
         )}
 
-        {/* Expand / collapse chevron (CB-42, CB-43, CB-45, CB-46) */}
         <button
           className={`bc__chevron ${isExpanded ? "bc__chevron--open" : ""}`}
           onClick={handleChevronClick}
@@ -185,7 +300,7 @@ export default function BeanCard({
             <div className="bc__loading">Loading…</div>
           ) : (
             <>
-              {/* Detail grid */}
+              {/* Origin / spec detail grid */}
               {gridItems.length > 0 && (
                 <div className="bc__grid">
                   {gridItems.map((item) => (
@@ -211,16 +326,12 @@ export default function BeanCard({
               {/* Tasting notes */}
               {bean.notes && <p className="bc__notes">"{bean.notes}"</p>}
 
-              {/* Espresso recipes */}
+              {/* Espresso recipe with Double / Single toggle */}
               {details?.recipes?.length > 0 && (
-                <div className="bc__recipes">
-                  {details.recipes.map((recipe) => (
-                    <RecipeRow key={recipe.id} recipe={recipe} />
-                  ))}
-                </div>
+                <RecipeSection recipes={details.recipes} />
               )}
 
-              {/* Action buttons */}
+              {/* Edit / Delete actions */}
               <div className="bc__actions">
                 <button
                   className="bc__btn bc__btn--ghost"
@@ -240,6 +351,7 @@ export default function BeanCard({
         </div>
       )}
 
+      {/* Delete confirmation dialog */}
       {showDeleteDialog && (
         <Dialog
           icon="🗑"

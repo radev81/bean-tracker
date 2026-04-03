@@ -1,5 +1,5 @@
 import { NavLink, Routes, Route, Navigate, Outlet } from "react-router-dom";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useLogto } from "@logto/react";
 import { ApiContext, createApiClient } from "./api";
 import BeanList from "./components/beans/BeanList";
@@ -88,7 +88,7 @@ export default function App() {
 
   const [beanCount, setBeanCount] = useState(null);
 
-  const api = useMemo(() => createApiClient(getAccessToken), [getAccessToken]);
+  const [api] = useState(() => createApiClient(getAccessToken));
 
   useEffect(() => {
     if (!isAuthenticated) return;

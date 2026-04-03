@@ -1,10 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { LogtoProvider, useHandleSignInCallback } from "@logto/react";
+import { LogtoProvider } from "@logto/react";
 import "./index.css";
-import App from "./App";
 import "./App.css";
+import Root from "./Root";
 
 const logtoConfig = {
   endpoint: import.meta.env.VITE_LOGTO_ENDPOINT,
@@ -12,19 +12,14 @@ const logtoConfig = {
   resources: [import.meta.env.VITE_API_RESOURCE],
 };
 
-function Root() {
-  const { isLoading } = useHandleSignInCallback(() => {
-    window.location.replace("/");
-  });
-
-  if (window.location.pathname === "/callback") {
-    return isLoading ? <div style={{ padding: 24 }}>Signing in…</div> : null;
-  }
-
-  return <App />;
+const container = document.getElementById("root");
+let root = container._reactRoot;
+if (!root) {
+  root = createRoot(container);
+  container._reactRoot = root;
 }
 
-createRoot(document.getElementById("root")).render(
+root.render(
   <StrictMode>
     <LogtoProvider config={logtoConfig}>
       <BrowserRouter>
