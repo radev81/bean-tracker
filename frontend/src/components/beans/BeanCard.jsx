@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useApi } from "../../api";
 import Dialog from "../common/Dialog";
+import { useSwipeReveal } from "./useSwipeReveal";
 import "./BeanCard.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -169,6 +170,9 @@ export default function BeanCard({
   onEdit,
   onFavouriteToggle,
   onDelete,
+  isSwipeOpen,
+  onSwipeOpen,
+  onSwipeClose,
 }) {
   const api = useApi();
 
@@ -182,6 +186,39 @@ export default function BeanCard({
   // Delete confirmation dialog state.
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // ── Swipe-to-reveal (touch only) ─────────────────────────────────────────
+  const { trackRef, offset, transitioning } = useSwipeReveal({
+    enabled: !isExpanded,
+    isOpen: isSwipeOpen,
+    onOpen: onSwipeOpen,
+    onClose: onSwipeClose,
+  });
+
+  // Close swipe panel whenever the card expands
+  useEffect(() => {
+    if (isExpanded) onSwipeClose();
+  }, [isExpanded]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // CSS transform applied to the header during swipe; none when expanded
+  const slideStyle = isExpanded
+    ? {}
+    : {
+        transform: `translateX(-${offset}px)`,
+        transition: transitioning
+          ? 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+          : 'none',
+      };
+
+  const handleSwipeEdit = () => {
+    onSwipeClose();
+    onEdit(bean);
+  };
+
+  const handleSwipeDelete = () => {
+    onSwipeClose();
+    setShowDeleteDialog(true);
+  };
 
   // ── Lazy-load full bean details on first expand ───────────────────────────
   useEffect(() => {
@@ -246,51 +283,76 @@ export default function BeanCard({
       {/* Gradient left bar — visible only when expanded */}
       {isExpanded && <div className="bc__bar" aria-hidden="true" />}
 
-      {/* ── Header row — always visible ─────────────────────────────────── */}
-      <div className="bc__header">
-        <button
-          className={`bc__fav ${bean.is_favourite ? "bc__fav--active" : ""}`}
-          onClick={handleFavClick}
-          disabled={togglingFav}
-          aria-label={
-            bean.is_favourite ? "Remove from favourites" : "Add to favourites"
-          }
-        >
-          ♥
-        </button>
+      {/* ── Swipe track — touch-only swipe left to reveal actions ─────── */}
+      <div className="bc__swipe-track" ref={trackRef}>
 
-        <div className="bc__info">
-          <div className="bc__name">{bean.name}</div>
-          {bean.url && (
-            <a
-              href={bean.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bc__shop-link"
-              onClick={(e) => e.stopPropagation()}
+        {/* Action strip — sits behind the header, revealed on swipe */}
+        {!isExpanded && (
+          <div className="bc__swipe-panel">
+            <button
+              className="bc__swipe-btn bc__swipe-btn--edit"
+              onClick={handleSwipeEdit}
+              aria-label="Edit bean"
             >
-              View at shop →
-            </a>
-          )}
-          <div className="bc__meta">
-            {[bean.country, bean.processing, bean.shop_name]
-              .filter(Boolean)
-              .join(" · ")}
+              Edit
+            </button>
+            <button
+              className="bc__swipe-btn bc__swipe-btn--delete"
+              onClick={handleSwipeDelete}
+              aria-label="Delete bean"
+            >
+              Delete
+            </button>
           </div>
-        </div>
-
-        {bean.container_name && (
-          <span className="bc__badge">{bean.container_name}</span>
         )}
 
-        <button
-          className={`bc__chevron ${isExpanded ? "bc__chevron--open" : ""}`}
-          onClick={handleChevronClick}
-          aria-label={isExpanded ? "Collapse card" : "Expand card"}
-          aria-expanded={isExpanded}
-        >
-          ›
-        </button>
+        {/* ── Header row — slides left on swipe ──────────────────────── */}
+        <div className="bc__header" style={slideStyle}>
+          <button
+            className={`bc__fav ${bean.is_favourite ? "bc__fav--active" : ""}`}
+            onClick={handleFavClick}
+            disabled={togglingFav}
+            aria-label={
+              bean.is_favourite ? "Remove from favourites" : "Add to favourites"
+            }
+          >
+            ♥
+          </button>
+
+          <div className="bc__info">
+            <div className="bc__name">{bean.name}</div>
+            {bean.url && (
+              <a
+                href={bean.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bc__shop-link"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View at shop →
+              </a>
+            )}
+            <div className="bc__meta">
+              {[bean.country, bean.processing, bean.shop_name]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
+          </div>
+
+          {bean.container_name && (
+            <span className="bc__badge">{bean.container_name}</span>
+          )}
+
+          <button
+            className={`bc__chevron ${isExpanded ? "bc__chevron--open" : ""}`}
+            onClick={handleChevronClick}
+            aria-label={isExpanded ? "Collapse card" : "Expand card"}
+            aria-expanded={isExpanded}
+          >
+            ›
+          </button>
+        </div>
+
       </div>
 
       {/* ── Expanded body ───────────────────────────────────────────────── */}

@@ -10,6 +10,7 @@
   margin-bottom: 7px;
   overflow: hidden;
   position: relative;
+  isolation: isolate; /* contain internal z-indices; prevents bc__header z-index leaking above fixed UI */
 }
 
 /* Expanded state: thicker accent border */
@@ -18,18 +19,63 @@
 }
 
 /* Gradient left bar — 3px wide, full card height, only when expanded */
+/* z-index:2 keeps it above the header's z-index:1 background          */
 .bc__bar {
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
   width: 3px;
+  z-index: 2;
   background: linear-gradient(180deg, #6a3828, #0e0806);
   border-radius: 3px 0 0 3px;
 }
 
+/* ── Swipe-to-reveal track (touch only) ─────────────────────────────────── */
+/* The track is the clipping container for the sliding header + action panel */
+.bc__swipe-track {
+  position: relative;
+}
+
+/* Action strip — positioned at the right edge, revealed as header slides away */
+.bc__swipe-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 120px; /* must match SWIPE_PANEL_WIDTH in useSwipeReveal.js */
+  display: flex;
+}
+
+.bc__swipe-btn {
+  flex: 1;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: "Outfit", system-ui, sans-serif;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bc__swipe-btn--edit {
+  background: linear-gradient(180deg, #6a3828, #2a1008);
+}
+
+.bc__swipe-btn--delete {
+  background: #9b2c2c;
+}
+
 /* ── Header row ─────────────────────────────────────────────────────────── */
+/* position:relative + z-index:1 keeps the header above the swipe panel    */
+/* background:#ffffff ensures the panel is covered when not swiped          */
 .bc__header {
+  position: relative;
+  z-index: 1;
+  background: #ffffff;
   display: flex;
   align-items: center;
   gap: 9px;

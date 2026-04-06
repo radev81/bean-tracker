@@ -147,6 +147,30 @@ Key rules:
 
 ## Phase Status
 
+### 🔲 Phase 11 — Swipe-to-reveal actions on bean cards (DRAFT)
+
+Touch-only swipe left on a collapsed BeanCard to reveal **Edit** and **Delete** action buttons behind the card header.
+
+#### Behaviour spec
+- Swipe left on a **collapsed** card → reveals a 120 px action strip (Edit | Delete)
+- Only one card swiped open at a time — swiping a new card auto-closes the previous one
+- Swipe is **disabled** when a card is expanded; Edit / Delete in the expanded body are used instead
+- Expanding a swiped-open card closes the swipe panel first
+- Delete from the swipe strip triggers the **same confirmation dialog** as the expanded-body Delete button
+- **Touch only** — mouse / pointer events leave desktop behaviour unchanged
+- Snap threshold: 44 px drag distance **or** 0.3 px/ms swipe velocity → snaps open; otherwise snaps back
+
+#### Files
+
+| File | Change |
+|------|--------|
+| `frontend/src/components/beans/useSwipeReveal.js` | **New** — touch event hook, direction detection, drag offset, snap logic |
+| `frontend/src/components/beans/BeanCard.jsx` | Add swipe track wrapper + revealed action strip; `isSwipeOpen` / `onSwipeOpen` / `onSwipeClose` props |
+| `frontend/src/components/beans/BeanCard.css` | Track / panel layout, header z-index, action strip button styling |
+| `frontend/src/components/beans/BeanList.jsx` | `swipeOpenId` state; pass swipe props to every BeanCard |
+
+---
+
 ### 🔲 Phase 10 — PWA (DRAFT)
 
 Make Beans Tracker installable on mobile and desktop with offline app-shell caching.

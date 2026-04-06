@@ -38,6 +38,9 @@ export default function BeanList() {
   const [isAdding, setIsAdding] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
 
+  // ── Swipe-to-reveal state — tracks which card's action strip is open ──────
+  const [swipeOpenId, setSwipeOpenId] = useState(null);
+
   // ── Filter state ──────────────────────────────────────────────────────────
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS);
@@ -363,6 +366,9 @@ export default function BeanList() {
               onEdit={setEditingBean}
               onFavouriteToggle={handleFavouriteToggle}
               onDelete={handleBeanDeleted}
+              isSwipeOpen={swipeOpenId === bean.id}
+              onSwipeOpen={() => setSwipeOpenId(bean.id)}
+              onSwipeClose={() => setSwipeOpenId((prev) => prev === bean.id ? null : prev)}
             />
           ))}
         </section>
@@ -384,6 +390,9 @@ export default function BeanList() {
               onEdit={setEditingBean}
               onFavouriteToggle={handleFavouriteToggle}
               onDelete={handleBeanDeleted}
+              isSwipeOpen={swipeOpenId === bean.id}
+              onSwipeOpen={() => setSwipeOpenId(bean.id)}
+              onSwipeClose={() => setSwipeOpenId((prev) => prev === bean.id ? null : prev)}
             />
           ))}
         </section>
