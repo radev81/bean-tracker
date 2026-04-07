@@ -23,7 +23,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--r-search);
   padding: 10px 13px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--color-text-3);
   display: flex;
   align-items: center;
@@ -31,18 +31,18 @@
 }
 
 .bean-list__search-icon {
-  font-size: 15px;
+  font-size: 17px;
   flex-shrink: 0;
 }
 
 .bean-list__search-placeholder {
   flex: 1;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--color-text-3);
 }
 
 .bean-list__filter-btn {
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--color-text-2);
   background: var(--color-bg);
@@ -69,7 +69,7 @@
 }
 
 .bean-list__section-label {
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -90,8 +90,8 @@
   padding: 0 12px;
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  margin-bottom: 4px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
 
 /* ── Loading skeletons ── */
@@ -139,7 +139,7 @@
   width: 100%;
   background: var(--grad);
   color: #fff;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.03em;
   padding: 14px;
@@ -166,21 +166,21 @@
 }
 
 .bean-list__no-results-icon {
-  font-size: 28px;
+  font-size: 30px;
   margin-bottom: 10px;
   opacity: 0.25;
 }
 
 .bean-list__no-results-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  color: #0a0906;
+  color: var(--color-text);
   margin-bottom: 6px;
 }
 
 .bean-list__no-results-sub {
-  font-size: 11px;
-  color: #ababab;
+  font-size: 13px;
+  color: var(--color-text-3);
   margin-bottom: 16px;
 }
 
@@ -189,9 +189,9 @@
   background: none;
   border: none;
   font-family: "Outfit", system-ui, sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
-  color: #4a2015;
+  color: #B86A00;
   cursor: pointer;
   padding: 0;
   text-decoration: underline;
@@ -208,21 +208,21 @@
 }
 
 .bean-list__no-results-icon {
-  font-size: 28px;
+  font-size: 30px;
   margin-bottom: 10px;
   opacity: 0.25;
 }
 
 .bean-list__no-results-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  color: #0a0906;
+  color: var(--color-text);
   margin-bottom: 6px;
 }
 
 .bean-list__no-results-sub {
-  font-size: 11px;
-  color: #ababab;
+  font-size: 13px;
+  color: var(--color-text-3);
   margin-bottom: 16px;
   max-width: 260px;
   line-height: 1.5;
@@ -237,9 +237,9 @@
   background: none;
   border: none;
   font-family: "Outfit", system-ui, sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
-  color: #4a2015;
+  color: #B86A00;
   cursor: pointer;
   padding: 0;
   text-decoration: underline;

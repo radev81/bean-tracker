@@ -7,27 +7,54 @@ import ContainerQRPage from "./pages/ContainerQRPage";
 import ContainerList from "./components/containers/ContainerList";
 import ShopList from "./components/shops/ShopList";
 
+// ── Theme management ──────────────────────────────────────────────────────────
+function useTheme() {
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("bt-theme") || "dark"
+  );
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("bt-theme", theme);
+  }, [theme]);
+
+  const toggle = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+  return { theme, toggle };
+}
+
 // ── App shell layout (header + tabs + page area) ──────────────────────────────
 // This is only rendered for /beans, /containers, /shops.
 // The QR page (/container/:id) bypasses this entirely.
-function AppShell({ beanCount, onSignOut }) {
+function AppShell({ beanCount, onSignOut, theme, onToggleTheme }) {
+  const iconSrc =
+    theme === "dark"
+      ? `${import.meta.env.BASE_URL}favicon-96x96.png`
+      : `${import.meta.env.BASE_URL}favicon-96x96-light.png`;
+
   return (
     <div className="app">
       <header className="app-header">
         <div className="app-header__top">
-          <div className="app-brand">
-            Beans
-            <br />
-            Tracker
+          <div className="app-brand-wrap">
+            <img className="app-brand-icon" src={iconSrc} alt="" />
+            <div className="app-brand">
+              Beans
+              <br />
+              <span>Tracker</span>
+            </div>
           </div>
-          {beanCount !== null && (
-            <span className="app-pill">
-              {beanCount} {beanCount === 1 ? "bean" : "beans"}
-            </span>
-          )}
-          <button className="app-signout" onClick={onSignOut}>
-            Sign out
-          </button>
+          <div className="app-header-actions">
+            <button
+              className="app-theme-toggle"
+              onClick={onToggleTheme}
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? "☀️" : "🌙"}
+            </button>
+            <button className="app-signout" onClick={onSignOut}>
+              Sign out
+            </button>
+          </div>
         </div>
 
         <nav className="app-tabs" aria-label="Main navigation">
@@ -65,6 +92,12 @@ function AppShell({ beanCount, onSignOut }) {
               </>
             )}
           </NavLink>
+
+          {beanCount !== null && (
+            <span className="app-pill">
+              {beanCount} {beanCount === 1 ? "bean" : "beans"}
+            </span>
+          )}
         </nav>
       </header>
 
@@ -87,8 +120,8 @@ export default function App() {
   } = useLogto();
 
   const [beanCount, setBeanCount] = useState(null);
-
   const [api] = useState(() => createApiClient(getAccessToken));
+  const { theme, toggle: toggleTheme } = useTheme();
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -106,7 +139,7 @@ export default function App() {
         <div className="app-brand app-brand--large">
           Beans
           <br />
-          Tracker
+          <span>Tracker</span>
         </div>
         <button
           className="app-splash__btn"
@@ -130,6 +163,8 @@ export default function App() {
             <AppShell
               beanCount={beanCount}
               onSignOut={() => signOut(window.location.origin)}
+              theme={theme}
+              onToggleTheme={toggleTheme}
             />
           }
         >

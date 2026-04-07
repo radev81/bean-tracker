@@ -5,8 +5,8 @@
   "start_url": "/beans/",
   "scope": "/beans/",
   "display": "standalone",
-  "background_color": "#1A0E08",
-  "theme_color": "#6A3828",
+  "background_color": "#F4F2EE",
+  "theme_color": "#B86A00",
   "orientation": "portrait",
   "icons": [
     {

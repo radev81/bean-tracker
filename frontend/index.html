@@ -21,6 +21,14 @@
     />
     <meta name="apple-mobile-web-app-title" content="Beans Tracker" />
 
+    <!-- Apply saved theme before React renders to avoid flash -->
+    <script>
+      (function () {
+        var t = localStorage.getItem("bt-theme") || "dark";
+        document.documentElement.setAttribute("data-theme", t);
+      })();
+    </script>
+
     <!-- GitHub Pages routing fix -->
     <script>
       (function () {
@@ -33,8 +41,8 @@
     </script>
 
     <!-- PWA -->
-    <link rel="manifest" href="/beans/site.webmanifest" />
-    <meta name="theme-color" content="#6A3828" />
+    <link rel="manifest" href="./site.webmanifest" />
+    <meta name="theme-color" content="#B86A00" />
   </head>
   <body>
     <div id="root"></div>

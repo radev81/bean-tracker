@@ -3,7 +3,8 @@
     "allow": [
       "Bash(xargs grep:*)",
       "Read(//c/Users/Rolf/Documents/Projects/days-off/**)",
-      "Read(//c/Users/Rolf/Documents/Projects//**)"
+      "Read(//c/Users/Rolf/Documents/Projects//**)",
+      "Bash(python -)"
     ],
     "additionalDirectories": [
       "c:\\Users\\Rolf\\Documents\\Projects\\bean-tracker\\nginx"

@@ -14,21 +14,21 @@
 }
 
 .empty-state__icon {
-  font-size: 36px;
+  font-size: 38px;
   opacity: 0.22;
   margin-bottom: 14px;
   display: block;
 }
 
 .empty-state__title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-text);
   margin-bottom: 6px;
 }
 
 .empty-state__body {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--color-text-3);
   line-height: 1.65;
   max-width: 220px;
@@ -38,7 +38,7 @@
 .empty-state__btn {
   background: var(--grad);
   color: #fff;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.025em;
   padding: 12px 28px;

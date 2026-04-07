@@ -185,8 +185,8 @@
   gap: 8px;
   margin-top: 0.5rem;
   padding: 0.45rem 0.75rem;
-  background: rgba(74, 32, 21, 0.05);
-  border: 1px solid rgba(74, 32, 21, 0.14);
+  background: rgba(184, 106, 0, 0.05);
+  border: 1px solid rgba(184, 106, 0, 0.14);
   border-radius: var(--r-input, 11px);
 }
 

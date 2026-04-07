@@ -1,5 +1,5 @@
 /**
- * theme.js — Beans Tracker · Mocha Deep
+ * theme.js — Beans Tracker · Neon Espresso
  * Single source of truth for all design tokens.
  *
  * CSS variables (index.css) and this file must stay in sync.
@@ -20,17 +20,17 @@ export const colors = {
   text3: "#ABABAB", // muted — labels, placeholders
   text4: "#D4D2CC", // inactive icons (un-favourite ♥)
 
-  // ── Accent (Mocha Deep) ──────────────────────────────────
-  accentStart: "#6A3828", // gradient start
-  accentEnd: "#0E0806", // gradient end (near-black espresso)
-  accentMid: "#4A2015", // mid-point — used for text on light bg
-  accentBg: "rgba(74,32,21,0.10)", // tinted chip background
-  accentBorder: "rgba(74,32,21,0.22)", // tinted chip border
+  // ── Accent (Neon Espresso) ───────────────────────────────
+  accentStart: "#D97E00", // gradient start — amber
+  accentEnd: "#8A4000", // gradient end — dark amber
+  accentMid: "#B86A00", // mid-point — used for text on light bg
+  accentBg: "rgba(184,106,0,0.10)", // tinted chip background
+  accentBorder: "rgba(184,106,0,0.22)", // tinted chip border
 };
 
 export const gradients = {
-  accent: "linear-gradient(135deg, #6A3828, #0E0806)", // buttons, active fav icon
-  accentVertical: "linear-gradient(180deg, #6A3828, #0E0806)", // expanded card left bar, tab underline
+  accent: "linear-gradient(135deg, #D97E00, #8A4000)", // buttons, active fav icon
+  accentVertical: "linear-gradient(180deg, #D97E00, #8A4000)", // expanded card left bar, tab underline
 };
 
 export const radii = {

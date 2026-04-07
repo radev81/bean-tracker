@@ -8,40 +8,76 @@
 /* ── Google Font ── */
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap");
 
-/* ── Design tokens ── */
+/* ── Dark theme (default) ── */
 :root {
   /* Backgrounds */
-  --color-bg: #f4f2ee;
-  --color-surface: #ffffff;
-  --color-border: #e4e1da;
-  --color-border-hi: #cccab8;
+  --color-bg:        #1E1D2A;
+  --color-surface:   #08080A;
+  --color-surface-2: #252436;
+  --color-border:    #2E2C3E;
+  --color-border-hi: #3E3C52;
 
   /* Text */
-  --color-text: #0a0906;
+  --color-text:   #EEE9E0;
+  --color-text-2: #B8B6C4;
+  --color-text-3: #908EA0;
+  --color-text-4: #4A4860;
+
+  /* Accent – Neon Espresso (bright for dark bg) */
+  --accent-start:  #F5A020;
+  --accent-end:    #C46010;
+  --accent-mid:    #F5A020;
+  --accent-bg:     rgba(245, 160, 32, 0.15);
+  --accent-border: rgba(245, 160, 32, 0.28);
+  --grad:   linear-gradient(135deg, #F5A020, #C46010);
+  --grad-v: linear-gradient(180deg, #F5A020, #C46010);
+
+  /* Blue accent */
+  --blue:           #3DBFF5;
+  --blue-dim:       rgba(61, 191, 245, 0.14);
+  --blue-border:    rgba(61, 191, 245, 0.28);
+  --blue-toggle-bg: rgba(61, 191, 245, 0.08);
+  --grad-blue: linear-gradient(135deg, #3DBFF5, #0E8FC4);
+
+  /* Border radii */
+  --r-card:   14px;
+  --r-add:    13px;
+  --r-search: 10px;
+  --r-btn:    8px;
+  --r-badge:  6px;
+  --r-tag:    4px;
+  --r-pill:   20px;
+
+  /* Typography */
+  --font: "Outfit", system-ui, sans-serif;
+}
+
+/* ── Light theme ── */
+[data-theme="light"] {
+  --color-bg:        #f4f2ee;
+  --color-surface:   #ffffff;
+  --color-surface-2: #f9f8f6;
+  --color-border:    #e4e1da;
+  --color-border-hi: #cccab8;
+
+  --color-text:   #0a0906;
   --color-text-2: #6b6860;
   --color-text-3: #ababab;
   --color-text-4: #d4d2cc;
 
-  /* Accent – Mocha Deep */
-  --accent-start: #6a3828;
-  --accent-end: #0e0806;
-  --accent-mid: #4a2015;
-  --accent-bg: rgba(74, 32, 21, 0.1);
-  --accent-border: rgba(74, 32, 21, 0.22);
-  --grad: linear-gradient(135deg, #6a3828, #0e0806);
-  --grad-v: linear-gradient(180deg, #6a3828, #0e0806);
+  --accent-start:  #D97E00;
+  --accent-end:    #8A4000;
+  --accent-mid:    #B86A00;
+  --accent-bg:     rgba(184, 106, 0, 0.10);
+  --accent-border: rgba(184, 106, 0, 0.22);
+  --grad:   linear-gradient(135deg, #D97E00, #8A4000);
+  --grad-v: linear-gradient(180deg, #D97E00, #8A4000);
 
-  /* Border radii */
-  --r-card: 14px;
-  --r-add: 13px;
-  --r-search: 10px;
-  --r-btn: 8px;
-  --r-badge: 6px;
-  --r-tag: 4px;
-  --r-pill: 20px;
-
-  /* Typography */
-  --font: "Outfit", system-ui, sans-serif;
+  --blue:           #0578A8;
+  --blue-dim:       rgba(5, 120, 168, 0.10);
+  --blue-border:    rgba(5, 120, 168, 0.22);
+  --blue-toggle-bg: rgba(5, 120, 168, 0.08);
+  --grad-blue: linear-gradient(135deg, #0578A8, #034A72);
 }
 
 /* ── Reset ── */
@@ -65,6 +101,7 @@ body {
   line-height: 1.5;
   /* Safe area insets for notched phones */
   padding-bottom: env(safe-area-inset-bottom);
+  transition: background 0.25s ease, color 0.25s ease;
 }
 
 button {

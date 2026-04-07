@@ -53,45 +53,52 @@ Auth:
 
 ## Design
 
-**Theme:** Mocha Deep — locked March 2026
+**Theme:** Neon Espresso — updated April 2026
 **Reference file:** `frontend/public/design-reference.html`
+**Mockup:** `mockups/theme-preview.html` (combined dark/light toggle — kept for fine-tuning)
 
-### Tokens
+### Tokens — Dark theme (`:root`, default)
 
 ```css
-/* Accent — Mocha Deep gradient */
---accent-a: #6a3828; /* gradient start — dark roast brown */
---accent-b: #0e0806; /* gradient end   — near-black */
---accent-mid: #4a2818; /* borders, badges */
---accent-bg: rgba(74, 40, 24, 0.08);
---accent-border: rgba(74, 40, 24, 0.2);
---accent-text: #3a1810;
-
-/* Gradients */
---grad-h: linear-gradient(135deg, #6a3828, #0e0806); /* buttons, tags */
---grad-v: linear-gradient(180deg, #6a3828, #0e0806); /* card left bar */
---grad-tab: linear-gradient(90deg, #6a3828, #0e0806); /* tab underline */
-
 /* Backgrounds */
---bg: #f4f2ee; /* warm paper */
---surface: #ffffff; /* cards, header */
-
-/* Borders */
---border: #e4e1da;
---border-hi: #cccab8;
+--color-bg:        #1E1D2A; /* list/page background — purple-grey */
+--color-surface:   #08080A; /* cards, header — near-black */
+--color-surface-2: #252436; /* hover states, toggle buttons */
+--color-border:    #2E2C3E;
+--color-border-hi: #3E3C52;
 
 /* Text */
---text: #0a0906; /* primary */
---text2: #6b6860; /* secondary */
---text3: #ababab; /* tertiary / labels */
---text4: #d4d2cc; /* ghost / inactive */
+--color-text:   #EEE9E0; /* primary */
+--color-text-2: #B8B6C4; /* secondary — metadata, values */
+--color-text-3: #908EA0; /* tertiary — uppercase labels */
+--color-text-4: #4A4860; /* ghost — inactive icons */
 
-/* Radii */
---r-card: 14px;
---r-btn: 9px;
---r-tag: 5px;
---r-input: 11px;
---r-add: 14px;
+/* Accent — Neon Espresso amber (bright for dark bg) */
+--accent-start:  #F5A020;
+--accent-end:    #C46010;
+--accent-mid:    #F5A020;
+--accent-bg:     rgba(245, 160, 32, 0.15);
+--accent-border: rgba(245, 160, 32, 0.28);
+--grad:   linear-gradient(135deg, #F5A020, #C46010);
+--grad-v: linear-gradient(180deg, #F5A020, #C46010);
+
+/* Blue accent */
+--blue:           #3DBFF5;
+--blue-dim:       rgba(61, 191, 245, 0.14);
+--blue-border:    rgba(61, 191, 245, 0.28);
+--blue-toggle-bg: rgba(61, 191, 245, 0.08);
+--grad-blue: linear-gradient(135deg, #3DBFF5, #0E8FC4);
+```
+
+### Tokens — Light theme (`[data-theme="light"]`)
+
+```css
+--color-bg:      #f4f2ee; /* warm paper */
+--color-surface: #ffffff;
+--accent-mid:    #B86A00;
+--grad:   linear-gradient(135deg, #D97E00, #8A4000);
+--blue:   #0578A8;
+/* (full override set in index.css) */
 ```
 
 ### Typography
@@ -105,11 +112,16 @@ Auth:
 
 ### Key UI rules
 
-- Mocha Deep gradient appears on: tab underline, card left bar (expanded), flavour tags, container badges, Edit button, Add button
+- Neon Espresso amber gradient on: tab underline, card left bar (expanded), flavour tags, Edit/Add buttons, filter badge, "Tracker" brand word
+- Blue accent (`--blue`) on: container badge, shop link, recipe Double/Single toggle
 - Expanded card: 1.5px `--accent-mid` border + 3px left bar gradient
 - Add button always fixed at bottom with border-top separator
 - Favourite icon uses gradient text clip when active
 - Pipes `|` between tab labels
+- App icon (`favicon-96x96.png` dark / `favicon-96x96-light.png` light) in header — 44px, no glow filter
+- Bean count pill at right end of tab bar (`margin-left: auto`)
+- Dark/light toggle button (☀️/🌙) in header; preference stored in `localStorage` as `bt-theme`; default is dark
+- `data-theme` attribute set on `<html>` synchronously from localStorage before React hydrates (no flash)
 
 ---
 
@@ -432,8 +444,9 @@ Structure:
   ├── frontend/   (Vite + React, React Router, @logto/react)
   └── backend/    (Node + Express ESM + SQLite, @logto/express, port 3000)
 
-Design: Outfit font, Mocha Deep gradient accent (#6A3828 → #0E0806),
+Design: Outfit font, Neon Espresso amber gradient accent (#D97E00 → #8A4000),
 warm paper background #F4F2EE, white surfaces, 14px card radius.
+App icon in header (favicon-96x96-light.png, 44px). Bean count pill in tab bar.
 Full token set and design reference: frontend/public/design-reference.html
 Full BDD scenario catalogue: frontend/public/scenario-catalogue.html
 Full build plan: ROADMAP.MD (project root)

@@ -22,6 +22,7 @@
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   padding: 18px 18px 0;
+  transition: background 0.25s ease, border-color 0.25s ease;
 
   /* Cap width on large screens and centre it */
   max-width: 480px;
@@ -41,24 +42,75 @@
   }
 }
 
-/* ── Brand row (name + pill) ── */
+/* ── Brand row (icon + name + sign-out) ── */
 .app-header__top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
 }
 
+.app-brand-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-brand-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
 .app-brand {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--color-text);
   letter-spacing: -0.03em;
   line-height: 1.15;
+  transition: color 0.25s ease;
 }
 
+/* "Tracker" word in amber gradient */
+.app-brand span {
+  display: block;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Header right-side actions (toggle + sign out) ── */
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.app-theme-toggle {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  padding: 5px 8px;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.app-theme-toggle:hover {
+  border-color: var(--accent-border);
+}
+
+/* ── Bean count pill — lives in the tab bar ── */
 .app-pill {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--accent-mid);
   background: var(--accent-bg);
@@ -66,7 +118,8 @@
   padding: 4px 10px;
   border-radius: var(--r-pill);
   white-space: nowrap;
-  margin-top: 3px;
+  margin-left: auto;
+  margin-bottom: 10px;
 }
 
 /* ── Tab bar ── */
@@ -85,7 +138,7 @@
 }
 
 .app-tab__label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--color-text-3);
   padding-bottom: 8px;
@@ -114,7 +167,7 @@
 
 /* Separator pipe */
 .app-tab-sep {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--color-border-hi);
   font-weight: 300;
   padding: 0 6px 8px;
@@ -125,10 +178,10 @@
 .app-main {
   /*
     Push content below the fixed header.
-    Header height ≈ 18px top padding + ~23px brand + 16px gap + ~27px tabs + 0 bottom = ~84px.
+    Header height ≈ 18px top padding + 44px icon/brand row + 16px gap + ~29px tabs = ~107px.
     We over-pad slightly and let the inner content decide its own top padding.
   */
-  margin-top: 88px;
+  margin-top: 120px;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -136,4 +189,42 @@
   max-width: 480px;
   width: 100%;
   margin-inline: auto;
+  transition: background 0.25s ease;
+}
+
+/* ── Sign out button ── */
+.app-signout {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-2);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  padding: 5px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+  letter-spacing: 0.03em;
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+/* ── Splash / sign-in screen ── */
+.app-splash {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  background: var(--color-bg);
+  transition: background 0.25s ease;
+}
+
+.app-splash__btn {
+  background: var(--grad);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 32px;
+  border-radius: var(--r-btn);
+  border: none;
+  cursor: pointer;
 }
