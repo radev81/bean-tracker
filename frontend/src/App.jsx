@@ -10,7 +10,7 @@ import ShopList from "./components/shops/ShopList";
 // ── Theme management ──────────────────────────────────────────────────────────
 function useTheme() {
   const [theme, setTheme] = useState(
-    () => localStorage.getItem("bt-theme") || "dark"
+    () => localStorage.getItem("bt-theme") || "dark",
   );
 
   useEffect(() => {
@@ -135,15 +135,63 @@ export default function App() {
 
   if (!isAuthenticated) {
     return (
-      <div className="app-splash">
-        <div className="app-brand app-brand--large">
-          Beans
-          <br />
-          <span>Tracker</span>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#0B0D14",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            borderRadius: 18,
+            background: "#E8903A",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 20,
+          }}
+        >
+          <img src="/beans/favicon.svg" width="44" height="44" alt="" />
         </div>
+        <h1
+          style={{
+            color: "#fff",
+            fontSize: 22,
+            fontWeight: 600,
+            margin: "0 0 8px",
+            fontFamily: "sans-serif",
+          }}
+        >
+          Beans Tracker
+        </h1>
+        <p
+          style={{
+            color: "rgba(255,255,255,0.45)",
+            fontSize: 14,
+            margin: "0 0 32px",
+            fontFamily: "sans-serif",
+          }}
+        >
+          Track your coffee beans
+        </p>
         <button
-          className="app-splash__btn"
           onClick={() => signIn(`${window.location.origin}/beans/callback`)}
+          style={{
+            background: "#E8903A",
+            color: "#fff",
+            border: "none",
+            borderRadius: 14,
+            padding: "14px 48px",
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
         >
           Sign in
         </button>

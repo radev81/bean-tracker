@@ -5,9 +5,8 @@
   "start_url": "/beans/",
   "scope": "/beans/",
   "display": "standalone",
-  "background_color": "#F4F2EE",
-  "theme_color": "#B86A00",
-  "orientation": "portrait",
+  "background_color": "#0B0D14",
+  "theme_color": "#E8903A",
   "icons": [
     {
       "src": "/beans/web-app-manifest-192x192.png",
