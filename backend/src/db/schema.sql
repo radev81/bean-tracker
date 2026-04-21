@@ -147,6 +147,7 @@ CREATE TABLE IF NOT EXISTS bean_recipes (
   ratio         TEXT,              -- e.g. "1:2"
   time_seconds  INTEGER,           -- extraction time
   temp_celsius  REAL,              -- brew temperature
+  notes         TEXT,              -- free-form recipe notes
 
   UNIQUE (bean_id, shot_type)
 );
@@ -179,6 +180,8 @@ CREATE INDEX IF NOT EXISTS idx_tags_bean
 -- Recipe lookups
 CREATE INDEX IF NOT EXISTS idx_recipes_bean
   ON bean_recipes (bean_id);
+
+
 
 
 -- ============================================================

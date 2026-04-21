@@ -16,6 +16,13 @@ const db = new Database(DB_PATH);
 const schema = readFileSync(path.join(__dirname, "schema.sql"), "utf8");
 db.exec(schema);
 
+// Migrations — add columns that don't exist yet in live databases.
+// PRAGMA table_info works on all SQLite versions.
+const recipeColumns = db.prepare("PRAGMA table_info(bean_recipes)").all();
+if (!recipeColumns.find((c) => c.name === "notes")) {
+  db.exec("ALTER TABLE bean_recipes ADD COLUMN notes TEXT");
+}
+
 console.log("Database ready at", DB_PATH);
 
 export default db;

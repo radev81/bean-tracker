@@ -337,6 +337,15 @@
   color: var(--color-text-3);
 }
 
+.bc-recipe__notes {
+  font-size: 13px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--color-text-2);
+  line-height: 1.55;
+  margin: 8px 0 0;
+}
+
 /* ── View at shop link ───────────────────────────────────────────────────── */
 /* Lives inside bc__info, between the bean name and the meta line.          */
 /* Always visible on the card header (collapsed and expanded).              */

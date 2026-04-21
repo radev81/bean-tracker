@@ -88,7 +88,7 @@ router.post("/", (req, res) => {
     notes = null,
     container_id = null,
     flavour_tags = [], // array of strings
-    recipes = [], // array of { shot_type, dose_in_g, yield_out_g, time_seconds, temp_celsius, ratio }
+    recipes = [], // array of { shot_type, dose_in_g, yield_out_g, time_seconds, temp_celsius, ratio, notes }
     skipDuplicateCheck = false, // CB-33: user acknowledged duplicate
     replaceContainer = false, // CB-40: user chose to replace occupant
   } = req.body;
@@ -179,8 +179,8 @@ router.post("/", (req, res) => {
   // ── Insert recipes ────────────────────────────────────────────────────
   const insertRecipe = db.prepare(`
       INSERT INTO bean_recipes
-        (bean_id, shot_type, dose_in_g, yield_out_g, time_seconds, temp_celsius, ratio)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+        (bean_id, shot_type, dose_in_g, yield_out_g, time_seconds, temp_celsius, ratio, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
   recipes.forEach((r) => {
     insertRecipe.run(
@@ -191,6 +191,7 @@ router.post("/", (req, res) => {
       r.time_seconds ?? null,
       r.temp_celsius ?? null,
       r.ratio ?? null,
+      r.notes ?? null,
     );
   });
 
@@ -333,8 +334,8 @@ router.put("/:id", (req, res) => {
     db.prepare(
       `
         INSERT INTO bean_recipes
-          (bean_id, shot_type, dose_in_g, yield_out_g, time_seconds, temp_celsius, ratio)
-        VALUES (?, 'double', ?, ?, ?, ?, ?)
+          (bean_id, shot_type, dose_in_g, yield_out_g, time_seconds, temp_celsius, ratio, notes)
+        VALUES (?, 'double', ?, ?, ?, ?, ?, ?)
       `,
     ).run(
       beanId,
@@ -343,6 +344,7 @@ router.put("/:id", (req, res) => {
       doubleRecipe.time_seconds ?? null,
       doubleRecipe.temp_celsius ?? null,
       doubleRecipe.ratio ?? null,
+      doubleRecipe.notes ?? null,
     );
   }
 

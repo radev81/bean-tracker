@@ -159,6 +159,23 @@ Key rules:
 
 ## Phase Status
 
+### ✅ Espresso recipe notes field
+
+Added a free-text **Notes** textarea to the Espresso Recipe section of BeanForm (below the auto-calculated Ratio). Notes are stored in `bean_recipes.notes` (TEXT, nullable).
+
+**Files changed:**
+
+| File | Change |
+|------|--------|
+| `backend/src/db/schema.sql` | Added `notes TEXT` to `bean_recipes` CREATE TABLE |
+| `backend/src/db/database.js` | `PRAGMA table_info` migration — adds column to existing DB on startup |
+| `backend/src/routes/beans.js` | Added `notes` to recipe INSERT (POST) and upsert (PUT) |
+| `frontend/src/components/beans/BeanForm.jsx` | New `recipeNotes` state, pre-filled in edit mode, included in `hasChanges`, `currentFields`, `buildPayload`, and rendered as textarea |
+| `frontend/src/components/beans/BeanCard.jsx` | `RecipeSection` now renders `notes` below the recipe row (both single and double paths) |
+| `frontend/src/components/beans/BeanCard.css` | Added `.bc-recipe__notes` style |
+
+---
+
 ### 🔲 Phase 11 — Swipe-to-reveal actions on bean cards (DRAFT)
 
 Touch-only swipe left on a collapsed BeanCard to reveal **Edit** and **Delete** action buttons behind the card header.

@@ -76,6 +76,7 @@ function RecipeSection({ recipes }) {
             </div>
           ))}
         </div>
+        {r.notes && <p className="bc-recipe__notes">{r.notes}</p>}
       </div>
     );
   }
@@ -148,6 +149,9 @@ function RecipeSection({ recipes }) {
           </div>
         ))}
       </div>
+      {doubleRecipe.notes && (
+        <p className="bc-recipe__notes">{doubleRecipe.notes}</p>
+      )}
     </div>
   );
 }

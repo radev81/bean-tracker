@@ -18,7 +18,7 @@ import "./BeanForm.css";
 function hasChanges(
   bean,
   fields,
-  originalRecipe = { in: "", out: "", time: "", temp: "" },
+  originalRecipe = { in: "", out: "", time: "", temp: "", notes: "" },
 ) {
   if (!bean) return false;
   return (
@@ -40,7 +40,8 @@ function hasChanges(
     fields.recipeIn !== originalRecipe.in ||
     fields.recipeOut !== originalRecipe.out ||
     fields.recipeTime !== originalRecipe.time ||
-    fields.recipeTemp !== originalRecipe.temp
+    fields.recipeTemp !== originalRecipe.temp ||
+    fields.recipeNotes !== originalRecipe.notes
   );
 }
 
@@ -80,10 +81,11 @@ export default function BeanForm({
   const [recipeOut, setRecipeOut] = useState("");
   const [recipeTime, setRecipeTime] = useState("");
   const [recipeTemp, setRecipeTemp] = useState("");
+  const [recipeNotes, setRecipeNotes] = useState("");
 
   // Stores the original recipe values fetched from DB (edit mode only).
   // Used by hasChanges() to detect whether the recipe was modified.
-  const originalRecipeRef = useRef({ in: "", out: "", time: "", temp: "" });
+  const originalRecipeRef = useRef({ in: "", out: "", time: "", temp: "", notes: "" });
 
   // Auto-calculated ratio — shown read-only in the form.
   // Recomputed whenever In or Out changes.
@@ -142,12 +144,14 @@ export default function BeanForm({
             out: dr.yield_out_g != null ? String(dr.yield_out_g) : "",
             time: dr.time_seconds != null ? String(dr.time_seconds) : "",
             temp: dr.temp_celsius != null ? String(dr.temp_celsius) : "",
+            notes: dr.notes ?? "",
           };
           originalRecipeRef.current = orig;
           setRecipeIn(orig.in);
           setRecipeOut(orig.out);
           setRecipeTime(orig.time);
           setRecipeTemp(orig.temp);
+          setRecipeNotes(orig.notes);
         }
       })
       .catch(console.error);
@@ -188,6 +192,7 @@ export default function BeanForm({
       recipeOut,
       recipeTime,
       recipeTemp,
+      recipeNotes,
     };
   }
 
@@ -197,7 +202,8 @@ export default function BeanForm({
       recipeIn.trim() ||
       recipeOut.trim() ||
       recipeTime.trim() ||
-      recipeTemp.trim();
+      recipeTemp.trim() ||
+      recipeNotes.trim();
 
     return {
       name: name.trim(),
@@ -226,6 +232,7 @@ export default function BeanForm({
               time_seconds: recipeTime ? parseInt(recipeTime, 10) : null,
               temp_celsius: recipeTemp ? parseFloat(recipeTemp) : null,
               ratio: recipeRatio || null,
+              notes: recipeNotes.trim() || null,
             },
           ]
         : [],
@@ -587,6 +594,17 @@ export default function BeanForm({
               <span className="bf-ratio__hint">auto-calculated</span>
             </div>
           )}
+
+          <div className="bf-field">
+            <label className="bf-label">Notes</label>
+            <textarea
+              className="bf-input bf-textarea"
+              rows={3}
+              placeholder="Free text…"
+              value={recipeNotes}
+              onChange={(e) => setRecipeNotes(e.target.value)}
+            />
+          </div>
         </div>
       </div>
       {/* end bean-form__body */}
