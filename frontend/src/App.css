@@ -1,8 +1,11 @@
 /*
-  App.css — shell layout styles
-  ──────────────────────────────
-  Matches the "Beans Tracker" header design from beans-tracker-FINAL.html.
-  Mobile-first: the header is fixed at top, main scrolls beneath it.
+  App.css — app shell layout (Dial design, step 3)
+  ────────────────────────────────────────────────
+  Mobile-first. The three main tabs share one layout:
+    page header (eyebrow + title + account button)
+    page content
+    fixed bottom navigation (components/ui/BottomNav)
+  On wide screens the content is capped and centred.
 */
 
 /* ── Outer shell ── */
@@ -10,221 +13,64 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh; /* dvh = dynamic viewport height — accounts for mobile browser bars */
-}
-
-/* ── Fixed header ── */
-.app-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  padding: 18px 18px 0;
-  transition: background 0.25s ease, border-color 0.25s ease;
-
-  /* Cap width on large screens and centre it */
-  max-width: 480px;
-  margin-inline: auto; /* keep centred even when fixed */
-  /* Note: fixed + margin:auto doesn't work on all browsers, so we use left/right + transform */
-  left: 50%;
-  transform: translateX(-50%);
   width: 100%;
-}
-
-/* On desktop, constrain and centre the whole layout */
-@media (min-width: 480px) {
-  .app-header {
-    border-left: 1px solid var(--color-border);
-    border-right: 1px solid var(--color-border);
-    border-radius: 0 0 8px 8px;
-  }
-}
-
-/* ── Brand row (icon + name + sign-out) ── */
-.app-header__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.app-brand-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.app-brand-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 6px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.app-brand {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--color-text);
-  letter-spacing: -0.03em;
-  line-height: 1.15;
-  transition: color 0.25s ease;
-}
-
-/* "Tracker" word in amber gradient */
-.app-brand span {
-  display: block;
-  background: var(--grad);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ── Header right-side actions (toggle + sign out) ── */
-.app-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.app-theme-toggle {
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  border-radius: 7px;
-  padding: 5px 8px;
-  font-size: 17px;
-  line-height: 1;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.25s ease, border-color 0.25s ease;
-}
-
-.app-theme-toggle:hover {
-  border-color: var(--accent-border);
-}
-
-/* ── Bean count pill — lives in the tab bar ── */
-.app-pill {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--accent-mid);
-  background: var(--accent-bg);
-  border: 1px solid var(--accent-border);
-  padding: 4px 10px;
-  border-radius: var(--r-pill);
-  white-space: nowrap;
-  margin-left: auto;
-  margin-bottom: 10px;
-}
-
-/* ── Tab bar ── */
-.app-tabs {
-  display: flex;
-  align-items: center;
-}
-
-.app-tab {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  padding-bottom: 0; /* bar sits flush at bottom */
-  text-decoration: none;
-}
-
-.app-tab__label {
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--color-text-3);
-  padding-bottom: 8px;
-  transition:
-    color 0.15s ease,
-    font-weight 0.15s ease;
-}
-
-/* Active tab label */
-.app-tab.active .app-tab__label,
-.app-tabs a[aria-current="page"] .app-tab__label {
-  font-weight: 500;
-  color: var(--color-text);
-}
-
-/* Gradient underline for the active tab */
-.app-tab__bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--grad-v);
-}
-
-/* Separator pipe */
-.app-tab-sep {
-  font-size: 13px;
-  color: var(--color-border-hi);
-  font-weight: 300;
-  padding: 0 6px 8px;
-  user-select: none;
+  max-width: 560px;
+  margin-inline: auto;
 }
 
 /* ── Main content ── */
 .app-main {
-  /*
-    Push content below the fixed header.
-    Header height ≈ 18px top padding + 44px icon/brand row + 16px gap + ~29px tabs = ~107px.
-    We over-pad slightly and let the inner content decide its own top padding.
-  */
-  margin-top: 120px;
   flex: 1;
   display: flex;
   flex-direction: column;
-
-  max-width: 480px;
   width: 100%;
+  padding-top: 8px;
+}
+
+/* ── Full-screen pages (bean form, QR page) ── */
+.app-fullscreen {
+  width: 100%;
+  max-width: 560px;
+  min-height: 100dvh;
   margin-inline: auto;
-  transition: background 0.25s ease;
 }
 
-/* ── Sign out button ── */
-.app-signout {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-text-2);
-  background: var(--color-surface-2);
-  border: 1px solid var(--color-border);
-  padding: 5px 9px;
-  border-radius: 7px;
-  cursor: pointer;
-  letter-spacing: 0.03em;
-  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+/* Loading / error message on a full page */
+.app-page-message {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--muted);
 }
 
-/* ── Splash / sign-in screen ── */
-.app-splash {
+/* ── Sign-in screen ── */
+.app-signin {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 28px;
-  background: var(--color-bg);
-  transition: background 0.25s ease;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+  background: var(--ground);
 }
-
-.app-splash__btn {
-  background: var(--grad);
-  color: var(--on-accent);
-  font-size: 16px;
-  font-weight: 600;
-  padding: 12px 32px;
-  border-radius: var(--r-btn);
-  border: none;
-  cursor: pointer;
+.app-signin__icon {
+  margin-bottom: 14px;
+}
+.app-signin__title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.app-signin__text {
+  margin: 0 0 24px;
+  max-width: 280px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.app-signin__btn {
+  min-width: 220px;
 }

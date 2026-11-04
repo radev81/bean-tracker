@@ -6,7 +6,7 @@
   position: fixed;
   inset: 0; /* covers the whole viewport */
   background: rgba(10, 9, 6, 0.45);
-  z-index: 100;
+  z-index: 250; /* above the bottom navigation (100) */
   /* Fade in */
   animation: bf-fade-in 0.2s ease;
 }
@@ -26,7 +26,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 101; /* above the backdrop */
+  z-index: 251; /* above the backdrop */
 
   /* On wide screens, centre and cap the width */
   max-width: 560px;

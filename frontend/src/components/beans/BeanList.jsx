@@ -1,11 +1,11 @@
 // frontend/src/components/beans/BeanList.jsx
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useApi } from "../../api";
 import BeanCard from "./BeanCard";
 import BeanSearch from "./BeanSearch";
 import BeanFilter from "./BeanFilter";
-import BeanForm from "./BeanForm"; // ← NEW: add form component
 import EmptyState from "../common/EmptyState";
 import "./BeanList.css";
 
@@ -25,18 +25,31 @@ const copyFilters = (f) => ({
   countries: [...f.countries],
 });
 
-export default function BeanList() {
+// onCountChange: tells the app header how many beans there are
+export default function BeanList({ onCountChange }) {
   const api = useApi();
   const [beans, setBeans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ── NEW: Add form + card expansion state ──────────────────────────────────
-  // isAdding:  true while the BeanForm is shown in place of the list
-  // expandedId: the id of whichever card is currently expanded (null = none)
-  const [isAdding, setIsAdding] = useState(false);
-  const [expandedId, setExpandedId] = useState(null);
+  // ── Card expansion state ──────────────────────────────────────────────────
+  // expandedId: the id of whichever card is currently expanded (null = none).
+  // Adding and editing now happen on their own pages (/new, /bean/:id/edit).
+  // When those pages send us back they pass { expandId } in the router state,
+  // so the saved bean's card opens straight away.
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [expandedId, setExpandedId] = useState(
+    () => location.state?.expandId ?? null,
+  );
+
+  // Clear that router state once used, so a page refresh doesn't reopen it
+  useEffect(() => {
+    if (location.state?.expandId) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   // ── Swipe-to-reveal state — tracks which card's action strip is open ──────
   const [swipeOpenId, setSwipeOpenId] = useState(null);
@@ -45,7 +58,6 @@ export default function BeanList() {
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState(EMPTY_FILTERS);
   const [pendingFilters, setPendingFilters] = useState(EMPTY_FILTERS);
-  const [editingBean, setEditingBean] = useState(null);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const loadBeans = useCallback(async () => {
@@ -53,13 +65,14 @@ export default function BeanList() {
       setError(null);
       const data = await api.getBeans();
       setBeans(data);
+      onCountChange?.(data.length);
     } catch (err) {
       setError("Could not load beans. Is the backend running?");
       console.error("loadBeans:", err.message);
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, onCountChange]);
 
   useEffect(() => {
     loadBeans();
@@ -83,27 +96,6 @@ export default function BeanList() {
       console.error("handleFavouriteToggle:", err.message);
     }
   }, [loadBeans]);
-
-  // ── BeanForm handlers ─────────────────────────────────────────────────
-
-  // Called when BeanForm saves successfully (CB-35 / CB-38) or is used to update an existing bean
-  // Prepends the new bean to the list (so it appears immediately without a
-  // full reload) and expands its card so the user sees it right away.
-  async function handleBeanSaved(newBean) {
-    setIsAdding(false);
-    setEditingBean(null);
-    setActiveFilters(copyFilters(EMPTY_FILTERS));
-    setSearchQuery("");
-    await loadBeans();
-    setExpandedId(newBean.id);
-  }
-
-  // Called when the user taps "View existing" in the duplicate warning
-  // dialogue (CB-33). Closes the form and expands the matching card.
-  function handleViewExisting(beanId) {
-    setIsAdding(false);
-    setExpandedId(beanId);
-  }
 
   // ── Card expand / collapse toggle ─────────────────────────────────────────
   // Passed down to every BeanCard. Tapping the expand icon on a collapsed
@@ -221,32 +213,6 @@ export default function BeanList() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  // While the add form is open, render it in place of the whole list.
-  // The form fills the same container the list normally occupies, matching
-  // the design reference "New card" screen.
-  if (isAdding) {
-    return (
-      <BeanForm
-        onClose={() => setIsAdding(false)}
-        onSaved={handleBeanSaved}
-        onViewExisting={handleViewExisting}
-      />
-    );
-  }
-
-  if (editingBean) {
-    return (
-      <BeanForm
-        bean={editingBean}
-        onClose={() => {
-          setEditingBean(null);
-        }}
-        onSaved={handleBeanSaved}
-        onViewExisting={handleViewExisting}
-      />
-    );
-  }
-
   if (loading) {
     return <div className="bean-list__loading">Loading beans…</div>;
   }
@@ -275,7 +241,7 @@ export default function BeanList() {
           title="No beans yet"
           subtitle="Add your first bag to start tracking your collection."
           action="+ Add Coffee Beans"
-          onAction={() => setIsAdding(true)} // ← NEW: wire button
+          onAction={() => navigate("/new")}
         />
       </>
     );
@@ -363,7 +329,7 @@ export default function BeanList() {
               bean={bean}
               isExpanded={expandedId === bean.id}
               onToggle={handleCardToggle}
-              onEdit={setEditingBean}
+              onEdit={(b) => navigate(`/bean/${b.id}/edit`)}
               onFavouriteToggle={handleFavouriteToggle}
               onDelete={handleBeanDeleted}
               isSwipeOpen={swipeOpenId === bean.id}
@@ -387,7 +353,7 @@ export default function BeanList() {
               bean={bean}
               isExpanded={expandedId === bean.id}
               onToggle={handleCardToggle}
-              onEdit={setEditingBean}
+              onEdit={(b) => navigate(`/bean/${b.id}/edit`)}
               onFavouriteToggle={handleFavouriteToggle}
               onDelete={handleBeanDeleted}
               isSwipeOpen={swipeOpenId === bean.id}
@@ -398,21 +364,7 @@ export default function BeanList() {
         </section>
       )}
 
-      {/* ── Add Coffee Beans button (always visible at bottom) ─────────── */}
-      {/* NEW: Previously missing from the list view. Matches the design
-           reference where the gradient button is pinned to the bottom of
-           the screen whenever the list is shown (CB-02). The button is
-           rendered here inside the scrollable list so it scrolls with the
-           content; if you later want it truly fixed/sticky you can move it
-           to App.jsx and use CSS position:sticky instead. */}
-      <div className="bean-list__add-wrap">
-        <button
-          className="bean-list__add-btn"
-          onClick={() => setIsAdding(true)}
-        >
-          + Add Coffee Beans
-        </button>
-      </div>
+      {/* Adding a bean: the + button in the bottom navigation (→ /new) */}
     </div>
   );
 }

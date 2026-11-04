@@ -8,7 +8,7 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  z-index: 200;
+  z-index: 400; /* above sheets (300) and the filter panel (250) */
   animation: fadeIn 0.15s ease;
 }
 
