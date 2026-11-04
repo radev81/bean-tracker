@@ -1,7 +1,7 @@
 /* ── Page wrapper ─────────────────────────────────────────────────────────── */
 .qr-page {
   min-height: 100vh;
-  background: var(--bg);
+  background: var(--color-bg);
   padding: 20px 16px 48px;
   display: flex;
   flex-direction: column;
@@ -16,19 +16,19 @@
   border: none;
   font-family: var(--font);
   font-size: 15px;
-  color: var(--text2);
+  color: var(--color-text-2);
   cursor: pointer;
   padding: 0 0 20px;
   letter-spacing: -0.01em;
 }
 .qr-back:hover {
-  color: var(--text);
+  color: var(--color-text);
 }
 
 /* ── Container badge ─────────────────────────────────────────────────────── */
 .qr-container-badge {
   background: var(--grad);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -42,7 +42,7 @@
 .qr-loading {
   margin-top: 80px;
   font-size: 15px;
-  color: var(--text3);
+  color: var(--color-text-3);
 }
 
 .qr-error {
@@ -58,7 +58,7 @@
 }
 .qr-error p {
   font-size: 15px;
-  color: var(--text2);
+  color: var(--color-text-2);
   line-height: 1.6;
 }
 
@@ -78,12 +78,12 @@
 .qr-empty-title {
   font-size: 17px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--color-text);
   letter-spacing: -0.02em;
 }
 .qr-empty-sub {
   font-size: 15px;
-  color: var(--text3);
+  color: var(--color-text-3);
   line-height: 1.6;
   max-width: 260px;
   margin-bottom: 8px;
@@ -91,7 +91,7 @@
 
 .qr-add-btn {
   background: var(--grad);
-  color: #fff;
+  color: var(--on-accent);
   border: none;
   border-radius: var(--r-add);
   padding: 13px 28px;
@@ -107,7 +107,7 @@
 .qr-card {
   width: 100%;
   max-width: 480px; /* comfortable on desktop too */
-  background: var(--surface);
+  background: var(--color-surface);
   border: 1.5px solid var(--accent-mid);
   border-radius: var(--r-card);
   position: relative;
@@ -130,12 +130,12 @@
   align-items: flex-start;
   gap: 10px;
   padding: 14px 16px 12px 18px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .qr-fav-icon {
   font-size: 18px;
-  color: var(--text4);
+  color: var(--color-text-4);
   flex-shrink: 0;
   padding-top: 1px;
 }
@@ -148,13 +148,13 @@
 .qr-bean-name {
   font-size: 17px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--color-text);
   letter-spacing: -0.02em;
   line-height: 1.25;
 }
 .qr-bean-meta {
   font-size: 13px;
-  color: var(--text3);
+  color: var(--color-text-3);
   margin-top: 3px;
   line-height: 1.4;
 }
@@ -176,12 +176,12 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text3);
+  color: var(--color-text-3);
 }
 .qr-dv {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text2);
+  color: var(--color-text-2);
 }
 
 /* Flavour tags */
@@ -206,10 +206,10 @@
   font-size: 14px;
   font-weight: 300;
   font-style: italic;
-  color: var(--text2);
+  color: var(--color-text-2);
   line-height: 1.7;
   padding: 0 16px 14px 18px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* Recipe */
@@ -221,7 +221,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text3);
+  color: var(--color-text-3);
   margin-bottom: 10px;
 }
 .qr-recipe-values {
@@ -236,7 +236,7 @@
 .qr-recipe-values strong {
   font-size: 22px;
   font-weight: 700;
-  color: var(--text);
+  color: var(--color-text);
   letter-spacing: -0.03em;
   line-height: 1;
 }
@@ -244,5 +244,5 @@
   font-size: 12px;
   font-style: normal;
   font-weight: 400;
-  color: var(--text3);
+  color: var(--color-text-3);
 }

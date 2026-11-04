@@ -138,7 +138,7 @@
 .bean-list__add-btn {
   width: 100%;
   background: var(--grad);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -188,7 +188,7 @@
 .bean-list__no-results-clear {
   background: none;
   border: none;
-  font-family: "Outfit", system-ui, sans-serif;
+  font-family: var(--font);
   font-size: 14px;
   font-weight: 600;
   color: #B86A00;
@@ -236,7 +236,7 @@
 .bean-list__no-results-clear {
   background: none;
   border: none;
-  font-family: "Outfit", system-ui, sans-serif;
+  font-family: var(--font);
   font-size: 14px;
   font-weight: 600;
   color: #B86A00;

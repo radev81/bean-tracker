@@ -6,78 +6,104 @@
 */
 
 /* ── Google Font ── */
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap");
+
+/*
+  Dial design tokens (Nov 2026)
+  ─────────────────────────────
+  Dark-first, monochrome "machine screen" look with ONE signal colour.
+  • Primary buttons are INK (cream) with dark text — not amber.
+  • Amber (--signal / --accent-mid) only marks what is live or selected.
+  The older variable names (--color-*, --accent-*, --grad*, --blue*) are
+  kept on purpose so the existing screens pick up the new look without
+  changes. New components should use the short names (--ground, --face…).
+*/
 
 /* ── Dark theme (default) ── */
 :root {
-  /* Backgrounds */
-  --color-bg:        #1E1D2A;
-  --color-surface:   #08080A;
-  --color-surface-2: #252436;
-  --color-border:    #2E2C3E;
-  --color-border-hi: #3E3C52;
+  /* New palette — use these in new components */
+  --ground:  #0B0B0A;  /* page background */
+  --face:    #121211;  /* cards, dial faces */
+  --raised:  #161614;  /* sheets, selected tiles, inputs on cards */
+  --line:    #2A2A27;  /* borders, dial track */
+  --line-hi: #3A3935;  /* stronger borders, minor ticks */
+  --ink:     #F3EFE6;  /* primary text, primary buttons */
+  --ink-2:   #D9D4C8;  /* secondary text */
+  --muted:   #A39E93;  /* labels, metadata (4.5:1 on ground) */
+  --ghost:   #4A4844;  /* inactive icons */
+  --signal:  #F2A65A;  /* the one accent: live / selected / suggestion */
+  --on-ink:  #0B0B0A;  /* text on primary (ink) buttons */
+  --danger:  #E06A4E;
+  --on-danger: #0B0B0A;  /* dark text reads better on this coral than white */
 
-  /* Text */
-  --color-text:   #EEE9E0;
-  --color-text-2: #B8B6C4;
-  --color-text-3: #908EA0;
-  --color-text-4: #4A4860;
+  /* Legacy names → mapped onto the new palette */
+  --color-bg:        var(--ground);
+  --color-surface:   var(--face);
+  --color-surface-2: var(--raised);
+  --color-border:    var(--line);
+  --color-border-hi: var(--line-hi);
 
-  /* Accent – Neon Espresso (bright for dark bg) */
-  --accent-start:  #F5A020;
-  --accent-end:    #C46010;
-  --accent-mid:    #F5A020;
-  --accent-bg:     rgba(245, 160, 32, 0.15);
-  --accent-border: rgba(245, 160, 32, 0.28);
-  --grad:   linear-gradient(135deg, #F5A020, #C46010);
-  --grad-v: linear-gradient(180deg, #F5A020, #C46010);
+  --color-text:   var(--ink);
+  --color-text-2: var(--ink-2);
+  --color-text-3: var(--muted);
+  --color-text-4: var(--ghost);
 
-  /* Blue accent */
-  --blue:           #3DBFF5;
-  --blue-dim:       rgba(61, 191, 245, 0.14);
-  --blue-border:    rgba(61, 191, 245, 0.28);
-  --blue-toggle-bg: rgba(61, 191, 245, 0.08);
-  --grad-blue: linear-gradient(135deg, #3DBFF5, #0E8FC4);
+  --accent-start:  var(--signal);
+  --accent-end:    var(--signal);
+  --accent-mid:    var(--signal);
+  --accent-bg:     rgba(242, 166, 90, 0.12);
+  --accent-border: rgba(242, 166, 90, 0.32);
+  /* "grad" used to be the amber gradient on buttons/badges.
+     In the Dial design those are solid ink. */
+  --grad:      var(--ink);
+  --grad-v:    var(--ink);
+  --on-accent: var(--on-ink);  /* text colour on anything using --grad */
 
-  /* Border radii */
-  --r-card:   14px;
-  --r-add:    13px;
-  --r-search: 10px;
-  --r-btn:    8px;
-  --r-badge:  6px;
-  --r-tag:    4px;
-  --r-pill:   20px;
+  /* The old blue accent is folded into the signal colour */
+  --blue:           var(--signal);
+  --blue-dim:       var(--accent-bg);
+  --blue-border:    var(--accent-border);
+  --blue-toggle-bg: rgba(242, 166, 90, 0.06);
+  --grad-blue:      var(--ink);
+
+  /* Border radii — rounder, pill-shaped controls */
+  --r-card:   20px;
+  --r-sheet:  28px;
+  --r-add:    28px;
+  --r-search: 14px;
+  --r-input:  14px;
+  --r-btn:    999px;
+  --r-badge:  999px;
+  --r-tag:    999px;
+  --r-pill:   999px;
 
   /* Typography */
-  --font: "Outfit", system-ui, sans-serif;
+  --font: "Manrope", system-ui, sans-serif;
+
+  color-scheme: dark;
 }
 
 /* ── Light theme ── */
 [data-theme="light"] {
-  --color-bg:        #f4f2ee;
-  --color-surface:   #ffffff;
-  --color-surface-2: #f9f8f6;
-  --color-border:    #e4e1da;
-  --color-border-hi: #cccab8;
+  --ground:  #F4F1EA;
+  --face:    #FFFFFF;
+  --raised:  #FAF8F3;
+  --line:    #E2DDD2;
+  --line-hi: #CFC8BA;
+  --ink:     #141311;
+  --ink-2:   #3F3B35;
+  --muted:   #6B665D;  /* 5:1 on white */
+  --ghost:   #C9C3B7;
+  --signal:  #B8661A;  /* darker amber so it stays readable on white */
+  --on-ink:  #FAF8F3;
+  --danger:  #B4402A;
+  --on-danger: #FFFFFF;
 
-  --color-text:   #0a0906;
-  --color-text-2: #6b6860;
-  --color-text-3: #ababab;
-  --color-text-4: #d4d2cc;
+  --accent-bg:      rgba(184, 102, 26, 0.10);
+  --accent-border:  rgba(184, 102, 26, 0.26);
+  --blue-toggle-bg: rgba(184, 102, 26, 0.06);
 
-  --accent-start:  #D97E00;
-  --accent-end:    #8A4000;
-  --accent-mid:    #B86A00;
-  --accent-bg:     rgba(184, 106, 0, 0.10);
-  --accent-border: rgba(184, 106, 0, 0.22);
-  --grad:   linear-gradient(135deg, #D97E00, #8A4000);
-  --grad-v: linear-gradient(180deg, #D97E00, #8A4000);
-
-  --blue:           #0578A8;
-  --blue-dim:       rgba(5, 120, 168, 0.10);
-  --blue-border:    rgba(5, 120, 168, 0.22);
-  --blue-toggle-bg: rgba(5, 120, 168, 0.08);
-  --grad-blue: linear-gradient(135deg, #0578A8, #034A72);
+  color-scheme: light;
 }
 
 /* ── Reset ── */
@@ -99,6 +125,8 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   line-height: 1.5;
+  /* Same-width digits so numbers don't jump (recipes, scores) */
+  font-variant-numeric: tabular-nums;
   /* Safe area insets for notched phones */
   padding-bottom: env(safe-area-inset-bottom);
   transition: background 0.25s ease, color 0.25s ease;

@@ -146,7 +146,7 @@
 }
 .shop-btn--accent {
   background: var(--grad);
-  color: #fff;
+  color: var(--on-accent);
 }
 .shop-btn--accent:hover:not(:disabled) {
   opacity: 0.88;
@@ -161,7 +161,7 @@
 .shop-add-btn {
   width: 100%;
   background: var(--grad);
-  color: #fff;
+  color: var(--on-accent);
   border: none;
   border-radius: var(--r-add);
   padding: 14px;

@@ -35,7 +35,7 @@
   height: 34px;
   border-radius: 8px;
   background: var(--grad);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 15px;
   font-weight: 700;
   display: flex;
@@ -125,11 +125,11 @@
 }
 .ctr-btn--accent {
   background: var(--grad);
-  color: #fff;
+  color: var(--on-accent);
 }
 .ctr-btn--danger {
-  background: #c8180f;
-  color: #fff;
+  background: var(--danger);
+  color: var(--on-danger);
 }
 
 /* ── Add button strip ── */
@@ -141,7 +141,7 @@
 .ctr-add-btn {
   width: 100%;
   background: var(--grad);
-  color: #fff;
+  color: var(--on-accent);
   border: none;
   border-radius: var(--r-add);
   padding: 14px;

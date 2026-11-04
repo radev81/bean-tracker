@@ -1,54 +1,64 @@
 /**
- * theme.js — Beans Tracker · Neon Espresso
- * Single source of truth for all design tokens.
+ * theme.js — Beans Tracker · Dial design tokens
+ * Mirror of the CSS variables in index.css, for places where JavaScript
+ * needs a colour value (e.g. SVG dials drawn from code, inline styles).
  *
- * CSS variables (index.css) and this file must stay in sync.
- * Use this file whenever JS logic needs a colour value —
- * e.g. canvas drawing, dynamic inline styles, chart colours.
+ * index.css is the source of truth — keep this file in sync with it.
+ * In components, prefer CSS variables (e.g. "var(--signal)") so the
+ * light/dark theme switch keeps working; use these values only when a
+ * literal colour is unavoidable.
  */
 
 export const colors = {
-  // ── Backgrounds ──────────────────────────────────────────
-  bg: "#F4F2EE", // warm paper — page background
-  surface: "#FFFFFF", // card / panel surface
-  border: "#E4E1DA", // default border
-  borderHi: "#CCCAB8", // stronger border (focus rings, dividers)
-
-  // ── Text ─────────────────────────────────────────────────
-  text: "#0A0906", // primary — bean names, headings
-  text2: "#6B6860", // secondary — metadata, detail values
-  text3: "#ABABAB", // muted — labels, placeholders
-  text4: "#D4D2CC", // inactive icons (un-favourite ♥)
-
-  // ── Accent (Neon Espresso) ───────────────────────────────
-  accentStart: "#D97E00", // gradient start — amber
-  accentEnd: "#8A4000", // gradient end — dark amber
-  accentMid: "#B86A00", // mid-point — used for text on light bg
-  accentBg: "rgba(184,106,0,0.10)", // tinted chip background
-  accentBorder: "rgba(184,106,0,0.22)", // tinted chip border
-};
-
-export const gradients = {
-  accent: "linear-gradient(135deg, #D97E00, #8A4000)", // buttons, active fav icon
-  accentVertical: "linear-gradient(180deg, #D97E00, #8A4000)", // expanded card left bar, tab underline
+  dark: {
+    ground: "#0B0B0A", // page background
+    face: "#121211", // cards, dial faces
+    raised: "#161614", // sheets, selected tiles
+    line: "#2A2A27", // borders, dial track
+    lineHi: "#3A3935", // stronger borders, minor ticks
+    ink: "#F3EFE6", // primary text, primary buttons
+    ink2: "#D9D4C8", // secondary text
+    muted: "#A39E93", // labels, metadata
+    ghost: "#4A4844", // inactive icons
+    signal: "#F2A65A", // the one accent: live / selected
+    onInk: "#0B0B0A", // text on ink buttons
+    danger: "#E06A4E",
+  },
+  light: {
+    ground: "#F4F1EA",
+    face: "#FFFFFF",
+    raised: "#FAF8F3",
+    line: "#E2DDD2",
+    lineHi: "#CFC8BA",
+    ink: "#141311",
+    ink2: "#3F3B35",
+    muted: "#6B665D",
+    ghost: "#C9C3B7",
+    signal: "#B8661A",
+    onInk: "#FAF8F3",
+    danger: "#B4402A",
+  },
 };
 
 export const radii = {
-  card: "14px",
-  addBtn: "13px",
-  search: "10px",
-  btn: "8px",
-  badge: "6px",
-  tag: "4px",
-  pill: "20px",
+  card: "20px",
+  sheet: "28px",
+  input: "14px",
+  pill: "999px",
 };
 
-export const font = "'Outfit', system-ui, sans-serif";
+// Dial geometry shared by every round gauge in the app
+export const dial = {
+  sweepDeg: 270, // arc length; the 90° gap sits at the bottom
+  startDeg: 135, // where the arc starts (bottom-left), clockwise
+};
+
+export const font = "'Manrope', system-ui, sans-serif";
 
 export const weights = {
-  light: 300,
+  light: 300, // big dial readouts
   regular: 400,
-  medium: 500,
-  semibold: 600,
+  medium: 500, // titles, bean names
+  semibold: 600, // primary buttons, small caps labels
   bold: 700,
 };

@@ -249,7 +249,7 @@
 .bean-form__btn--save {
   flex: 2;
   background: var(--grad);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .bean-form__btn--save:disabled {

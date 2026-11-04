@@ -37,7 +37,7 @@
 
 .empty-state__btn {
   background: var(--grad);
-  color: #fff;
+  color: var(--on-accent);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.025em;

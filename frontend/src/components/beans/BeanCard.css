@@ -1,6 +1,6 @@
 /* frontend/src/components/beans/BeanCard.css
    Matches the "List · card expanded" mock in design-reference.html
-   Neon Espresso theme — Outfit font — tokens from ROADMAP.md        */
+   Dial theme — Manrope font — tokens from ROADMAP.md        */
 
 /* ── Card shell ──────────────────────────────────────────────────────────── */
 .bc {
@@ -27,7 +27,7 @@
   bottom: 0;
   width: 3px;
   z-index: 2;
-  background: linear-gradient(180deg, #D97E00, #8A4000);
+  background: var(--grad-v);
   border-radius: 3px 0 0 3px;
 }
 
@@ -53,20 +53,21 @@
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
-  font-family: "Outfit", system-ui, sans-serif;
+  font-family: var(--font);
   letter-spacing: 0.05em;
-  color: #ffffff;
+  color: var(--on-accent);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .bc__swipe-btn--edit {
-  background: linear-gradient(180deg, #D97E00, #8A4000);
+  background: var(--grad-v);
 }
 
 .bc__swipe-btn--delete {
-  background: #9b2c2c;
+  background: var(--danger);
+  color: var(--on-danger);
 }
 
 /* ── Header row ─────────────────────────────────────────────────────────── */
@@ -96,7 +97,7 @@
 }
 
 .bc__fav--active {
-  background: linear-gradient(135deg, #D97E00, #8A4000);
+  background: var(--grad);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -273,7 +274,7 @@
   cursor: pointer;
   gap: 0;
   /* Reset default button styles */
-  font-family: "Outfit", system-ui, sans-serif;
+  font-family: var(--font);
 }
 
 .bc-recipe__toggle-opt {
@@ -286,13 +287,13 @@
   transition:
     background 0.15s,
     color 0.15s;
-  font-family: "Outfit", system-ui, sans-serif;
+  font-family: var(--font);
   line-height: 1.4;
 }
 
 .bc-recipe__toggle-opt--active {
   background: var(--grad-blue);
-  color: #ffffff;
+  color: var(--on-accent);
 }
 
 /* ── Recipe value row ────────────────────────────────────────────────────── */
@@ -384,7 +385,7 @@
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;
-  font-family: "Outfit", system-ui, sans-serif;
+  font-family: var(--font);
   cursor: pointer;
   border: none;
   text-align: center;
@@ -402,8 +403,8 @@
 }
 
 .bc__btn--primary {
-  background: linear-gradient(135deg, #D97E00, #8A4000);
-  color: #ffffff;
+  background: var(--grad);
+  color: var(--on-accent);
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */

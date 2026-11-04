@@ -220,7 +220,7 @@
 
 .app-splash__btn {
   background: var(--grad);
-  color: #ffffff;
+  color: var(--on-accent);
   font-size: 16px;
   font-weight: 600;
   padding: 12px 32px;
