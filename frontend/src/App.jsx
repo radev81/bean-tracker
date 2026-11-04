@@ -6,6 +6,8 @@ import BeanList from "./components/beans/BeanList";
 import ContainerQRPage from "./pages/ContainerQRPage";
 import ContainerList from "./components/containers/ContainerList";
 import ShopList from "./components/shops/ShopList";
+// TEMPORARY (step 2): preview of the new UI building blocks — remove before merging
+import UiKit from "./pages/UiKit";
 
 // ── Theme management ──────────────────────────────────────────────────────────
 function useTheme() {
@@ -23,7 +25,7 @@ function useTheme() {
 }
 
 // ── App shell layout (header + tabs + page area) ──────────────────────────────
-// This is only rendered for /beans, /containers, /shops.
+// This is only rendered for /, /containers, /shops (all under /beans/).
 // The QR page (/container/:id) bypasses this entirely.
 function AppShell({ beanCount, onSignOut, theme, onToggleTheme }) {
   const iconSrc =
@@ -58,7 +60,7 @@ function AppShell({ beanCount, onSignOut, theme, onToggleTheme }) {
         </div>
 
         <nav className="app-tabs" aria-label="Main navigation">
-          <NavLink to="/beans" className="app-tab">
+          <NavLink to="/" end className="app-tab">
             {({ isActive }) => (
               <>
                 <span className="app-tab__label">Beans</span>
@@ -205,6 +207,9 @@ export default function App() {
         {/* Standalone route — no header, no tabs */}
         <Route path="/container/:id" element={<ContainerQRPage />} />
 
+        {/* TEMPORARY (step 2): UI kit preview at /beans/kit — remove before merging */}
+        <Route path="/kit" element={<UiKit />} />
+
         {/* All other routes share the AppShell layout */}
         <Route
           element={
@@ -216,14 +221,15 @@ export default function App() {
             />
           }
         >
-          <Route path="/" element={<Navigate to="/beans" replace />} />
           <Route
-            path="/beans"
+            path="/"
             element={<BeanList onCountChange={setBeanCount} />}
           />
+          {/* Old address /beans/beans (bookmarks) → bean list */}
+          <Route path="/beans" element={<Navigate to="/" replace />} />
           <Route path="/containers" element={<ContainerList />} />
           <Route path="/shops" element={<ShopList />} />
-          <Route path="*" element={<Navigate to="/beans" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
     </ApiContext.Provider>

@@ -22,7 +22,10 @@ if (!root) {
 root.render(
   <StrictMode>
     <LogtoProvider config={logtoConfig}>
-      <BrowserRouter>
+      {/* basename = the Vite base path ("/beans/") without the trailing slash.
+          Routes below are then written WITHOUT the /beans prefix:
+          "/" = /beans/, "/containers" = /beans/containers, etc. */}
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "")}>
         <Root />
       </BrowserRouter>
     </LogtoProvider>
