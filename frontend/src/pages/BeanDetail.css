@@ -1,0 +1,268 @@
+/* pages/BeanDetail.css — one bean, full screen (Dial design) */
+
+.bd {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}
+
+.bd-muted {
+  color: var(--muted);
+}
+
+.bd-small {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* ── Top bar ── */
+.bd-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 0;
+}
+
+.bd-bar__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bd-fav--on {
+  color: var(--signal);
+  border-color: var(--accent-border);
+}
+
+/* ── Title + SCA dial ── */
+.bd-hero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 18px 24px 0;
+}
+
+.bd-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.bd-hero__name {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+/* ── Shop + container tiles ── */
+.bd-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 18px 16px 0;
+}
+
+.bd-tile {
+  min-height: 64px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 14px;
+  border-radius: 18px;
+  background: var(--raised);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.bd-tile--row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.bd-tile:focus-visible,
+.bd-tile__link:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.bd-tile__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.bd-tile__value {
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bd-tile__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  font-size: 12px;
+  color: var(--signal);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.bd-tile__link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Tags ── */
+.bd-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 24px 0;
+}
+
+/* ── Origin grid ── */
+.bd-origin {
+  margin: 16px 16px 0;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.bd-origin__grid {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bd-origin__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.bd-origin__item:nth-child(odd) {
+  border-right: 1px solid var(--line);
+}
+
+.bd-origin__item dt {
+  font-size: 10px;
+}
+
+.bd-origin__item dd {
+  margin: 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.bd-add {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.bd-add:hover {
+  color: var(--signal);
+}
+
+/* ── Tasting notes ── */
+.bd-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 24px 0;
+}
+
+.bd-notes__text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  white-space: pre-line;
+}
+
+.bd-notes__text--clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bd-notes__more {
+  align-self: flex-start;
+  padding: 0;
+  color: var(--signal);
+}
+
+/* ── Recipe card ── */
+.bd-card {
+  margin: 18px 16px 0;
+  padding: 16px;
+  border-radius: 24px;
+  background: var(--raised);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bd-recipe__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bd-recipe__ratio {
+  color: var(--signal);
+}
+
+.bd-recipe__values {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.bd-recipe__value {
+  display: flex;
+  flex-direction: column-reverse; /* number above its label */
+  gap: 2px;
+}
+
+.bd-recipe__value dd {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1.1;
+}
+
+.bd-recipe__value dt {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.bd-recipe__notes {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  white-space: pre-line;
+}
+
+/* ── Delete ── */
+.bd-delete {
+  padding: 24px 16px 0;
+}

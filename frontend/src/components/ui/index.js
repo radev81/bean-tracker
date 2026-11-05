@@ -5,5 +5,6 @@ export { default as Dial } from "./Dial";
 export { default as RingBadge } from "./RingBadge";
 export { default as BottomNav } from "./BottomNav";
 export { default as Sheet } from "./Sheet";
+export { default as AccountButton } from "./AccountButton";
 export { Button, Chip, Segmented, Field, PageHeader, SectionLabel } from "./controls";
 export { containerColor } from "./containerColor";

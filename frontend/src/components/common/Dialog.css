@@ -1,9 +1,9 @@
-/* frontend/src/components/shared/Dialog.css */
+/* components/common/Dialog.css — confirmation pop-up (Dial design) */
 
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 9, 6, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,69 +13,68 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .dialog {
-  background: var(--color-surface);
-  border-radius: 16px;
-  padding: 1.5rem;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 22px 20px 18px;
   width: 100%;
-  max-width: 320px;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.22);
+  max-width: 340px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
   animation: slideUp 0.18s ease;
 }
 
 @keyframes slideUp {
-  from {
-    transform: translateY(12px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog-overlay,
+  .dialog {
+    animation: none;
   }
 }
 
 .dialog__icon {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   margin-bottom: 0.75rem;
 }
 
 .dialog__title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text);
-  letter-spacing: -0.02em;
-  margin-bottom: 0.5rem;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
 }
 
 .dialog__body {
-  font-size: 0.8rem;
-  color: var(--color-text-2);
-  line-height: 1.6;
-  margin-bottom: 1.25rem;
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin-bottom: 20px;
 }
 
 .dialog__actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 10px;
 }
 
 .dialog__btn {
   flex: 1;
-  padding: 0.65rem;
-  border-radius: var(--r-btn);
-  font-size: 0.8rem;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 15px;
   font-weight: 600;
   font-family: var(--font);
   cursor: pointer;
-  border: none;
+  border: 1px solid transparent;
   transition: opacity 0.15s;
 }
 
@@ -83,19 +82,28 @@
   opacity: 0.75;
 }
 
-.dialog__btn--secondary {
-  background: transparent;
-  border: 1px solid var(--color-border-hi);
-  color: var(--color-text-2);
+.dialog__btn:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
 }
 
-.dialog__btn--primary {
-  background: var(--grad);
-  color: var(--on-accent);
+/* "secondary" and "ghost" = outline button */
+.dialog__btn--secondary,
+.dialog__btn--ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* "primary" and "accent" = solid ink button */
+.dialog__btn--primary,
+.dialog__btn--accent {
+  background: var(--ink);
+  color: var(--on-ink);
 }
 
 .dialog__btn--danger {
   background: var(--danger);
   color: var(--on-danger);
-  border: none;
 }

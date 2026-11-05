@@ -1,15 +1,13 @@
 // pages/BeanFormPage.jsx
 // ─────────────────────────────────────────────────────────────────────────────
-// Full-screen page around the existing BeanForm, so adding and editing a bean
-// get their own addresses:
+// Full-screen page around BeanForm, so adding and editing a bean get their
+// own addresses:
 //   /beans/new            → add a bean   (the + button in the bottom bar)
 //   /beans/bean/12/edit   → edit bean 12
 //
-// BeanForm itself is unchanged (validation, duplicate-name and container
-// dialogs all keep working). Its new look comes in step 4.
-//
-// After saving, or "View existing" in the duplicate dialog, we go back to the
-// bean list and tell it which card to open (via router state `expandId`).
+// After saving, or "View existing" in the duplicate dialog, we open that
+// bean's page. The form's own history entry is replaced, so the phone's
+// back button doesn't return to a form that was already saved.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
@@ -17,7 +15,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useApi } from "../api";
 import BeanForm from "../components/beans/BeanForm";
 
-export default function BeanFormPage({ onSaved }) {
+export default function BeanFormPage() {
   const { id } = useParams(); // undefined on /new
   const api = useApi();
   const navigate = useNavigate();
@@ -27,7 +25,7 @@ export default function BeanFormPage({ onSaved }) {
   const [error, setError] = useState(null);
 
   // BeanForm calls onViewExisting(id) and then onClose() straight after.
-  // This flag stops onClose from overriding the "open that card" navigation.
+  // This flag stops onClose from overriding the "open that bean" navigation.
   const leavingRef = useRef(false);
 
   // Editing: load the full bean (with tags and recipes) first
@@ -44,9 +42,9 @@ export default function BeanFormPage({ onSaved }) {
     };
   }, [api, id]);
 
-  function backToList(expandId) {
+  function openBean(beanId) {
     leavingRef.current = true;
-    navigate("/", expandId ? { state: { expandId } } : undefined);
+    navigate(beanId ? `/bean/${beanId}` : "/", { replace: true });
   }
 
   if (loading) return <div className="app-page-message">Loading bean…</div>;
@@ -58,11 +56,8 @@ export default function BeanFormPage({ onSaved }) {
         // key: a fresh form when switching between beans
         key={id ?? "new"}
         bean={bean}
-        onSaved={(saved) => {
-          onSaved?.();
-          backToList(saved?.id);
-        }}
-        onViewExisting={(existingId) => backToList(existingId)}
+        onSaved={(saved) => openBean(saved?.id)}
+        onViewExisting={(existingId) => openBean(existingId)}
         onClose={() => {
           if (leavingRef.current) return;
           // Back to where the user came from; fall back to the list

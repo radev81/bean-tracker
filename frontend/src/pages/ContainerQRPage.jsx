@@ -1,211 +1,188 @@
+// pages/ContainerQRPage.jsx
+// ─────────────────────────────────────────────────────────────────────────────
+// What opens when you scan the QR code on a container:
+//   /beans/container/:id   (CB-72, CB-73)
+//
+//  • One big dial with the container's bean and its espresso ratio — the
+//    "machine screen" view, readable at arm's length next to the grinder
+//  • The recipe numbers, flavour tags and shortcuts to the bean / dial-in
+//  • Empty container → fill it with one of your beans, or add a new bean
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useApi } from "../api";
+import { fmt, getDoubleRecipe, metaLine, ratioNumber } from "../beanUtils";
+import { Button, Chip, Dial, containerColor } from "../components/ui";
+import { BackIcon, DialIcon } from "../components/ui/icons";
 import "./ContainerQRPage.css";
-
-// ─── Small helpers ────────────────────────────────────────────────────────────
-
-// Formats a recipe row into readable numbers with units.
-function RecipeRow({ recipe }) {
-  if (!recipe) return null;
-  return (
-    <div className="qr-recipe">
-      <div className="qr-recipe-label">
-        {recipe.shot_type === "double" ? "Double espresso" : "Single espresso"}
-      </div>
-      <div className="qr-recipe-values">
-        {recipe.dose_in_g != null && (
-          <span>
-            <strong>{recipe.dose_in_g}</strong>
-            <em>g in</em>
-          </span>
-        )}
-        {recipe.yield_out_g != null && (
-          <span>
-            <strong>{recipe.yield_out_g}</strong>
-            <em>g out</em>
-          </span>
-        )}
-        {recipe.time_seconds != null && (
-          <span>
-            <strong>{recipe.time_seconds}</strong>
-            <em>s</em>
-          </span>
-        )}
-        {recipe.temp_celsius != null && (
-          <span>
-            <strong>{recipe.temp_celsius}</strong>
-            <em>°C</em>
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ContainerQRPage() {
   const api = useApi();
   const { id } = useParams(); // the container number from the URL
   const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [container, setContainer] = useState(null);
-  const [bean, setBean] = useState(null);
+  // Results are tagged with the id they belong to, so switching from
+  // /container/1 to /container/2 never shows the old container's data.
+  const [result, setResult] = useState(null); // { forId, container, bean }
+  const [failure, setFailure] = useState(null); // { forId, message }
 
   useEffect(() => {
-    // Reset state whenever the URL id changes (edge case: user navigates
-    // from /container/1 to /container/2 without unmounting)
-    setLoading(true);
-    setError(null);
+    let cancelled = false;
+    api
+      .getContainerCurrentBean(id)
+      .then((data) => !cancelled && setResult({ forId: id, ...data }))
+      .catch((err) =>
+        !cancelled &&
+        setFailure({
+          forId: id,
+          message:
+            err.status === 404
+              ? "There's no container with this number."
+              : "Could not load the container. Check your connection.",
+        }),
+      );
+    return () => {
+      cancelled = true;
+    };
+  }, [api, id]);
 
-    api.getContainerCurrentBean(id)
-      .then((data) => {
-        setContainer(data.container);
-        setBean(data.bean); // null if the container is empty
-      })
-      .catch(() =>
-        setError("Could not load container data. Check your connection."),
-      )
-      .finally(() => setLoading(false));
-  }, [id]);
+  const current = result?.forId === id ? result : null;
+  const error = failure?.forId === id ? failure.message : null;
 
-  // ── Loading ──
-  if (loading) {
+  const bar = (
+    <header className="qr-bar">
+      <Link to="/" className="ui-btn ui-btn--secondary qr-bar__back">
+        <BackIcon size={18} /> All beans
+      </Link>
+    </header>
+  );
+
+  if (error || !current) {
     return (
-      <div className="qr-page">
-        <div className="qr-loading">Loading…</div>
+      <div className="app-fullscreen qr">
+        {bar}
+        <p className="app-page-message">{error || "Loading…"}</p>
       </div>
     );
   }
 
-  // ── Network / 404 error ──
-  if (error || !container) {
-    return (
-      <div className="qr-page">
-        <button className="qr-back" onClick={() => navigate("/")}>
-          ← All beans
-        </button>
-        <div className="qr-error">
-          <div className="qr-error-icon">⚠️</div>
-          <p>{error || "Container not found."}</p>
-        </div>
-      </div>
-    );
-  }
+  const { container, bean } = current;
+  const label = `Container ${container.id} · ${container.name}`;
+  const ring = containerColor(container.name);
 
-  // ── CB-73: container exists but no bean assigned ──
+  // ── CB-73: empty container ─────────────────────────────────────────────────
   if (!bean) {
     return (
-      <div className="qr-page">
-        <button className="qr-back" onClick={() => navigate("/")}>
-          ← All beans
-        </button>
-        <div className="qr-container-badge">{container.name}</div>
-        <div className="qr-empty">
-          <div className="qr-empty-icon">☕</div>
-          <p className="qr-empty-title">No beans assigned</p>
-          <p className="qr-empty-sub">
-            {container.name} doesn't have any coffee beans assigned to it yet.
-          </p>
-          {/* Navigates home; BeanList will handle opening the add form */}
-          <button className="qr-add-btn" onClick={() => navigate("/")}>
-            + Add Coffee Beans
-          </button>
+      <div className="app-fullscreen qr">
+        {bar}
+        <section className="qr-dial">
+          <Dial value={0} min={0} max={1} size={280} ariaLabel={`${label}: empty`}>
+            <span className="qr-dial__label">
+              <span className="qr-dot" style={{ background: ring }} aria-hidden="true" />
+              {label}
+            </span>
+            <span className="ui-dial__value">Empty</span>
+          </Dial>
+        </section>
+        <p className="qr-empty">No beans in this container yet.</p>
+        <div className="qr-actions">
+          <Button
+            variant="primary"
+            block
+            onClick={() => navigate("/containers", { state: { fillId: container.id } })}
+          >
+            Fill with one of your beans
+          </Button>
+          <Link to="/new" className="ui-btn ui-btn--secondary ui-btn--block">
+            Add a new bean
+          </Link>
         </div>
       </div>
     );
   }
 
-  // ── CB-72: container has a bean assigned — show it expanded ──
-  // Prefer the double recipe if available, fall back to single.
-  const recipe =
-    bean.recipes?.find((r) => r.shot_type === "double") ||
-    bean.recipes?.find((r) => r.shot_type === "single") ||
-    null;
+  // ── CB-72: container holds a bean ─────────────────────────────────────────
+  const double = getDoubleRecipe(bean);
+  const recipe = double || bean.recipes?.find((r) => r.shot_type === "single") || null;
+  const ratio = recipe ? ratioNumber(recipe.dose_in_g, recipe.yield_out_g) : null;
+
+  const values = recipe
+    ? [
+        { label: "g in", value: fmt(recipe.dose_in_g) },
+        { label: "g out", value: fmt(recipe.yield_out_g) },
+        { label: "sec", value: recipe.time_seconds },
+        { label: "°C", value: fmt(recipe.temp_celsius) },
+      ]
+    : [];
 
   return (
-    <div className="qr-page">
-      <button className="qr-back" onClick={() => navigate("/")}>
-        ← All beans
-      </button>
+    <div className="app-fullscreen qr">
+      {bar}
 
-      {/* Gradient pill showing which container was scanned */}
-      <div className="qr-container-badge">{container.name}</div>
-
-      {/* The bean card — always shown in its expanded state on this page */}
-      <div className="qr-card">
-        <div className="qr-card-bar" />{" "}
-        {/* left gradient bar, same as expanded BeanCard */}
-        {/* Header row */}
-        <div className="qr-card-header">
-          <span className={`qr-fav-icon${bean.is_favourite ? " active" : ""}`}>
-            ♥
+      <section className="qr-dial">
+        <Dial
+          value={ratio ?? (bean.sca_score || 0)}
+          min={ratio ? 1 : 80}
+          max={ratio ? 3 : 100}
+          ticks={ratio ? 60 : 20}
+          majorEvery={ratio ? 10 : 5}
+          knob={Boolean(ratio || bean.sca_score)}
+          size={280}
+          ariaLabel={
+            ratio
+              ? `${label}: ${bean.name}, ratio 1 to ${ratio.toFixed(1)}`
+              : `${label}: ${bean.name}`
+          }
+        >
+          <span className="qr-dial__label">
+            <span className="qr-dot" style={{ background: ring }} aria-hidden="true" />
+            {label}
           </span>
-          <div className="qr-card-title">
-            <div className="qr-bean-name">{bean.name}</div>
-            <div className="qr-bean-meta">
-              {bean.country}
-              {bean.processing ? ` · ${bean.processing}` : ""}
-              {bean.shop_name ? ` · ${bean.shop_name}` : ""}
+          <span className="ui-dial__value">
+            {ratio ? `1:${ratio.toFixed(1)}` : bean.sca_score ?? "–"}
+          </span>
+          <span className="qr-dial__sub">
+            {ratio ? (double ? "Double shot" : "Single shot") : bean.sca_score ? "SCA score" : "No recipe yet"}
+          </span>
+        </Dial>
+      </section>
+
+      <section className="qr-bean">
+        <h1 className="qr-bean__name">{bean.name}</h1>
+        <p className="qr-bean__meta">{metaLine(bean.shop_name, bean.country, bean.processing)}</p>
+      </section>
+
+      {values.length > 0 && (
+        <dl className="qr-values">
+          {values.map((v) => (
+            <div key={v.label} className="qr-values__item">
+              <dt>{v.label}</dt>
+              <dd>{v.value ?? "–"}</dd>
             </div>
-          </div>
+          ))}
+        </dl>
+      )}
+
+      {recipe?.notes && <p className="qr-notes">{recipe.notes}</p>}
+
+      {bean.tags?.length > 0 && (
+        <div className="qr-tags" aria-label="Flavour tags">
+          {bean.tags.map((t) => (
+            <Chip key={t}>{t}</Chip>
+          ))}
         </div>
-        {/* Detail grid */}
-        <div className="qr-details">
-          {bean.region && (
-            <div className="qr-detail">
-              <span className="qr-dl">Region</span>
-              <span className="qr-dv">{bean.region}</span>
-            </div>
-          )}
-          {bean.altitude && (
-            <div className="qr-detail">
-              <span className="qr-dl">Altitude</span>
-              <span className="qr-dv">{bean.altitude}</span>
-            </div>
-          )}
-          {bean.sca_score && (
-            <div className="qr-detail">
-              <span className="qr-dl">SCA</span>
-              <span className="qr-dv">{bean.sca_score}</span>
-            </div>
-          )}
-          {bean.variety && (
-            <div className="qr-detail">
-              <span className="qr-dl">Variety</span>
-              <span className="qr-dv">{bean.variety}</span>
-            </div>
-          )}
-          {bean.processing && (
-            <div className="qr-detail">
-              <span className="qr-dl">Process</span>
-              <span className="qr-dv">{bean.processing}</span>
-            </div>
-          )}
-          {bean.farm_producer && (
-            <div className="qr-detail">
-              <span className="qr-dl">Farm</span>
-              <span className="qr-dv">{bean.farm_producer}</span>
-            </div>
-          )}
-        </div>
-        {/* Flavour tags */}
-        {bean.tags?.length > 0 && (
-          <div className="qr-tags">
-            {bean.tags.map((tag) => (
-              <span key={tag} className="qr-tag">
-                {tag}
-              </span>
-            ))}
-          </div>
+      )}
+
+      <div className="qr-actions">
+        <Link to={`/bean/${bean.id}`} className="ui-btn ui-btn--primary ui-btn--block">
+          Open bean
+        </Link>
+        {double && (
+          <Link to={`/bean/${bean.id}/dial`} className="ui-btn ui-btn--secondary ui-btn--block">
+            <DialIcon /> Dial in
+          </Link>
         )}
-        {/* Tasting notes */}
-        {bean.notes && <p className="qr-notes">"{bean.notes}"</p>}
-        {/* Recipe */}
-        {recipe && <RecipeRow recipe={recipe} />}
       </div>
     </div>
   );

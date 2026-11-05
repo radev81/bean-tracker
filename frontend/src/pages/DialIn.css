@@ -1,0 +1,147 @@
+/* pages/DialIn.css — recipe dial-in (Dial design) */
+
+.di {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+.di-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 0;
+}
+
+.di-bar__title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.di-bar__name {
+  max-width: 100%;
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.di-bar__spacer {
+  width: 44px;
+  flex: none;
+}
+
+/* ── Dial ── */
+.di-dial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px 0;
+}
+
+.di-ratio {
+  margin-top: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.di-steppers {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.di-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Tiles ── */
+.di-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 20px 16px 0;
+}
+
+.di-tile {
+  position: relative;
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font);
+  cursor: pointer;
+}
+
+.di-tile--on {
+  border: 1.5px solid var(--signal);
+  background: var(--raised);
+}
+
+.di-tile:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* Small dot = changed but not saved yet */
+.di-tile--changed::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--signal);
+}
+
+.di-tile__value {
+  font-size: 20px;
+}
+
+.di-tile__label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.di-error {
+  margin: 12px 24px 0;
+  font-size: 13px;
+  color: var(--danger);
+}
+
+/* ── Save / reset ── */
+.di-actions {
+  display: flex;
+  gap: 10px;
+  padding: 24px 16px 0;
+}
+
+.di-actions > :first-child {
+  flex: none;
+}
+
+.di-actions > :last-child {
+  flex: 1;
+}

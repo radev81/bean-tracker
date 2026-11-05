@@ -1,8 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 
 // Width of the revealed action strip in px.
-// Must match the CSS .bc__swipe-panel width.
-export const SWIPE_PANEL_WIDTH = 120;
+// Must match the width of the action strip in CSS (.bl-row__actions).
+export const SWIPE_PANEL_WIDTH = 140;
 
 const SNAP_DIST      = 44;  // px — minimum drag distance to snap open
 const SNAP_VEL       = 0.3; // px/ms — fast-swipe threshold (snap open even with short drag)
@@ -14,24 +14,29 @@ const DIR_THRESHOLD  = 5;   // px — movement needed before horizontal/vertical
  * Attaches touchstart/touchmove/touchend to `trackRef`. Detects horizontal vs
  * vertical intent before acting so vertical page scrolling is not blocked.
  *
+ * While the finger is down the row follows it; when it lifts the row snaps
+ * open or closed and the parent is told via onOpen / onClose. When nothing is
+ * being dragged, the position simply follows `isOpen` — so the parent can
+ * close a row (e.g. when another row opens) just by changing that prop.
+ *
  * @param {object}   opts
- * @param {boolean}  opts.enabled   – false when the card is expanded (disables all handling)
+ * @param {boolean}  opts.enabled   – false to ignore touches entirely
  * @param {boolean}  opts.isOpen    – controlled open state driven by the parent list
  * @param {function} opts.onOpen    – called when the panel snaps open
  * @param {function} opts.onClose   – called when the panel snaps closed
  *
  * @returns {{ trackRef, offset, transitioning }}
- *   trackRef     – attach to the swipe-track element via ref={trackRef}
- *   offset       – current translation in px (0 = closed, SWIPE_PANEL_WIDTH = fully open)
- *   transitioning – true during snap animation; apply CSS transition while true
+ *   trackRef      – attach to the swipe-track element via ref={trackRef}
+ *   offset        – current translation in px (0 = closed, SWIPE_PANEL_WIDTH = open)
+ *   transitioning – true when not dragging; apply a CSS transition while true
  */
 export function useSwipeReveal({ enabled, isOpen, onOpen, onClose }) {
   const trackRef  = useRef(null);
   const offsetRef = useRef(0);   // mutable ref — always current, avoids stale closures
   const touchRef  = useRef(null);
 
-  const [displayOffset, setDisplayOffset] = useState(0);
-  const [transitioning, setTransitioning] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [dragging, setDragging]     = useState(false);
 
   // Stable callback refs so event handlers don't need to re-register on every render
   const isOpenRef  = useRef(isOpen);
@@ -40,15 +45,6 @@ export function useSwipeReveal({ enabled, isOpen, onOpen, onClose }) {
   useEffect(() => { isOpenRef.current  = isOpen;  }, [isOpen]);
   useEffect(() => { onOpenRef.current  = onOpen;  }, [onOpen]);
   useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
-
-  // External close: when parent sets isOpen=false, animate the panel back to 0
-  useEffect(() => {
-    if (!isOpen && offsetRef.current !== 0) {
-      offsetRef.current = 0;
-      setTransitioning(true);
-      setDisplayOffset(0);
-    }
-  }, [isOpen]);
 
   const handleTouchStart = useCallback((e) => {
     if (!enabled) return;
@@ -63,7 +59,7 @@ export function useSwipeReveal({ enabled, isOpen, onOpen, onClose }) {
       decided:      false,
       isHorizontal: false,
     };
-    setTransitioning(false);
+    offsetRef.current = touchRef.current.startOffset;
   }, [enabled]);
 
   const handleTouchMove = useCallback((e) => {
@@ -78,7 +74,9 @@ export function useSwipeReveal({ enabled, isOpen, onOpen, onClose }) {
       if (absDx < DIR_THRESHOLD && absDy < DIR_THRESHOLD) return;
       tc.decided      = true;
       tc.isHorizontal = absDx > absDy;
+      if (tc.isHorizontal) setDragging(true);
     }
+
     if (!tc.isHorizontal) return; // vertical scroll — let browser handle it
 
     const dx      = tc.startX - t.clientX; // positive = left swipe
@@ -89,7 +87,7 @@ export function useSwipeReveal({ enabled, isOpen, onOpen, onClose }) {
     if (clamped > 0) e.preventDefault();
 
     offsetRef.current = clamped;
-    setDisplayOffset(clamped);
+    setDragOffset(clamped);
     tc.lastX    = t.clientX;
     tc.lastTime = Date.now();
   }, [enabled]);
@@ -106,14 +104,10 @@ export function useSwipeReveal({ enabled, isOpen, onOpen, onClose }) {
     const vel     = totalDx / dt;
     const cur     = offsetRef.current;
 
-    setTransitioning(true);
+    setDragging(false);
     if (cur > SNAP_DIST || vel > SNAP_VEL) {
-      offsetRef.current = SWIPE_PANEL_WIDTH;
-      setDisplayOffset(SWIPE_PANEL_WIDTH);
       onOpenRef.current();
     } else {
-      offsetRef.current = 0;
-      setDisplayOffset(0);
       onCloseRef.current();
     }
   }, [enabled]);
@@ -132,5 +126,9 @@ export function useSwipeReveal({ enabled, isOpen, onOpen, onClose }) {
     };
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-  return { trackRef, offset: displayOffset, transitioning };
+  return {
+    trackRef,
+    offset: dragging ? dragOffset : (isOpen ? SWIPE_PANEL_WIDTH : 0),
+    transitioning: !dragging,
+  };
 }

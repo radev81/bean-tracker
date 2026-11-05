@@ -73,6 +73,11 @@
 .ui-dial__face {
   fill: var(--face);
 }
+/* Coloured outer edge, e.g. the container colour on the Beans hero dial */
+.ui-dial__rim {
+  fill: none;
+  stroke-width: 4;
+}
 .ui-dial__tick {
   stroke: var(--line-hi);
   stroke-width: 1;

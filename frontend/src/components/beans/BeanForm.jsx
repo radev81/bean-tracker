@@ -1,25 +1,46 @@
 // frontend/src/components/beans/BeanForm.jsx
+// ─────────────────────────────────────────────────────────────────────────────
+// Add / edit a bean (CB-25 – CB-41 add, CB-53 – CB-66 edit), Dial design.
+//
+// Used by pages/BeanFormPage.jsx, which passes the FULL bean (with tags and
+// recipes) when editing, or null when adding.
+//
+// Behaviour kept from the previous version:
+//   • Save enabled only when name, shop and country are filled (CB-27/CB-55)
+//   • Shop autocomplete from existing shops; a new name creates a shop (CB-36)
+//   • Duplicate name warning with "View existing" (CB-32/CB-33)
+//   • Container already in use → "Replace?" (CB-39/CB-64/CB-65)
+//   • Discard-changes warning when cancelling an edit (CB-56)
+//   • Only the double-shot recipe is edited; the ratio is calculated
+// New in the Dial design:
+//   • Grouped cards, container picker as tiles, process quick-picks,
+//     flavour tags as removable chips
+//   • Conflicts (409) are now actually shown — before, the error details
+//     were lost in api.js and saving silently failed.
+// ─────────────────────────────────────────────────────────────────────────────
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApi } from "../../api";
+import { getDoubleRecipe } from "../../beanUtils";
 import Dialog from "../common/Dialog";
+import { Button, Chip, Field, RingBadge, SectionLabel, containerColor } from "../ui";
 import "./BeanForm.css";
 
+const PROCESS_PICKS = ["Washed", "Natural", "Honey", "Anaerobic"];
+
+// Split "a, b, c" into ["a","b","c"] (trimmed, no empties)
+const splitTags = (text) =>
+  text
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+const str = (v) => (v != null ? String(v) : "");
+
 // ─────────────────────────────────────────────────────────────────────────────
-//  hasChanges
-//
-//  Returns true if the user has modified anything relative to the original
-//  bean values. Used to decide whether to show the "Discard changes?" warning
-//  on cancel (CB-56).
-//
-//  originalRecipe is a plain object { in, out, time, temp } of strings,
-//  populated from the DB fetch in edit mode (see useEffect below).
+//  hasChanges — true if anything differs from the saved bean (CB-56)
 // ─────────────────────────────────────────────────────────────────────────────
-function hasChanges(
-  bean,
-  fields,
-  originalRecipe = { in: "", out: "", time: "", temp: "", notes: "" },
-) {
+function hasChanges(bean, fields, originalRecipe) {
   if (!bean) return false;
   return (
     fields.name !== (bean.name ?? "") ||
@@ -29,13 +50,11 @@ function hasChanges(
     fields.altitude !== (bean.altitude ?? "") ||
     fields.variety !== (bean.variety ?? "") ||
     fields.processing !== (bean.processing ?? "") ||
-    fields.scaScore !==
-      (bean.sca_score != null ? String(bean.sca_score) : "") ||
+    fields.scaScore !== str(bean.sca_score) ||
     fields.farmProducer !== (bean.farm_producer ?? "") ||
     fields.url !== (bean.url ?? "") ||
     fields.notes !== (bean.notes ?? "") ||
-    fields.containerId !==
-      (bean.container_id != null ? String(bean.container_id) : "") ||
+    fields.containerId !== str(bean.container_id) ||
     fields.tagsInput !== (bean.tags?.join(", ") ?? "") ||
     fields.recipeIn !== originalRecipe.in ||
     fields.recipeOut !== originalRecipe.out ||
@@ -45,14 +64,22 @@ function hasChanges(
   );
 }
 
-export default function BeanForm({
-  bean = null,
-  onClose,
-  onSaved,
-  onViewExisting,
-}) {
+export default function BeanForm({ bean = null, onClose, onSaved, onViewExisting }) {
   const api = useApi();
   const isEditing = bean !== null;
+
+  // The saved double-shot recipe (edit mode) — the starting values and the
+  // reference for "has anything changed?"
+  const originalRecipe = useMemo(() => {
+    const dr = getDoubleRecipe(bean);
+    return {
+      in: str(dr?.dose_in_g),
+      out: str(dr?.yield_out_g),
+      time: str(dr?.time_seconds),
+      temp: str(dr?.temp_celsius),
+      notes: dr?.notes ?? "",
+    };
+  }, [bean]);
 
   // ── Required fields ───────────────────────────────────────────────────────
   const [name, setName] = useState(bean?.name ?? "");
@@ -64,45 +91,33 @@ export default function BeanForm({
   const [altitude, setAltitude] = useState(bean?.altitude ?? "");
   const [variety, setVariety] = useState(bean?.variety ?? "");
   const [processing, setProcessing] = useState(bean?.processing ?? "");
-  const [scaScore, setScaScore] = useState(
-    bean?.sca_score != null ? String(bean.sca_score) : "",
-  );
+  const [scaScore, setScaScore] = useState(str(bean?.sca_score));
   const [farmProducer, setFarmProducer] = useState(bean?.farm_producer ?? "");
   const [url, setUrl] = useState(bean?.url ?? "");
   const [notes, setNotes] = useState(bean?.notes ?? "");
-  const [containerId, setContainerId] = useState(
-    bean?.container_id != null ? String(bean.container_id) : "",
-  );
+  const [containerId, setContainerId] = useState(str(bean?.container_id));
+  // Tags are kept as "a, b, c" text (as before) and shown as chips.
+  // tagDraft is what's being typed in the "Add tag" box.
   const [tagsInput, setTagsInput] = useState(bean?.tags?.join(", ") ?? "");
+  const [tagDraft, setTagDraft] = useState("");
 
-  // ── Espresso recipe fields (double shot) ──────────────────────────────────
-  // All stored as strings so they bind cleanly to <input type="number">.
-  const [recipeIn, setRecipeIn] = useState("");
-  const [recipeOut, setRecipeOut] = useState("");
-  const [recipeTime, setRecipeTime] = useState("");
-  const [recipeTemp, setRecipeTemp] = useState("");
-  const [recipeNotes, setRecipeNotes] = useState("");
+  // ── Espresso recipe (double shot), strings for the number inputs ──────────
+  const [recipeIn, setRecipeIn] = useState(originalRecipe.in);
+  const [recipeOut, setRecipeOut] = useState(originalRecipe.out);
+  const [recipeTime, setRecipeTime] = useState(originalRecipe.time);
+  const [recipeTemp, setRecipeTemp] = useState(originalRecipe.temp);
+  const [recipeNotes, setRecipeNotes] = useState(originalRecipe.notes);
 
-  // Stores the original recipe values fetched from DB (edit mode only).
-  // Used by hasChanges() to detect whether the recipe was modified.
-  const originalRecipeRef = useRef({ in: "", out: "", time: "", temp: "", notes: "" });
-
-  // Auto-calculated ratio — shown read-only in the form.
-  // Recomputed whenever In or Out changes.
+  // Ratio, recalculated whenever In or Out changes
   const recipeRatio = useMemo(() => {
     const inG = parseFloat(recipeIn);
     const outG = parseFloat(recipeOut);
-    if (inG > 0 && outG > 0) {
-      return `1:${parseFloat((outG / inG).toFixed(1))}`;
-    }
-    return "";
+    return inG > 0 && outG > 0 ? `1:${parseFloat((outG / inG).toFixed(1))}` : "";
   }, [recipeIn, recipeOut]);
 
-  // ── Dropdown data ─────────────────────────────────────────────────────────
+  // ── Lists for the shop autocomplete and container picker ──────────────────
   const [shops, setShops] = useState([]);
   const [containers, setContainers] = useState([]);
-
-  // ── Shop autocomplete state ───────────────────────────────────────────────
   const [showShopDropdown, setShowShopDropdown] = useState(false);
   const shopWrapRef = useRef(null);
 
@@ -111,53 +126,21 @@ export default function BeanForm({
   const [occupiedOccupant, setOccupiedOccupant] = useState(null);
   const [pendingPayload, setPendingPayload] = useState(null);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
-
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
-  // ── CB-27 / CB-55: Save enabled only when required fields are filled ───────
-  const canSave = name.trim() && shopInput.trim() && country.trim();
+  // CB-27 / CB-55: Save enabled only when required fields are filled
+  const canSave = Boolean(name.trim() && shopInput.trim() && country.trim());
 
-  // ── Fetch shops and containers on mount ───────────────────────────────────
   useEffect(() => {
     api.getShops().then(setShops).catch(console.error);
-    api.getContainers().then(setContainers).catch(console.error);
+    api
+      .getContainers()
+      .then((list) => setContainers([...list].sort((a, b) => a.id - b.id)))
+      .catch(console.error);
   }, [api]);
 
-  // ── In edit mode: fetch full bean details to pre-fill recipe (and tags) ───
-  // The bean prop passed from BeanList/BeanCard is the list-level object which
-  // does not include recipes or tags. We fetch the full record once on mount.
-  useEffect(() => {
-    if (!isEditing) return;
-    api
-      .getBeanById(bean.id)
-      .then((data) => {
-        // Pre-fill tags only if the prop didn't already supply them
-        if (data.tags?.length > 0 && !tagsInput) {
-          setTagsInput(data.tags.join(", "));
-        }
-
-        // Pre-fill double shot recipe
-        const dr = data.recipes?.find((r) => r.shot_type === "double");
-        if (dr) {
-          const orig = {
-            in: dr.dose_in_g != null ? String(dr.dose_in_g) : "",
-            out: dr.yield_out_g != null ? String(dr.yield_out_g) : "",
-            time: dr.time_seconds != null ? String(dr.time_seconds) : "",
-            temp: dr.temp_celsius != null ? String(dr.temp_celsius) : "",
-            notes: dr.notes ?? "",
-          };
-          originalRecipeRef.current = orig;
-          setRecipeIn(orig.in);
-          setRecipeOut(orig.out);
-          setRecipeTime(orig.time);
-          setRecipeTemp(orig.temp);
-          setRecipeNotes(orig.notes);
-        }
-      })
-      .catch(console.error);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Close shop dropdown on outside click ──────────────────────────────────
+  // Close the shop suggestions when tapping elsewhere
   useEffect(() => {
     function handleOutsideClick(e) {
       if (shopWrapRef.current && !shopWrapRef.current.contains(e.target)) {
@@ -168,42 +151,56 @@ export default function BeanForm({
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
-  const filteredShops = shops.filter((s) =>
-    s.name.toLowerCase().includes(shopInput.toLowerCase()),
+  const filteredShops = shops.filter(
+    (s) =>
+      s.name.toLowerCase().includes(shopInput.toLowerCase()) &&
+      s.name.toLowerCase() !== shopInput.trim().toLowerCase(),
   );
+  const isNewShop =
+    shopInput.trim() !== "" &&
+    shops.length > 0 &&
+    !shops.some((s) => s.name.toLowerCase() === shopInput.trim().toLowerCase());
 
-  // ── Collect current field values for change-detection ─────────────────────
+  // ── Tags ──────────────────────────────────────────────────────────────────
+  const tags = splitTags(tagsInput);
+  const setTags = (list) => setTagsInput(list.join(", "));
+
+  function addDraftTags() {
+    const fresh = splitTags(tagDraft).filter(
+      (t) => !tags.some((x) => x.toLowerCase() === t.toLowerCase()),
+    );
+    if (fresh.length) setTags([...tags, ...fresh]);
+    setTagDraft("");
+  }
+
+  function handleTagKeyDown(e) {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addDraftTags();
+    } else if (e.key === "Backspace" && tagDraft === "" && tags.length > 0) {
+      setTags(tags.slice(0, -1));
+    }
+  }
+
+  // ── Change detection ──────────────────────────────────────────────────────
   function currentFields() {
     return {
-      name,
-      shopInput,
-      country,
-      region,
-      altitude,
-      variety,
-      processing,
-      scaScore,
-      farmProducer,
-      url,
-      notes,
-      containerId,
-      tagsInput,
-      recipeIn,
-      recipeOut,
-      recipeTime,
-      recipeTemp,
-      recipeNotes,
+      name, shopInput, country, region, altitude, variety, processing,
+      scaScore, farmProducer, url, notes, containerId, tagsInput,
+      recipeIn, recipeOut, recipeTime, recipeTemp, recipeNotes,
     };
   }
 
   // ── Build the API payload ─────────────────────────────────────────────────
-  function buildPayload(overrides = {}) {
+  function buildPayload() {
     const hasRecipe =
-      recipeIn.trim() ||
-      recipeOut.trim() ||
-      recipeTime.trim() ||
-      recipeTemp.trim() ||
-      recipeNotes.trim();
+      recipeIn.trim() || recipeOut.trim() || recipeTime.trim() || recipeTemp.trim() || recipeNotes.trim();
+
+    // A tag still being typed counts too
+    const allTags = [...tags];
+    splitTags(tagDraft).forEach((t) => {
+      if (!allTags.some((x) => x.toLowerCase() === t.toLowerCase())) allTags.push(t);
+    });
 
     return {
       name: name.trim(),
@@ -218,11 +215,8 @@ export default function BeanForm({
       url: url.trim() || null,
       notes: notes.trim() || null,
       container_id: containerId ? parseInt(containerId, 10) : null,
-      flavour_tags: tagsInput
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean),
-      // Double shot recipe — send as array so the API handles upsert/delete
+      flavour_tags: allTags,
+      // Double-shot recipe — the API upserts it, or removes it when empty
       recipes: hasRecipe
         ? [
             {
@@ -236,80 +230,60 @@ export default function BeanForm({
             },
           ]
         : [],
-      ...overrides,
     };
   }
 
-  // ── Core save logic ───────────────────────────────────────────────────────
+  // ── Save, with conflict handling ──────────────────────────────────────────
+  // The API answers 409 for conflicts; api.js puts the reply in err.data.
   async function attemptSave(payload) {
     setSaving(true);
+    setSaveError(null);
     try {
-      let data;
-      if (isEditing) {
-        data = await api.updateBean(bean.id, payload);
-      } else {
-        data = await api.createBean(payload);
-      }
-
-      if (data.conflict === "duplicate_name") {
-        setDuplicateBean(data.existingBean);
-        setPendingPayload(payload);
-        return;
-      }
-      if (data.conflict === "container_occupied") {
-        setOccupiedOccupant(data.occupant);
-        setPendingPayload(payload);
-        return;
-      }
-
+      const data = isEditing
+        ? await api.updateBean(bean.id, payload)
+        : await api.createBean(payload);
       onSaved(data);
     } catch (err) {
-      console.error("Save failed:", err);
+      const conflict = err.data?.conflict;
+      if (conflict === "duplicate_name") {
+        setDuplicateBean(err.data.existingBean);
+        setPendingPayload(payload);
+      } else if (conflict === "container_occupied") {
+        setOccupiedOccupant(err.data.occupant);
+        setPendingPayload(payload);
+      } else {
+        console.error("Save failed:", err);
+        setSaveError("Could not save. Check your connection and try again.");
+      }
     } finally {
       setSaving(false);
     }
   }
 
-  function handleSave() {
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!canSave || saving) return;
     attemptSave(buildPayload());
   }
 
-  // ── Cancel / discard logic ────────────────────────────────────────────────
+  // ── Cancel / discard (CB-56) ──────────────────────────────────────────────
   function handleCancel() {
-    if (
-      isEditing &&
-      hasChanges(bean, currentFields(), originalRecipeRef.current)
-    ) {
+    if (isEditing && hasChanges(bean, currentFields(), originalRecipe)) {
       setShowDiscardDialog(true);
     } else {
       onClose();
     }
   }
 
-  function handleKeepEditing() {
-    setShowDiscardDialog(false);
-  }
-  function handleDiscard() {
-    setShowDiscardDialog(false);
-    onClose();
-  }
-
-  // ── Duplicate bean dialog ─────────────────────────────────────────────────
-  function handleDuplicateCancel() {
-    setDuplicateBean(null);
-    setPendingPayload(null);
-  }
+  // ── Duplicate dialog (CB-32/33) ───────────────────────────────────────────
   function handleViewExistingBean() {
+    const existingId = duplicateBean.id;
     setDuplicateBean(null);
-    onViewExisting(duplicateBean.id);
+    onViewExisting(existingId);
     onClose();
   }
 
-  // ── Container occupied dialog ─────────────────────────────────────────────
-  function handleOccupiedCancel() {
-    setOccupiedOccupant(null);
-    setPendingPayload(null);
-  }
+  // ── Container occupied dialog (CB-39/64/65) ───────────────────────────────
   function handleReplaceContainer() {
     setOccupiedOccupant(null);
     attemptSave({ ...pendingPayload, replaceContainer: true });
@@ -317,373 +291,324 @@ export default function BeanForm({
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="bean-form">
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="bean-form__header">
-        <div className="bean-form__header-brand">
-          Beans
-          <br />
-          Tracker
-        </div>
-        <div className="bean-form__header-subtitle">
-          {isEditing ? "Edit card" : "New card"}
-        </div>
-      </div>
+    <form className="bfm" onSubmit={handleSubmit} noValidate>
+      <header className="bfm-head">
+        <span className="ui-eyebrow">{isEditing ? "Edit bean" : "New bean"}</span>
+        <h1 className="bfm-head__title">{isEditing ? bean.name : "Add a bean"}</h1>
+      </header>
 
-      {/* ── Scrollable body ────────────────────────────────────────────── */}
-      <div className="bean-form__body">
-        {/* ── Required section ──────────────────────────────────────── */}
-        <div className="bf-section">
-          <div className="bf-section-label bf-section-label--required">
-            Required
-          </div>
+      {/* ── Required ─────────────────────────────────────────────────── */}
+      <section className="bfm-card" aria-labelledby="bfm-req">
+        <SectionLabel as="h2" accent>
+          <span id="bfm-req">Required</span>
+        </SectionLabel>
 
-          <div className="bf-field">
-            <label className="bf-label">Bean name</label>
-            <input
-              className="bf-input"
-              type="text"
-              placeholder="e.g. Yirgacheffe Kochere"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+        <Field
+          label="Bean name"
+          placeholder="e.g. Yirgacheffe Kochere"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
 
-          {/* Shop with autocomplete */}
-          <div
-            className="bf-field"
-            ref={shopWrapRef}
-            style={{ position: "relative" }}
-          >
-            <label className="bf-label">Shop</label>
-            <input
-              className="bf-input"
-              type="text"
-              placeholder="e.g. Nomad Coffee"
-              value={shopInput}
-              autoComplete="off"
-              onChange={(e) => {
-                setShopInput(e.target.value);
-                setShowShopDropdown(true);
-              }}
-              onFocus={() => setShowShopDropdown(true)}
-            />
-            {showShopDropdown && filteredShops.length > 0 && (
-              <div className="bf-dropdown">
-                {filteredShops.map((s) => (
-                  <div
-                    key={s.id}
-                    className="bf-dropdown__item"
-                    onMouseDown={() => {
+        {/* Shop with suggestions from your existing shops */}
+        <div className="bfm-shop" ref={shopWrapRef}>
+          <Field
+            label="Shop"
+            placeholder="e.g. Nomad"
+            value={shopInput}
+            autoComplete="off"
+            onChange={(e) => {
+              setShopInput(e.target.value);
+              setShowShopDropdown(true);
+            }}
+            onFocus={() => setShowShopDropdown(true)}
+            onKeyDown={(e) => e.key === "Escape" && setShowShopDropdown(false)}
+            hint={isNewShop ? "New shop — it will be added to your Shops list" : "Pick one of your shops or type a new one"}
+            required
+          />
+          {showShopDropdown && filteredShops.length > 0 && (
+            <ul className="bfm-suggest" aria-label="Your shops">
+              {filteredShops.slice(0, 8).map((s) => (
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    className="bfm-suggest__item"
+                    onClick={() => {
                       setShopInput(s.name);
                       setShowShopDropdown(false);
                     }}
                   >
                     {s.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="bf-field">
-            <label className="bf-label">Country of origin</label>
-            <input
-              className="bf-input"
-              type="text"
-              placeholder="e.g. Ethiopia"
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* ── Optional section ──────────────────────────────────────── */}
-        <div className="bf-section">
-          <div className="bf-section-label">Optional</div>
-
-          <div className="bf-field">
-            <label className="bf-label">Shop URL</label>
-            <input
-              className="bf-input"
-              type="url"
-              placeholder="https://…"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
-          </div>
-
-          <div className="bf-field">
-            <label className="bf-label">Container</label>
-            <select
-              className="bf-input bf-select"
-              value={containerId}
-              onChange={(e) => setContainerId(e.target.value)}
-            >
-              <option value="">None assigned</option>
-              {containers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                  {c.bean_name ? ` · ${c.bean_name}` : ""}
-                </option>
+                    <span className="bfm-suggest__count">{s.bean_count}</span>
+                  </button>
+                </li>
               ))}
-            </select>
-          </div>
-
-          <div className="bf-row">
-            <div className="bf-field">
-              <label className="bf-label">Region</label>
-              <input
-                className="bf-input"
-                type="text"
-                placeholder="e.g. Huila"
-                value={region}
-                onChange={(e) => setRegion(e.target.value)}
-              />
-            </div>
-            <div className="bf-field">
-              <label className="bf-label">Altitude</label>
-              <input
-                className="bf-input"
-                type="text"
-                placeholder="e.g. 1,800m"
-                value={altitude}
-                onChange={(e) => setAltitude(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="bf-row">
-            <div className="bf-field">
-              <label className="bf-label">Variety</label>
-              <input
-                className="bf-input"
-                type="text"
-                placeholder="e.g. Caturra"
-                value={variety}
-                onChange={(e) => setVariety(e.target.value)}
-              />
-            </div>
-            <div className="bf-field">
-              <label className="bf-label">Process</label>
-              <input
-                className="bf-input"
-                type="text"
-                placeholder="e.g. Washed"
-                value={processing}
-                onChange={(e) => setProcessing(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="bf-row">
-            <div className="bf-field">
-              <label className="bf-label">SCA Score</label>
-              <input
-                className="bf-input"
-                type="number"
-                placeholder="87.5"
-                min="0"
-                max="100"
-                step="0.25"
-                value={scaScore}
-                onChange={(e) => setScaScore(e.target.value)}
-              />
-            </div>
-            <div className="bf-field">
-              <label className="bf-label">Farm / Producer</label>
-              <input
-                className="bf-input"
-                type="text"
-                placeholder="e.g. El Paraíso"
-                value={farmProducer}
-                onChange={(e) => setFarmProducer(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="bf-field">
-            <label className="bf-label">Flavour tags</label>
-            <input
-              className="bf-input"
-              type="text"
-              placeholder="e.g. Jasmine, Peach, Bergamot"
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
-            />
-            <div className="bf-hint">Separate tags with commas</div>
-          </div>
-
-          <div className="bf-field">
-            <label className="bf-label">Tasting notes</label>
-            <textarea
-              className="bf-input bf-textarea"
-              rows={3}
-              placeholder="Free text…"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* ── Espresso recipe section (double shot) ─────────────────── */}
-        {/* Only double shot values are stored. The card derives single   */}
-        {/* shot values by halving In and Out. Ratio is auto-calculated. */}
-        <div className="bf-section">
-          <div className="bf-section-label">Espresso recipe · double shot</div>
-
-          <div className="bf-row">
-            <div className="bf-field">
-              <label className="bf-label">In (g)</label>
-              <input
-                className="bf-input"
-                type="number"
-                placeholder="18"
-                min="0"
-                step="0.1"
-                value={recipeIn}
-                onChange={(e) => setRecipeIn(e.target.value)}
-              />
-            </div>
-            <div className="bf-field">
-              <label className="bf-label">Out (g)</label>
-              <input
-                className="bf-input"
-                type="number"
-                placeholder="36"
-                min="0"
-                step="0.1"
-                value={recipeOut}
-                onChange={(e) => setRecipeOut(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="bf-row">
-            <div className="bf-field">
-              <label className="bf-label">Time (s)</label>
-              <input
-                className="bf-input"
-                type="number"
-                placeholder="30"
-                min="0"
-                step="1"
-                value={recipeTime}
-                onChange={(e) => setRecipeTime(e.target.value)}
-              />
-            </div>
-            <div className="bf-field">
-              <label className="bf-label">Temp (°C)</label>
-              <input
-                className="bf-input"
-                type="number"
-                placeholder="93"
-                min="0"
-                step="0.5"
-                value={recipeTemp}
-                onChange={(e) => setRecipeTemp(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Auto-calculated ratio — only shown when both In and Out are set */}
-          {recipeRatio && (
-            <div className="bf-ratio">
-              <span className="bf-ratio__label">Ratio</span>
-              <span className="bf-ratio__value">{recipeRatio}</span>
-              <span className="bf-ratio__hint">auto-calculated</span>
-            </div>
+            </ul>
           )}
+        </div>
 
-          <div className="bf-field">
-            <label className="bf-label">Notes</label>
-            <textarea
-              className="bf-input bf-textarea"
-              rows={3}
-              placeholder="Free text…"
-              value={recipeNotes}
-              onChange={(e) => setRecipeNotes(e.target.value)}
-            />
+        <Field
+          label="Country of origin"
+          placeholder="e.g. Ethiopia"
+          value={country}
+          onChange={(e) => setCountry(e.target.value)}
+          required
+        />
+      </section>
+
+      {/* ── Container ────────────────────────────────────────────────── */}
+      {containers.length > 0 && (
+        <section className="bfm-card" aria-labelledby="bfm-ctr">
+          <SectionLabel as="h2">
+            <span id="bfm-ctr">Container</span>
+          </SectionLabel>
+          <div className="bfm-tiles" role="radiogroup" aria-labelledby="bfm-ctr">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={containerId === ""}
+              className={`bfm-tile${containerId === "" ? " bfm-tile--on" : ""}`}
+              onClick={() => setContainerId("")}
+            >
+              <span className="bfm-tile__name">None</span>
+            </button>
+            {containers.map((c) => {
+              const on = containerId === String(c.id);
+              const takenByOther = c.bean_id && (!bean || c.bean_id !== bean.id);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  className={`bfm-tile${on ? " bfm-tile--on" : ""}`}
+                  onClick={() => setContainerId(String(c.id))}
+                >
+                  <RingBadge size={28} ringColor={containerColor(c.name)}>
+                    {c.id}
+                  </RingBadge>
+                  <span className="bfm-tile__name">{c.name}</span>
+                  <span className="bfm-tile__sub">
+                    {takenByOther ? `has ${c.bean_name}` : "empty"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ── Origin & cup ─────────────────────────────────────────────── */}
+      <section className="bfm-card" aria-labelledby="bfm-origin">
+        <SectionLabel as="h2">
+          <span id="bfm-origin">Origin &amp; cup · optional</span>
+        </SectionLabel>
+
+        <div className="bfm-grid">
+          <Field label="Region" placeholder="e.g. Huila" value={region} onChange={(e) => setRegion(e.target.value)} />
+          <Field label="Altitude" placeholder="e.g. 1,800 m" value={altitude} onChange={(e) => setAltitude(e.target.value)} />
+          <Field label="Variety" placeholder="e.g. Caturra" value={variety} onChange={(e) => setVariety(e.target.value)} />
+          <Field
+            label="SCA score"
+            type="number"
+            inputMode="decimal"
+            placeholder="87.5"
+            min="0"
+            max="100"
+            step="0.25"
+            value={scaScore}
+            onChange={(e) => setScaScore(e.target.value)}
+          />
+        </div>
+
+        <div className="bfm-process">
+          <Field
+            label="Process"
+            placeholder="e.g. Washed"
+            value={processing}
+            onChange={(e) => setProcessing(e.target.value)}
+          />
+          <div className="bfm-picks" role="group" aria-label="Quick pick process">
+            {PROCESS_PICKS.map((p) => (
+              <Chip
+                key={p}
+                selected={processing.trim().toLowerCase() === p.toLowerCase()}
+                onClick={() => setProcessing(p)}
+              >
+                {p}
+              </Chip>
+            ))}
           </div>
         </div>
-      </div>
-      {/* end bean-form__body */}
 
-      {/* ── Footer buttons ────────────────────────────────────────────── */}
-      <div className="bean-form__footer">
-        <button
-          className="bean-form__btn bean-form__btn--cancel"
-          onClick={handleCancel}
-        >
+        <Field
+          label="Farm / producer"
+          placeholder="e.g. El Paraíso"
+          value={farmProducer}
+          onChange={(e) => setFarmProducer(e.target.value)}
+        />
+
+        {/* Flavour tags as chips */}
+        <div className="ui-field">
+          <label className="ui-field__label" htmlFor="bfm-tag-input">
+            Flavour tags
+          </label>
+          <div className="bfm-tags">
+            {tags.map((t) => (
+              <Chip key={t} onRemove={() => setTags(tags.filter((x) => x !== t))}>
+                {t}
+              </Chip>
+            ))}
+            <input
+              id="bfm-tag-input"
+              className="bfm-tags__input"
+              placeholder={tags.length ? "Add tag…" : "e.g. Jasmine, Peach"}
+              value={tagDraft}
+              onChange={(e) => setTagDraft(e.target.value)}
+              onKeyDown={handleTagKeyDown}
+              onBlur={addDraftTags}
+              aria-describedby="bfm-tag-hint"
+            />
+          </div>
+          <span id="bfm-tag-hint" className="ui-field__hint">
+            Press Enter or comma to add a tag
+          </span>
+        </div>
+
+        <Field
+          label="Tasting notes"
+          as="textarea"
+          rows={4}
+          placeholder="What does it taste like?"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+
+        <Field
+          label="Product page"
+          type="url"
+          inputMode="url"
+          placeholder="https://…"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          hint="Link to this bean at the shop"
+        />
+      </section>
+
+      {/* ── Espresso recipe (double shot) ────────────────────────────── */}
+      <section className="bfm-card" aria-labelledby="bfm-recipe">
+        <div className="bfm-recipe-head">
+          <SectionLabel as="h2">
+            <span id="bfm-recipe">Espresso recipe · double</span>
+          </SectionLabel>
+          {recipeRatio && <span className="bfm-ratio">Ratio {recipeRatio}</span>}
+        </div>
+        <div className="bfm-recipe">
+          {[
+            { label: "In", unit: "g", value: recipeIn, set: setRecipeIn, ph: "18", step: "0.1", mode: "decimal" },
+            { label: "Out", unit: "g", value: recipeOut, set: setRecipeOut, ph: "36", step: "0.1", mode: "decimal" },
+            { label: "Time", unit: "s", value: recipeTime, set: setRecipeTime, ph: "30", step: "1", mode: "numeric" },
+            { label: "Temp", unit: "°C", value: recipeTemp, set: setRecipeTemp, ph: "93", step: "0.5", mode: "decimal" },
+          ].map((r) => (
+            <label key={r.label} className="bfm-recipe__tile">
+              <input
+                type="number"
+                inputMode={r.mode}
+                min="0"
+                step={r.step}
+                placeholder={r.ph}
+                value={r.value}
+                onChange={(e) => r.set(e.target.value)}
+              />
+              <span className="bfm-recipe__label">
+                {r.label} {r.unit}
+              </span>
+            </label>
+          ))}
+        </div>
+        <Field
+          label="Recipe notes"
+          as="textarea"
+          rows={3}
+          placeholder="Grind setting, basket, puck prep…"
+          value={recipeNotes}
+          onChange={(e) => setRecipeNotes(e.target.value)}
+        />
+      </section>
+
+      {saveError && (
+        <p className="bfm-error" role="alert">
+          {saveError}
+        </p>
+      )}
+
+      {/* ── Sticky footer ────────────────────────────────────────────── */}
+      <div className="bfm-foot">
+        <Button variant="secondary" onClick={handleCancel}>
           Cancel
-        </button>
-        <button
-          className="bean-form__btn bean-form__btn--save"
-          disabled={!canSave || saving}
-          onClick={handleSave}
-        >
-          {saving ? "Saving…" : isEditing ? "Save changes" : "Save Bean"}
-        </button>
+        </Button>
+        <Button variant="primary" type="submit" disabled={!canSave || saving}>
+          {saving ? "Saving…" : isEditing ? "Save changes" : "Save bean"}
+        </Button>
       </div>
 
-      {/* ── Discard changes warning — CB-56 ───────────────────────────── */}
+      {/* ── Discard changes (CB-56) ── */}
       {showDiscardDialog && (
         <Dialog
-          icon="✏️"
           title="Discard changes?"
           body="You have unsaved changes. Discard them and close, or keep editing?"
           actions={[
+            { label: "Keep editing", variant: "secondary", onClick: () => setShowDiscardDialog(false) },
             {
-              label: "Keep editing",
-              variant: "secondary",
-              onClick: handleKeepEditing,
+              label: "Discard",
+              variant: "danger",
+              onClick: () => {
+                setShowDiscardDialog(false);
+                onClose();
+              },
             },
-            { label: "Discard", variant: "danger", onClick: handleDiscard },
           ]}
         />
       )}
 
-      {/* ── Duplicate bean warning — CB-32 ────────────────────────────── */}
+      {/* ── Duplicate bean (CB-32) ── */}
       {duplicateBean && (
         <Dialog
-          icon="⚠️"
-          title={`"${duplicateBean.name}" already exists`}
-          body="A card for these beans is already in your collection. View the existing card or go back and make changes."
+          title={`“${duplicateBean.name}” already exists`}
+          body="This bean is already in your collection. Open the existing one, or go back and change the name."
           actions={[
             {
               label: "Cancel",
               variant: "secondary",
-              onClick: handleDuplicateCancel,
+              onClick: () => {
+                setDuplicateBean(null);
+                setPendingPayload(null);
+              },
             },
-            {
-              label: "View existing",
-              variant: "primary",
-              onClick: handleViewExistingBean,
-            },
+            { label: "View existing", variant: "primary", onClick: handleViewExistingBean },
           ]}
         />
       )}
 
-      {/* ── Container occupied warning — CB-39 / CB-64 ────────────────── */}
+      {/* ── Container occupied (CB-39 / CB-64) ── */}
       {occupiedOccupant && (
         <Dialog
-          icon="📦"
           title="Container already in use"
-          body={`This container currently holds "${occupiedOccupant.name}". Replace it with the new beans?`}
+          body={`This container holds “${occupiedOccupant.name}”. Replace it? That bean stays in your list without a container.`}
           actions={[
             {
               label: "Cancel",
               variant: "secondary",
-              onClick: handleOccupiedCancel,
+              onClick: () => {
+                setOccupiedOccupant(null);
+                setPendingPayload(null);
+              },
             },
-            {
-              label: "Replace",
-              variant: "danger",
-              onClick: handleReplaceContainer,
-            },
+            { label: "Replace", variant: "danger", onClick: handleReplaceContainer },
           ]}
         />
       )}
-    </div>
+    </form>
   );
 }

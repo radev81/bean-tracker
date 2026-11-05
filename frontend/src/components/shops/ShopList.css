@@ -1,177 +1,120 @@
-/* ── Page wrapper ─────────────────────────────────────────────────────────── */
+/* components/shops/ShopList.css — Shops tab (Dial design) */
+
 .shop-page {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
-}
-
-/* ── List ─────────────────────────────────────────────────────────────────── */
-.shop-list {
   flex: 1;
-  padding: 12px 12px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
 }
 
-/* ── Row ──────────────────────────────────────────────────────────────────── */
+.shop-page__message {
+  padding: 32px 24px;
+  color: var(--muted);
+}
+
+.shop-page__sort {
+  padding: 16px 16px 4px;
+}
+
+.shop-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 16px 0;
+}
+
 .shop-row {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-card);
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  transition: border-color 0.15s;
-}
-.shop-row--edit {
-  border-color: var(--accent-mid);
-}
-.shop-row--new {
-  border-color: var(--accent-mid);
-  align-items: stretch;
-  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 64px;
+  border-top: 1px solid var(--line);
 }
 
-/* ── Icon ─────────────────────────────────────────────────────────────────── */
-.shop-icon {
-  font-size: 20px;
-  flex-shrink: 0;
-  align-self: flex-start;
-  padding-top: 1px;
+.shop-row:first-child {
+  border-top: none;
 }
 
-/* ── Body ─────────────────────────────────────────────────────────────────── */
-.shop-body {
+/* The tappable part: ring + name + website + count */
+.shop-row__main {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px 10px 8px;
+  border-radius: 14px;
+  color: var(--ink);
+  text-decoration: none;
 }
-.shop-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-text);
-  letter-spacing: -0.01em;
+
+.shop-row__main:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: -2px;
+}
+
+.shop-row__text {
+  flex: 1;
+  min-width: 0; /* lets long names/links shrink and get "…" */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shop-row__name,
+.shop-row__site {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.shop-meta {
-  font-size: 13px;
-  color: var(--color-text-3);
-  line-height: 1.4;
-}
-.shop-link {
-  color: var(--accent-mid);
-  text-decoration: none;
-}
-.shop-link:hover {
-  text-decoration: underline;
-}
 
-/* ── Bean count badge ─────────────────────────────────────────────────────── */
-.shop-badge {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent-mid);
-  background: var(--accent-bg);
-  border: 1px solid var(--accent-border);
-  padding: 3px 8px;
-  border-radius: var(--r-badge);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* ── Text inputs ──────────────────────────────────────────────────────────── */
-.shop-input {
-  width: 100%;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-hi);
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-family: var(--font);
+.shop-row__name {
   font-size: 15px;
-  color: var(--color-text);
-  outline: none;
-  transition: border-color 0.15s;
-}
-.shop-input:focus {
-  border-color: var(--accent-mid);
-}
-.shop-input--url {
-  font-size: 14px;
-  color: var(--color-text-2);
+  font-weight: 500;
 }
 
-/* ── Action buttons ───────────────────────────────────────────────────────── */
-.shop-actions {
+.shop-row__site {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.shop-row__count {
+  flex: none;
+  min-width: 28px;
+  text-align: right;
+  font-size: 22px;
+  font-weight: 300;
+}
+
+.shop-row--empty .shop-row__count {
+  color: var(--ghost);
+}
+
+/* ── Edit sheet ── */
+.shop-editor {
   display: flex;
-  gap: 6px;
-  flex-shrink: 0;
-  align-items: center;
+  flex-direction: column;
+  gap: 14px;
 }
 
-/* For the new row, push actions to the right */
-.shop-row--new .shop-actions {
-  width: 100%;
-  justify-content: flex-end;
-  padding-top: 2px;
+.shop-editor__actions {
+  display: flex;
+  gap: 10px;
 }
 
-.shop-btn {
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: var(--r-btn);
-  padding: 7px 12px;
-  cursor: pointer;
-  border: none;
-  transition: opacity 0.15s;
-}
-.shop-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-.shop-btn--ghost {
-  background: transparent;
-  border: 1px solid var(--color-border-hi);
-  color: var(--color-text-3);
-}
-.shop-btn--ghost:hover:not(:disabled) {
-  border-color: var(--color-text-3);
-  color: var(--color-text-2);
-}
-.shop-btn--accent {
-  background: var(--grad);
-  color: var(--on-accent);
-}
-.shop-btn--accent:hover:not(:disabled) {
-  opacity: 0.88;
+.shop-editor__actions > * {
+  flex: 1;
 }
 
-/* ── Add button strip ─────────────────────────────────────────────────────── */
-.shop-add-wrap {
-  padding: 10px 12px 16px;
-  border-top: 1px solid var(--color-border);
-  margin-top: 12px;
+.shop-editor__remove {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
 }
-.shop-add-btn {
-  width: 100%;
-  background: var(--grad);
-  color: var(--on-accent);
-  border: none;
-  border-radius: var(--r-add);
-  padding: 14px;
-  font-family: var(--font);
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.shop-add-btn:hover {
-  opacity: 0.88;
+
+.shop-editor__note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
 }

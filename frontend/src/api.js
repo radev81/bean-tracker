@@ -22,6 +22,9 @@ export function createApiClient(getAccessToken) {
     if (!res.ok) {
       const error = new Error(data?.error || `API error ${res.status}`);
       error.status = res.status;
+      // Keep the server's reply: 409 conflicts carry details we need
+      // (e.g. { conflict: "duplicate_name", existingBean })
+      error.data = data;
       throw error;
     }
     return data;

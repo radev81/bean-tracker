@@ -1,249 +1,154 @@
-import { useState, useEffect } from "react";
+// components/shops/ShopList.jsx
+// ─────────────────────────────────────────────────────────────────────────────
+// Shops tab (SH-01 – SH-08, plus edit and remove).
+//
+//  • Header: shop and bean totals, "New" button, account button
+//  • Sort: Most beans | A–Z (remembered on this device)
+//  • Each row: initial ring · name · website · bean count · ⋯
+//      – tap the row  → bean list filtered to this shop
+//      – ↗ icon       → opens the shop's website in a new tab
+//      – ⋯            → edit sheet (name, website, remove)
+//  • A shop can only be removed when no beans use it (the database blocks it
+//    too — ON DELETE RESTRICT), so Remove is disabled with an explanation.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { useApi } from "../../api";
+import { externalUrl, hostname } from "../../beanUtils";
 import Dialog from "../common/Dialog";
 import EmptyState from "../common/EmptyState";
+import {
+  AccountButton,
+  Button,
+  Field,
+  PageHeader,
+  RingBadge,
+  Segmented,
+  Sheet,
+} from "../ui";
+import { ExternalIcon, MoreIcon, PlusIcon } from "../ui/icons";
 import "./ShopList.css";
 
-// ── Single shop row ───────────────────────────────────────────────────────────
-function ShopRow({ shop, onSaved, onRemoved }) {
+const SORT_KEY = "bt-shop-sort";
+const SORTS = [
+  { value: "count", label: "Most beans" },
+  { value: "az", label: "A–Z" },
+];
+
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+// ── Edit / new shop sheet ─────────────────────────────────────────────────────
+// shop = null → create a new shop
+function ShopEditor({ shop, open, onClose, onSaved, onRemoved }) {
   const api = useApi();
-  const [mode, setMode] = useState("view");
-  const [nameInput, setNameInput] = useState(shop.name);
-  const [urlInput, setUrlInput] = useState(shop.url || "");
-  const [dialog, setDialog] = useState(null);
+  const isNew = !shop;
+  const [name, setName] = useState(shop?.name ?? "");
+  const [url, setUrl] = useState(shop?.url ?? "");
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
-  function handleEditClick() {
-    setNameInput(shop.name);
-    setUrlInput(shop.url || "");
-    setMode("edit");
-  }
+  const inUse = (shop?.bean_count ?? 0) > 0;
 
-  function hasChanges() {
-    return (
-      nameInput.trim() !== shop.name ||
-      (urlInput.trim() || null) !== (shop.url || null)
-    );
-  }
-
-  function handleCancel() {
-    if (hasChanges()) {
-      setDialog({ type: "discard" });
-    } else {
-      setMode("view");
-    }
-  }
-
-  function handleDiscard() {
-    setNameInput(shop.name);
-    setUrlInput(shop.url || "");
-    setDialog(null);
-    setMode("view");
-  }
-
-  function handleKeepEditing() {
-    setDialog(null);
-  }
-
-  async function handleSave() {
-    const trimmedName = nameInput.trim();
-    if (!trimmedName) return;
+  async function handleSave(e) {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setSaving(true);
+    setError(null);
     try {
-      const updated = await api.updateShop(
-        shop.id,
-        trimmedName,
-        urlInput.trim() || null,
-      );
-      setDialog(null);
-      setMode("view");
-      onSaved(updated);
+      const saved = isNew
+        ? await api.createShop(trimmed, url.trim() || null)
+        : await api.updateShop(shop.id, trimmed, url.trim() || null);
+      onSaved(saved);
     } catch (err) {
       if (err.status === 409) {
-        setDialog({ type: "duplicate" });
+        setError(`A shop named “${trimmed}” already exists.`);
+      } else {
+        setError("Could not save. Check your connection and try again.");
       }
+    } finally {
+      setSaving(false);
     }
   }
 
-  function handleRemoveClick() {
-    setDialog({ type: "remove" });
-  }
-
-  async function handleConfirmRemove() {
+  async function handleRemove() {
     try {
       await api.deleteShop(shop.id);
-      setDialog(null);
+      setConfirmRemove(false);
       onRemoved(shop.id);
     } catch (err) {
-      if (err.status === 409) {
-        setDialog({ type: "blocked" });
-      }
+      setConfirmRemove(false);
+      setError(
+        err.status === 409
+          ? "This shop still has beans. Move or delete them first."
+          : "Could not remove the shop.",
+      );
     }
   }
 
   return (
     <>
-      <div className={`shop-row${mode === "edit" ? " shop-row--edit" : ""}`}>
-        <div className="shop-icon">🏪</div>
-
-        <div className="shop-body">
-          {mode === "view" ? (
-            <>
-              <div className="shop-name">{shop.name}</div>
-              <div className="shop-meta">
-                {shop.bean_count === 0
-                  ? "No beans"
-                  : `${shop.bean_count} ${
-                      shop.bean_count === 1 ? "bean" : "beans"
-                    }`}
-                {shop.url && (
-                  <span>
-                    {" \u00b7 "}
-                    <a
-                      className="shop-link"
-                      href={shop.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {shop.url}
-                    </a>
-                  </span>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <input
-                className="shop-input"
-                placeholder="Shop name\u2026"
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSave();
-                  if (e.key === "Escape") handleCancel();
-                }}
-              />
-              <input
-                className="shop-input shop-input--url"
-                placeholder="Website URL (optional)"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSave();
-                  if (e.key === "Escape") handleCancel();
-                }}
-              />
-            </>
+      <Sheet open={open} onClose={onClose} title={isNew ? "New shop" : `Edit ${shop.name}`}>
+        <form className="shop-editor" onSubmit={handleSave}>
+          <Field
+            label="Shop name"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setError(null);
+            }}
+            error={error}
+            autoFocus
+            required
+          />
+          <Field
+            label="Website"
+            type="url"
+            inputMode="url"
+            placeholder="https://…"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            hint="Optional — the shop's home page"
+          />
+          <div className="shop-editor__actions">
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={!name.trim() || saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </div>
+          {!isNew && (
+            <div className="shop-editor__remove">
+              <Button
+                variant="danger"
+                block
+                disabled={inUse}
+                onClick={() => setConfirmRemove(true)}
+              >
+                Remove shop
+              </Button>
+              {inUse && (
+                <p className="shop-editor__note">
+                  {plural(shop.bean_count, "bean uses", "beans use")} this shop.
+                  Move or delete {shop.bean_count === 1 ? "it" : "them"} before
+                  removing the shop.
+                </p>
+              )}
+            </div>
           )}
-        </div>
+        </form>
+      </Sheet>
 
-        {mode === "view" && shop.bean_count > 0 && (
-          <span className="shop-badge">{shop.bean_count}</span>
-        )}
-
-        <div className="shop-actions">
-          {mode === "view" ? (
-            <>
-              <button
-                className="shop-btn shop-btn--ghost"
-                onClick={handleRemoveClick}
-              >
-                Remove
-              </button>
-              <button
-                className="shop-btn shop-btn--accent"
-                onClick={handleEditClick}
-              >
-                Edit
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                className="shop-btn shop-btn--ghost"
-                onClick={handleCancel}
-              >
-                Cancel
-              </button>
-              <button
-                className="shop-btn shop-btn--accent"
-                onClick={handleSave}
-                disabled={!nameInput.trim()}
-              >
-                Save
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-
-      {dialog?.type === "discard" && (
-        <Dialog
-          title="Discard changes?"
-          body="You have unsaved changes to this shop."
-          actions={[
-            {
-              label: "Keep editing",
-              onClick: handleKeepEditing,
-              variant: "ghost",
-            },
-            { label: "Discard", onClick: handleDiscard, variant: "danger" },
-          ]}
-        />
-      )}
-
-      {dialog?.type === "duplicate" && (
-        <Dialog
-          title="Name already exists"
-          body={`A shop named "${nameInput.trim()}" already exists. Please choose a different name.`}
-          actions={[
-            { label: "OK", onClick: () => setDialog(null), variant: "accent" },
-          ]}
-        />
-      )}
-
-      {dialog?.type === "remove" && (
+      {confirmRemove && (
         <Dialog
           title={`Remove ${shop.name}?`}
-          body={
-            shop.bean_count > 0
-              ? `${shop.bean_count} ${
-                  shop.bean_count === 1 ? "bean references" : "beans reference"
-                } this shop. You must reassign or delete those beans before removing this shop.`
-              : "This shop has no beans assigned. This cannot be undone."
-          }
-          actions={
-            shop.bean_count > 0
-              ? [
-                  {
-                    label: "OK",
-                    onClick: () => setDialog(null),
-                    variant: "accent",
-                  },
-                ]
-              : [
-                  {
-                    label: "Cancel",
-                    onClick: () => setDialog(null),
-                    variant: "ghost",
-                  },
-                  {
-                    label: "Remove",
-                    onClick: handleConfirmRemove,
-                    variant: "danger",
-                  },
-                ]
-          }
-        />
-      )}
-
-      {dialog?.type === "blocked" && (
-        <Dialog
-          title="Cannot remove shop"
-          body={`${shop.bean_count} ${
-            shop.bean_count === 1 ? "bean references" : "beans reference"
-          } this shop. Reassign or delete those beans first.`}
+          body="This shop has no beans. Removing it cannot be undone."
           actions={[
-            { label: "OK", onClick: () => setDialog(null), variant: "accent" },
+            { label: "Cancel", variant: "secondary", onClick: () => setConfirmRemove(false) },
+            { label: "Remove", variant: "danger", onClick: handleRemove },
           ]}
         />
       )}
@@ -251,77 +156,49 @@ function ShopRow({ shop, onSaved, onRemoved }) {
   );
 }
 
-// ── New shop row (inline add form) ────────────────────────────────────────────
-function NewShopRow({ onSaved, onCancel }) {
-  const api = useApi();
-  const [name, setName] = useState("");
-  const [url, setUrl] = useState("");
-  const [dialog, setDialog] = useState(null);
-
-  async function handleSave() {
-    const trimmedName = name.trim();
-    if (!trimmedName) return;
-    try {
-      const created = await api.createShop(trimmedName, url.trim() || null);
-      onSaved(created);
-    } catch (err) {
-      if (err.status === 409) {
-        setDialog({ type: "duplicate" });
-      }
-    }
-  }
+// ── One row ───────────────────────────────────────────────────────────────────
+function ShopRow({ shop, onEdit }) {
+  const empty = shop.bean_count === 0;
+  const site = hostname(shop.url);
 
   return (
-    <>
-      <div className="shop-row shop-row--new">
-        <div className="shop-icon">🏪</div>
-        <div className="shop-body">
-          <input
-            className="shop-input"
-            placeholder="Shop name\u2026"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSave();
-              if (e.key === "Escape") onCancel();
-            }}
-          />
-          <input
-            className="shop-input shop-input--url"
-            placeholder="Website URL (optional)"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSave();
-              if (e.key === "Escape") onCancel();
-            }}
-          />
-        </div>
-        <div className="shop-actions">
-          <button className="shop-btn shop-btn--ghost" onClick={onCancel}>
-            Cancel
-          </button>
-          <button
-            className="shop-btn shop-btn--accent"
-            onClick={handleSave}
-            disabled={!name.trim()}
-          >
-            Save
-          </button>
-        </div>
-      </div>
+    <li className={`shop-row${empty ? " shop-row--empty" : ""}`}>
+      <Link
+        to="/"
+        state={{ filterShop: shop.name }}
+        className="shop-row__main"
+        aria-label={`${shop.name}, ${plural(shop.bean_count, "bean", "beans")}. Show beans`}
+      >
+        <RingBadge muted={empty}>{shop.name.replace(/^the\s+/i, "").charAt(0).toUpperCase()}</RingBadge>
+        <span className="shop-row__text">
+          <span className="shop-row__name">{shop.name}</span>
+          <span className="shop-row__site">{site || (empty ? "No beans yet" : "")}</span>
+        </span>
+        <span className="shop-row__count" aria-hidden="true">
+          {shop.bean_count}
+        </span>
+      </Link>
 
-      {dialog?.type === "duplicate" && (
-        <Dialog
-          title="Shop already exists"
-          body={`A shop named "${name.trim()}" already exists.`}
-          actions={[
-            { label: "OK", onClick: () => setDialog(null), variant: "accent" },
-          ]}
-        />
+      {shop.url && (
+        <a
+          className="ui-btn ui-btn--icon ui-btn--quiet"
+          href={externalUrl(shop.url)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Open ${shop.name} website (new tab)`}
+        >
+          <ExternalIcon />
+        </a>
       )}
-    </>
+      <Button
+        icon
+        variant="quiet"
+        aria-label={`Edit ${shop.name}`}
+        onClick={() => onEdit(shop)}
+      >
+        <MoreIcon />
+      </Button>
+    </li>
   );
 }
 
@@ -330,73 +207,103 @@ export default function ShopList() {
   const api = useApi();
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const [sort, setSort] = useState(() => localStorage.getItem(SORT_KEY) || "count");
+  // editing: undefined = sheet closed, null = new shop, object = edit that shop
+  const [editing, setEditing] = useState(undefined);
 
   useEffect(() => {
     api
       .getShops()
       .then(setShops)
+      .catch(() => setLoadError("Could not load shops. Is the backend running?"))
       .finally(() => setLoading(false));
   }, [api]);
 
-  function handleSaved(updated) {
+  function changeSort(value) {
+    setSort(value);
+    try {
+      localStorage.setItem(SORT_KEY, value);
+    } catch {
+      /* storage unavailable — sorting still works for this visit */
+    }
+  }
+
+  const sorted = useMemo(() => {
+    const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+    const list = [...shops];
+    return sort === "count"
+      ? list.sort((a, b) => b.bean_count - a.bean_count || byName(a, b))
+      : list.sort(byName);
+  }, [shops, sort]);
+
+  const totalBeans = shops.reduce((sum, s) => sum + (s.bean_count || 0), 0);
+
+  function handleSaved(saved) {
     setShops((prev) =>
-      prev
-        .map((s) => (s.id === updated.id ? updated : s))
-        .sort((a, b) => a.name.localeCompare(b.name)),
+      prev.some((s) => s.id === saved.id)
+        ? prev.map((s) => (s.id === saved.id ? saved : s))
+        : [...prev, saved],
     );
+    setEditing(undefined);
   }
 
   function handleRemoved(id) {
     setShops((prev) => prev.filter((s) => s.id !== id));
+    setEditing(undefined);
   }
-
-  function handleCreated(created) {
-    setShops((prev) =>
-      [...prev, created].sort((a, b) => a.name.localeCompare(b.name)),
-    );
-    setAdding(false);
-  }
-
-  if (loading) return null;
 
   return (
     <div className="shop-page">
-      {shops.length === 0 && !adding ? (
+      <PageHeader
+        eyebrow={
+          loading ? null : `${plural(shops.length, "shop", "shops")} · ${plural(totalBeans, "bean", "beans")}`
+        }
+        title="Shops"
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setEditing(null)}>
+              <PlusIcon /> New
+            </Button>
+            <AccountButton />
+          </>
+        }
+      />
+
+      {loading ? (
+        <p className="shop-page__message">Loading shops…</p>
+      ) : loadError ? (
+        <p className="shop-page__message">{loadError}</p>
+      ) : shops.length === 0 ? (
         <EmptyState
-          icon="🏪"
           title="No shops yet"
           body="Add your first shop, or save a bean with a new shop name."
-          action="+ Add Shop"
-          onAction={() => setAdding(true)}
+          action="Add shop"
+          onAction={() => setEditing(null)}
         />
       ) : (
         <>
-          <div className="shop-list">
-            {shops.map((s) => (
-              <ShopRow
-                key={s.id}
-                shop={s}
-                onSaved={handleSaved}
-                onRemoved={handleRemoved}
-              />
-            ))}
-            {adding && (
-              <NewShopRow
-                onSaved={handleCreated}
-                onCancel={() => setAdding(false)}
-              />
-            )}
+          <div className="shop-page__sort">
+            <Segmented ariaLabel="Sort shops" value={sort} onChange={changeSort} options={SORTS} />
           </div>
-
-          {!adding && (
-            <div className="shop-add-wrap">
-              <button className="shop-add-btn" onClick={() => setAdding(true)}>
-                + Add Shop
-              </button>
-            </div>
-          )}
+          <ul className="shop-list">
+            {sorted.map((s) => (
+              <ShopRow key={s.id} shop={s} onEdit={setEditing} />
+            ))}
+          </ul>
         </>
+      )}
+
+      {editing !== undefined && (
+        <ShopEditor
+          // key: fresh form state for every shop opened
+          key={editing?.id ?? "new"}
+          shop={editing}
+          open
+          onClose={() => setEditing(undefined)}
+          onSaved={handleSaved}
+          onRemoved={handleRemoved}
+        />
       )}
     </div>
   );

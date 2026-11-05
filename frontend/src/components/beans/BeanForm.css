@@ -1,258 +1,282 @@
-/* ── Full-screen form shell ─────────────────────────────────────────── */
-.bean-form {
+/* components/beans/BeanForm.css — add / edit bean (Dial design)
+   Class prefix "bfm-" (BeanFilter already uses "bf-"). */
+
+.bfm {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  background: var(--color-bg);
+  min-height: 100dvh;
+  background: var(--ground);
+}
+
+/* ── Header ── */
+.bfm-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 24px 24px 4px;
+}
+
+.bfm-head__title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+/* ── Section cards ── */
+.bfm-card {
+  margin: 12px 16px 0;
+  padding: 18px 16px;
+  border-radius: var(--r-card);
+  background: var(--face);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bfm-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* ── Shop suggestions ── */
+.bfm-shop {
   position: relative;
 }
 
-/* ── Header ─────────────────────────────────────────────────────────── */
-.bean-form__header {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  padding: 1.125rem 1.125rem 1rem;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  flex-shrink: 0;
-}
-
-.bean-form__header-brand {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text);
-  letter-spacing: -0.03em;
-  line-height: 1.15;
-}
-
-.bean-form__header-subtitle {
-  font-size: 0.7rem;
-  color: var(--color-text-3);
-  margin-top: 0.3rem;
-}
-
-/* ── Scrollable body ────────────────────────────────────────────────── */
-.bean-form__body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0.875rem 0.875rem 0;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ── Card sections ──────────────────────────────────────────────────── */
-.bf-section {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-card);
-  padding: 0.875rem;
-  margin-bottom: 0.625rem;
-}
-
-.bf-section-label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-text-3);
-  margin-bottom: 0.75rem;
-}
-
-.bf-section-label--required {
-  color: var(--accent-mid);
-}
-
-/* ── Fields ─────────────────────────────────────────────────────────── */
-.bf-field {
-  margin-bottom: 0.5rem;
-}
-
-.bf-field:last-child {
-  margin-bottom: 0;
-}
-
-.bf-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.bf-row:last-child {
-  margin-bottom: 0;
-}
-
-.bf-label {
-  display: block;
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-text-3);
-  margin-bottom: 0.25rem;
-}
-
-.bf-input {
-  width: 100%;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-input, 11px);
-  padding: 0.6rem 0.75rem;
-  font-size: 0.8rem;
-  font-family: var(--font);
-  font-weight: 500;
-  color: var(--color-text);
-  outline: none;
-  transition: border-color 0.15s;
-  -webkit-appearance: none;
-  appearance: none;
-  box-sizing: border-box;
-}
-
-.bf-input:focus {
-  border-color: var(--accent-mid);
-}
-
-.bf-input::placeholder {
-  color: var(--color-text-3);
-  font-weight: 400;
-}
-
-.bf-select {
-  cursor: pointer;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23ABABAB' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  padding-right: 2rem;
-}
-
-.bf-textarea {
-  resize: vertical;
-  min-height: 5rem;
-  font-style: italic;
-  font-weight: 300;
-}
-
-.bf-hint {
-  font-size: 0.65rem;
-  color: var(--color-text-3);
-  margin-top: 0.25rem;
-  padding-left: 0.1rem;
-}
-
-/* ── Shop autocomplete dropdown ─────────────────────────────────────── */
-.bf-dropdown {
+.bfm-suggest {
   position: absolute;
-  top: 100%;
+  z-index: 20;
+  top: 78px; /* just below the input */
   left: 0;
   right: 0;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-hi);
-  border-radius: var(--r-input, 11px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  max-height: 160px;
+  max-height: 240px;
   overflow-y: auto;
-  margin-top: 3px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: var(--r-input);
+  border: 1px solid var(--line);
+  background: var(--raised);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
-.bf-dropdown__item {
-  padding: 0.6rem 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-text);
-  cursor: pointer;
-  border-bottom: 1px solid var(--color-border);
-  transition: background 0.1s;
-}
-
-.bf-dropdown__item:last-child {
-  border-bottom: none;
-}
-
-.bf-dropdown__item:hover,
-.bf-dropdown__item:active {
-  background: var(--accent-bg);
-  color: var(--accent-mid);
-}
-
-/* ── Auto-calculated ratio display ─────────────────────────────────── */
-/* Shown below the In / Out row in the recipe section when both         */
-/* In and Out are filled in. Read-only — not an input field.            */
-.bf-ratio {
+.bfm-suggest__item {
+  width: 100%;
+  min-height: 44px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bfm-suggest__item:hover,
+.bfm-suggest__item:focus-visible {
+  background: var(--face);
+  outline: none;
+}
+
+.bfm-suggest__count {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ── Container tiles ── */
+.bfm-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-top: 0.5rem;
-  padding: 0.45rem 0.75rem;
-  background: rgba(184, 106, 0, 0.05);
-  border: 1px solid rgba(184, 106, 0, 0.14);
-  border-radius: var(--r-input, 11px);
 }
 
-.bf-ratio__label {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--color-text-3);
-  flex-shrink: 0;
-}
-
-.bf-ratio__value {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--accent-mid);
-  letter-spacing: -0.01em;
-  flex-shrink: 0;
-}
-
-.bf-ratio__hint {
-  font-size: 0.6rem;
-  color: var(--color-text-3);
-  font-style: italic;
-  margin-left: auto; /* push to right */
-}
-
-/* ── Footer ─────────────────────────────────────────────────────────── */
-.bean-form__footer {
+.bfm-tile {
+  min-height: 72px;
   display: flex;
-  gap: 0.5rem;
-  padding: 0.625rem 0.875rem 1rem;
-  background: var(--color-bg);
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
-}
-
-.bean-form__btn {
-  flex: 1;
-  padding: 0.75rem;
-  border-radius: var(--r-btn);
-  font-size: 0.75rem;
-  font-weight: 600;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--ink);
   font-family: var(--font);
   cursor: pointer;
+  min-width: 0;
+}
+
+.bfm-tile--on {
+  border: 1.5px solid var(--signal);
+  background: var(--raised);
+}
+
+.bfm-tile:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.bfm-tile__name {
+  font-size: 13px;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bfm-tile__sub {
+  font-size: 11px;
+  color: var(--muted);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Process quick picks ── */
+.bfm-process {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bfm-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ── Tags box ── */
+.bfm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 6px 8px;
+  border-radius: var(--r-input);
+  border: 1px solid var(--line);
+  background: var(--ground);
+}
+
+.bfm-tags:focus-within {
+  border-color: var(--signal);
+}
+
+.bfm-tags__input {
+  flex: 1;
+  min-width: 110px;
+  height: 36px;
   border: none;
-  transition: opacity 0.15s;
-}
-
-.bean-form__btn:active {
-  opacity: 0.75;
-}
-
-.bean-form__btn--cancel {
   background: transparent;
-  border: 1px solid var(--color-border-hi);
-  color: var(--color-text-2);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 16px;
+  outline: none;
 }
 
-.bean-form__btn--save {
-  flex: 2;
-  background: var(--grad);
-  color: var(--on-accent);
+.bfm-tags__input::placeholder {
+  color: var(--muted);
 }
 
-.bean-form__btn--save:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+/* ── Recipe tiles ── */
+.bfm-recipe-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bfm-ratio {
+  font-size: 13px;
+  color: var(--signal);
+}
+
+.bfm-recipe {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bfm-recipe__tile {
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--ground);
+}
+
+.bfm-recipe__tile:focus-within {
+  border-color: var(--signal);
+}
+
+.bfm-recipe__tile input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 22px;
+  font-weight: 300;
+  text-align: center;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.bfm-recipe__tile input::-webkit-outer-spin-button,
+.bfm-recipe__tile input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.bfm-recipe__tile input::placeholder {
+  color: var(--ghost);
+}
+
+.bfm-recipe__label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Error + footer ── */
+.bfm-error {
+  margin: 12px 24px 0;
+  font-size: 14px;
+  color: var(--danger);
+}
+
+.bfm-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  gap: 10px;
+  margin-top: auto;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--ground);
+}
+
+.bfm-foot > :first-child {
+  flex: none;
+}
+
+.bfm-foot > :last-child {
+  flex: 1;
 }

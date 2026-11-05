@@ -47,6 +47,7 @@ export default function Dial({
   band, // [from, to] in value units — ticks inside are brighter
   litTicks = !band, // light ticks up to the value (when no band)
   knob, // show the round knob at the value (default: when interactive)
+  rimColor, // optional colour for the outer edge (e.g. the container colour)
   label,
   display, // formatted value text; defaults to String(value)
   unit,
@@ -172,6 +173,15 @@ export default function Dial({
         aria-hidden="true"
       >
         <circle className="ui-dial__face" cx={C} cy={C} r={R_FACE} />
+        {rimColor && (
+          <circle
+            className="ui-dial__rim"
+            cx={C}
+            cy={C}
+            r={R_FACE}
+            style={{ stroke: rimColor }}
+          />
+        )}
         {tickLines}
         <circle
           className="ui-dial__track"

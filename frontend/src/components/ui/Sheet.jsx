@@ -32,7 +32,11 @@ export default function Sheet({ open, onClose, title, children, footer }) {
 
     // Remember what had focus, move focus into the sheet
     const previouslyFocused = document.activeElement;
-    panelRef.current?.focus();
+    // Move focus into the sheet — unless a field inside already took it
+    // (e.g. an input with autoFocus)
+    if (!panelRef.current?.contains(document.activeElement)) {
+      panelRef.current?.focus();
+    }
 
     // Escape closes the sheet
     function onKey(e) {

@@ -1,247 +1,300 @@
-/*
-  BeanList.css
-  Mobile-first layout for the beans list page.
-*/
+/* components/beans/BeanList.css — Beans tab (Dial design) */
 
-/* ── Outer wrapper ── */
-.bean-list {
+.bl {
   display: flex;
   flex-direction: column;
   flex: 1;
   padding-bottom: 16px; /* the shell adds room for the bottom navigation */
 }
 
-/* ── Search bar area ── */
-.bean-list__search-wrap {
-  padding: 12px 14px;
-  background: var(--color-bg);
-  flex-shrink: 0;
+.bl-message {
+  padding: 32px 24px;
+  color: var(--muted);
 }
 
-.bean-list__search {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--r-search);
-  padding: 10px 13px;
-  font-size: 13px;
-  color: var(--color-text-3);
+/* ── Hero dial ── */
+.bl-hero {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
+  padding: 16px 24px 4px;
 }
 
-.bean-list__search-icon {
-  font-size: 17px;
-  flex-shrink: 0;
+.bl-hero__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border-radius: 24px;
+  color: var(--ink);
+  text-decoration: none;
+  text-align: center;
 }
 
-.bean-list__search-placeholder {
-  flex: 1;
-  font-size: 13px;
-  color: var(--color-text-3);
+.bl-hero__link:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 4px;
 }
 
-.bean-list__filter-btn {
-  font-size: 11px;
+.bl-hero__recipe {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bl-hero__name {
+  margin-top: 6px;
+  font-size: 18px;
   font-weight: 500;
-  color: var(--color-text-2);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-hi);
-  border-radius: 5px;
-  padding: 3px 9px;
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    color 0.15s ease;
 }
 
-.bean-list__filter-btn:hover {
-  border-color: var(--accent-mid);
-  color: var(--accent-mid);
+.bl-hero__meta {
+  font-size: 13px;
+  color: var(--muted);
 }
 
-/* ── Section headers (Favourites / All Beans) ── */
-.bean-list__section-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px 6px;
-}
-
-.bean-list__section-label {
-  font-size: 10px;
+.bl-hero__label {
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-text-3);
-  white-space: nowrap;
-  flex-shrink: 0;
+  color: var(--muted);
 }
 
-.bean-list__section-line {
-  flex: 1;
-  height: 1px;
-  background: var(--color-border);
-}
-
-/* ── Card list ── */
-.bean-list__cards {
-  list-style: none;
-  padding: 0 12px;
+/* Container switcher under the hero dial */
+.bl-hero__picker {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-bottom: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  padding-top: 6px;
 }
 
-/* ── Loading skeletons ── */
-.bean-list--loading {
-  padding: 12px;
+.bl-hero__pick {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid transparent;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.bl-hero__pick:hover {
+  opacity: 0.85;
+}
+
+.bl-hero__pick--on {
+  opacity: 1;
+  border-color: var(--signal);
+  background: var(--face);
+}
+
+.bl-hero__pick:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* ── Search + filter button ── */
+.bl-tools {
+  display: flex;
   gap: 8px;
+  padding: 16px 16px 0;
 }
 
-.bean-list__skeleton {
-  height: 52px;
-  border-radius: var(--r-card);
-  background: linear-gradient(
-    90deg,
-    var(--color-border) 25%,
-    var(--color-bg) 50%,
-    var(--color-border) 75%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.4s ease infinite;
-}
-
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
-/* ── Add button (fixed to bottom of screen) ── */
-.bean-list__add-wrap {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 480px;
-  padding: 9px 12px calc(16px + env(safe-area-inset-bottom));
-  background: var(--color-bg);
-  border-top: 1px solid var(--color-border);
-}
-
-.bean-list__add-btn {
-  width: 100%;
-  background: var(--grad);
-  color: var(--on-accent);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  padding: 14px;
-  border-radius: var(--r-add);
-  border: none;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.bean-list__add-btn:hover {
-  opacity: 0.88;
-}
-.bean-list__add-btn:active {
-  opacity: 0.78;
-}
-
-/* ── No-results state (CB-05) ──────────────────────────────────────────── */
-.bean-list__no-results {
+.bl-search {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 40px 20px;
-  text-align: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--face);
+  color: var(--muted);
 }
 
-.bean-list__no-results-icon {
-  font-size: 30px;
-  margin-bottom: 10px;
-  opacity: 0.25;
+.bl-search:focus-within {
+  border-color: var(--signal);
 }
 
-.bean-list__no-results-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-text);
-  margin-bottom: 6px;
-}
-
-.bean-list__no-results-sub {
-  font-size: 13px;
-  color: var(--color-text-3);
-  margin-bottom: 16px;
-}
-
-/* "Clear search" link-style button */
-.bean-list__no-results-clear {
-  background: none;
+.bl-search input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
   border: none;
+  background: transparent;
+  color: var(--ink);
   font-family: var(--font);
-  font-size: 14px;
-  font-weight: 600;
-  color: #B86A00;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  font-size: 16px; /* no iOS zoom on focus */
+  outline: none;
 }
 
-/* ── No-results state (CB-05 / CB-14 / CB-20) ──────────────────────────── */
-.bean-list__no-results {
+.bl-search input::placeholder {
+  color: var(--muted);
+}
+
+.bl-filter-btn {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+}
+
+.bl-filter-btn__count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--signal);
+  color: var(--ground);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+/* ── Quick filter chips (scroll sideways on small screens) ── */
+.bl-chips {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.bl-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.bl-results {
+  margin: 12px 24px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bl-none {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 20px;
-  text-align: center;
-}
-
-.bean-list__no-results-icon {
-  font-size: 30px;
-  margin-bottom: 10px;
-  opacity: 0.25;
-}
-
-.bean-list__no-results-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-text);
-  margin-bottom: 6px;
-}
-
-.bean-list__no-results-sub {
-  font-size: 13px;
-  color: var(--color-text-3);
-  margin-bottom: 16px;
-  max-width: 260px;
-  line-height: 1.5;
-}
-
-.bean-list__no-results-actions {
-  display: flex;
   gap: 12px;
+  padding: 40px 24px;
+  color: var(--muted);
 }
 
-.bean-list__no-results-clear {
-  background: none;
+/* ── The list ── */
+.bl-rows.bl-list {
+  padding: 12px 16px 0;
+}
+
+.bl-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── One row ── */
+.bl-row {
+  position: relative;
+  overflow: hidden; /* hides the action strip until swiped */
+  border-top: 1px solid var(--line);
+}
+
+.bl-row:first-child {
+  border-top: none;
+}
+
+.bl-row__main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 60px;
+  padding: 8px;
+  background: var(--ground); /* covers the action strip when closed */
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.bl-row__main:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: -2px;
+  border-radius: 12px;
+}
+
+.bl-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bl-row__name,
+.bl-row__meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bl-row__name {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.bl-row__fav {
+  display: inline-flex;
+  margin-left: 6px;
+  vertical-align: -1px;
+  color: var(--signal);
+}
+
+.bl-row__meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.bl-row__sca {
+  flex: none;
+  font-size: 20px;
+  font-weight: 300;
+}
+
+/* Swipe actions — width must match SWIPE_PANEL_WIDTH in useSwipeReveal.js */
+.bl-row__actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 140px;
+  display: flex;
+}
+
+.bl-row__action {
+  flex: 1;
   border: none;
   font-family: var(--font);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  color: #B86A00;
   cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+}
+
+.bl-row__action--edit {
+  background: var(--raised);
+  color: var(--ink);
+}
+
+.bl-row__action--delete {
+  background: var(--danger);
+  color: var(--on-danger);
 }
