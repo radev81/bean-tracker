@@ -17,8 +17,6 @@ import {
   SectionLabel,
   Sheet,
 } from "./components/ui";
-// TEMPORARY (step 2): preview of the new UI building blocks — remove before merging
-import UiKit from "./pages/UiKit";
 
 // ── Theme management ──────────────────────────────────────────────────────────
 // The chosen theme is stored in localStorage and applied to <html data-theme>.
@@ -145,9 +143,6 @@ export default function App() {
         <Route path="/bean/:id" element={<BeanDetail />} />
         <Route path="/bean/:id/edit" element={<BeanFormPage />} />
         <Route path="/bean/:id/dial" element={<DialIn />} />
-
-        {/* TEMPORARY (step 2): UI kit preview at /beans/kit — remove before merging */}
-        <Route path="/kit" element={<UiKit />} />
 
         {/* ── Main tabs: share the AppShell layout ───────────────────────── */}
         <Route
