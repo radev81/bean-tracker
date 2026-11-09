@@ -13,8 +13,13 @@ dist/
 
 # Database file (lives on NAS only, never in Git)
 *.db
+*.db-wal
+*.db-shm
 backend/data/
 /data/
+
+# Database backups made on the NAS before a deploy
+backups/
 
 # OS clutter
 .DS_Store

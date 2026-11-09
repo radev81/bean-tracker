@@ -2,3 +2,12 @@ backend/node_modules
 frontend/node_modules
 frontend/dist
 .env
+
+# Never send data or backups into the image build
+# (the database is bind-mounted from the NAS at runtime)
+data
+backups
+backend/data
+*.db
+*.db-wal
+*.db-shm
