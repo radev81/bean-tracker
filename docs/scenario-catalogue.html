@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scenario Catalogue · Coffee Beans Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0c0902;
+    --bg1:       #131008;
+    --bg2:       #1a140a;
+    --bg3:       #221b0e;
+    --border:    #2e2415;
+    --border2:   #3d3120;
+    --accent:    #c8933a;
+    --accent2:   #e8b86d;
+    --text:      #e0cba8;
+    --text2:     #a08860;
+    --text3:     #8a7350;
+    --given-bg:  #1f1505;
+    --given-bar: #8b6914;
+    --given-txt: #d4a843;
+    --when-bg:   #0f1a10;
+    --when-bar:  #3a6b3c;
+    --when-txt:  #7bbf7e;
+    --then-bg:   #0e1520;
+    --then-bar:  #2d5a8e;
+    --then-txt:  #6fa8dc;
+    --and-bg:    #150f1a;
+    --and-bar:   #5a3d7a;
+    --and-txt:   #a87fd4;
+    --upd:       #7fb7e8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ── */
+  .shell { max-width: 900px; margin: 0 auto; padding: 2.5rem 1.5rem 4rem; }
+
+  /* ── Header ── */
+  .header { margin-bottom: 2rem; border-bottom: 1px solid var(--border2); padding-bottom: 1.5rem; }
+  .header h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--accent2);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+  }
+  .header p { color: var(--text3); font-style: italic; font-size: 0.85rem; }
+  .header-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1rem; margin-top: 0.5rem; }
+  .total-badge, .upd-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--accent);
+    padding: 0.15rem 0.6rem;
+    border-radius: 20px;
+  }
+  .upd-badge { color: var(--upd); }
+  .header-note { margin-top: 0.75rem; color: var(--text2); font-size: 0.8rem; max-width: 640px; }
+
+  /* ── Search ── */
+  .search-wrap { position: relative; margin-bottom: 1.5rem; }
+  .search-wrap input {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 0.65rem 3rem 0.65rem 2.5rem;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--text3); }
+  .search-icon { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 1rem; pointer-events: none; }
+  .search-count { position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text3); font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; }
+
+  /* ── Summary bar ── */
+  .summary { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 2rem; }
+  .summary-pill {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .summary-pill .section-name { color: var(--accent); font-weight: 500; }
+  .summary-pill .pill-count { font-family: 'IBM Plex Mono', monospace; color: var(--text3); font-size: 0.7rem; }
+  .summary-divider { color: var(--border2); }
+  .summary-group { color: var(--text3); font-family: 'IBM Plex Mono', monospace; font-size: 0.68rem; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 1.5rem; border: 1px solid var(--border2); border-radius: 8px; overflow: hidden; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1.25rem;
+    background: var(--bg2);
+    cursor: pointer;
+    user-select: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s;
+  }
+  .section-header:hover { background: var(--bg3); }
+  .section-icon { font-size: 1.1rem; }
+  .section-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent2);
+    flex: 1;
+  }
+  .section-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--accent);
+    padding: 0.15rem 0.5rem;
+    border-radius: 20px;
+  }
+  .section-chevron { color: var(--accent); font-size: 0.7rem; transition: transform 0.2s; }
+  .section-chevron.open { transform: rotate(90deg); }
+  .section-body { padding: 1.25rem; background: var(--bg1); display: none; }
+  .section-body.open { display: block; }
+
+  /* ── Group ── */
+  .group { margin-bottom: 1.25rem; }
+  .group:last-child { margin-bottom: 0; }
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+    cursor: pointer;
+    user-select: none;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    padding: 0;
+  }
+  .group-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+  }
+  .group-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    background: rgba(200,147,58,0.12);
+    color: var(--accent);
+    padding: 0.1rem 0.45rem;
+    border-radius: 20px;
+  }
+  .group-line { flex: 1; height: 1px; background: var(--border); }
+  .group-toggle { font-size: 0.68rem; color: var(--text3); font-family: 'IBM Plex Mono', monospace; }
+  .group-body { display: block; }
+  .group-body.closed { display: none; }
+
+  /* ── Scenario row ── */
+  .scenario { border: 1px solid var(--border); border-radius: 5px; margin-bottom: 0.4rem; overflow: hidden; }
+  .scenario-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.85rem;
+    background: var(--bg2);
+    cursor: pointer;
+    user-select: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s;
+  }
+  .scenario-header:hover { background: var(--bg3); }
+  .scenario-header.open { background: #1e1708; }
+  .scenario-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--accent);
+    min-width: 3.8rem;
+    flex-shrink: 0;
+  }
+  .scenario-title { font-size: 0.82rem; color: var(--text); flex: 1; line-height: 1.4; }
+  .scenario-upd {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--upd);
+    border: 1px solid rgba(127,183,232,0.35);
+    padding: 0.05rem 0.4rem;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+  .scenario-steps-count { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; color: var(--text3); flex-shrink: 0; }
+  .scenario-chevron { color: var(--text3); font-size: 0.6rem; transition: transform 0.2s; flex-shrink: 0; }
+  .scenario-chevron.open { transform: rotate(90deg); }
+
+  .scenario-body { display: none; padding: 0.65rem 0.85rem; background: #110d05; border-top: 1px solid var(--border); }
+  .scenario-body.open { display: block; }
+
+  /* ── Steps ── */
+  .step { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 0.35rem; }
+  .step:last-child { margin-bottom: 0; }
+  .step-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 500;
+    padding: 0.18rem 0.4rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+    min-width: 3rem;
+    text-align: center;
+    margin-top: 0.1rem;
+  }
+  .step-text { font-size: 0.8rem; color: #c8b898; line-height: 1.5; }
+
+  .step.given .step-label { background: var(--given-bg); color: var(--given-txt); border-left: 2px solid var(--given-bar); }
+  .step.when  .step-label { background: var(--when-bg);  color: var(--when-txt);  border-left: 2px solid var(--when-bar);  }
+  .step.then  .step-label { background: var(--then-bg);  color: var(--then-txt);  border-left: 2px solid var(--then-bar);  }
+  .step.and   .step-label { background: var(--and-bg);   color: var(--and-txt);   border-left: 2px solid var(--and-bar);   }
+
+  /* ── No results ── */
+  .no-results { text-align: center; padding: 3rem 0; color: var(--text3); font-style: italic; }
+
+  /* ── Controls strip ── */
+  .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+  .ctrl-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ctrl-btn:hover, .ctrl-btn[aria-pressed="true"] { background: var(--bg3); color: var(--accent); border-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="header">
+    <h1>Scenario Catalogue</h1>
+    <p>Coffee Beans Tracker · BDD Specification</p>
+    <div class="header-meta">
+      <span class="total-badge" id="total-badge"></span>
+      <span class="upd-badge" id="upd-badge"></span>
+    </div>
+    <p class="header-note">Updated November 2026 for the Dial redesign. Scenarios marked <span class="scenario-upd">Nov 2026</span> are new or changed. The expanding bean card was replaced by a bean page; adding and editing open their own page; containers can be filled from the Containers tab.</p>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="search" placeholder="Search by title, ID or step text…" autocomplete="off">
+    <span class="search-count" id="search-count"></span>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="setAll(true)">Expand all</button>
+    <button class="ctrl-btn" onclick="setAll(false)">Collapse all</button>
+    <button class="ctrl-btn" id="only-upd" aria-pressed="false" onclick="toggleOnlyUpdated()">Show only Nov 2026 changes</button>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <div id="catalogue"></div>
+
+</div>
+
+<script>
+// u:1 = new or changed in the Dial redesign (Nov 2026)
+const DATA = [
+  {
+    id:"coffee-beans", title:"Coffee Beans", icon:"☕",
+    groups:[
+      { id:"cb-list", title:"List Display", scenarios:[
+        { id:"CB-01", u:1, title:"Show empty coffee beans list", steps:[
+          {t:"given",s:"no coffee beans exist in the DB"},
+          {t:"when", s:"the Beans tab is shown"},
+          {t:"then", s:"an empty state message is shown"},
+          {t:"and",  s:'an "Add a bean" button is shown'}]},
+        { id:"CB-02", u:1, title:"Show coffee beans list with existing beans", steps:[
+          {t:"given",s:"coffee beans exist in the DB"},
+          {t:"when", s:"the Beans tab is shown"},
+          {t:"then", s:"all coffee beans are shown in one list, one row per bean"},
+          {t:"and",  s:"each row shows the container number (coloured ring) or a dash, the name, shop · country · process and the SCA score"},
+          {t:"and",  s:'a "+" button to add a bean is shown in the bottom navigation'}]},
+      ]},
+      { id:"cb-search", title:"Search", scenarios:[
+        { id:"CB-03", u:1, title:"Show search, filter button and quick filters", steps:[
+          {t:"given",s:"the coffee beans list is shown"},
+          {t:"then", s:"a search bar is shown"},
+          {t:"and",  s:'a "Filters" button is shown'},
+          {t:"and",  s:'quick filter chips "All", "Favourites" and (when containers are used) "In containers" are shown'}]},
+        { id:"CB-04", u:1, title:"Search coffee beans", steps:[
+          {t:"given",s:"the coffee beans list is shown"},
+          {t:"and",  s:"coffee beans exist in the DB"},
+          {t:"when", s:"text is typed in the search bar"},
+          {t:"then", s:"only beans whose name, country, region, variety, shop or process contains the text are shown"},
+          {t:"and",  s:"the number of results is shown"}]},
+        { id:"CB-05", u:1, title:"Show no results state when search matches nothing", steps:[
+          {t:"given",s:"the coffee beans list is shown"},
+          {t:"and",  s:"coffee beans exist in the DB"},
+          {t:"when", s:"text is typed in the search bar that does not match any bean"},
+          {t:"then", s:'a "No beans match" message is shown'},
+          {t:"and",  s:'a "Clear search and filters" button is shown'}]},
+        { id:"CB-06", title:"Clear search input", steps:[
+          {t:"given",s:"a search term has been entered in the search bar"},
+          {t:"when", s:"the clear icon in the search bar is tapped/clicked"},
+          {t:"then", s:"the search input is cleared"},
+          {t:"and",  s:"all coffee beans are shown"}]},
+        { id:"CB-07", title:"Search coffee beans with active filters", steps:[
+          {t:"given",s:"one or more filters are active"},
+          {t:"when", s:"text is typed in the search bar"},
+          {t:"then", s:"only beans that match both the active filters and the search input are shown"},
+          {t:"and",  s:"the number of results is shown"}]},
+        { id:"CB-08", title:"Clear search with active filters", steps:[
+          {t:"given",s:"one or more filters are active"},
+          {t:"and",  s:"a search term has been entered in the search bar"},
+          {t:"when", s:"the clear icon in the search bar is tapped/clicked"},
+          {t:"then", s:"the search input is cleared"},
+          {t:"and",  s:"only beans matching the active filters are shown"}]},
+      ]},
+      { id:"cb-filter", title:"Filtering", scenarios:[
+        { id:"CB-09", u:1, title:"Open filter panel", steps:[
+          {t:"given",s:"the coffee beans list is shown"},
+          {t:"when", s:'the "Filters" button is tapped/clicked'},
+          {t:"then", s:"a filter panel slides up from the bottom"},
+          {t:"and",  s:'a "Favourites" filter option is shown'},
+          {t:"and",  s:'a "Shop" filter option is shown'},
+          {t:"and",  s:'a "Container" filter option is shown'},
+          {t:"and",  s:'a "Country of origin" filter option is shown'},
+          {t:"and",  s:'a "Clear filters" button is shown'},
+          {t:"and",  s:'an "Apply" button is shown'}]},
+        { id:"CB-10", title:"Show available shops in shop filter", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"when", s:'the "Shop" filter option is tapped/clicked'},
+          {t:"then", s:"a list of all shops referenced by at least one bean is shown"},
+          {t:"and",  s:"each shop is shown with a selectable checkbox"}]},
+        { id:"CB-11", title:"Show available containers in container filter", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"when", s:'the "Container" filter option is tapped/clicked'},
+          {t:"then", s:"a list of all containers that have beans assigned is shown"},
+          {t:"and",  s:'an "Unassigned" option is shown for beans not assigned to any container'},
+          {t:"and",  s:"each option is shown with a selectable checkbox"}]},
+        { id:"CB-12", title:"Show available countries of origin in country of origin filter", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"when", s:'the "Country of origin" filter option is tapped/clicked'},
+          {t:"then", s:"a list of all countries of origin referenced by at least one bean is shown"},
+          {t:"and",  s:"each country is shown with a selectable checkbox"}]},
+        { id:"CB-13", u:1, title:"Filter coffee beans by favourites", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"when", s:'the "Favourites" filter option is selected'},
+          {t:"and",  s:'the "Apply" button is tapped/clicked'},
+          {t:"then", s:"only beans marked as favourite are shown"},
+          {t:"and",  s:"the number of results is shown"},
+          {t:"and",  s:'the "Filters" button shows the number of active filters'},
+          {t:"and",  s:'the "Favourites" quick filter chip is shown as selected'}]},
+        { id:"CB-14", u:1, title:"Show no results state when favourites filter matches nothing", steps:[
+          {t:"given",s:"the favourites filter is active"},
+          {t:"and",  s:"no beans are marked as favourite"},
+          {t:"then", s:'a "No beans match" message is shown'},
+          {t:"and",  s:'a "Clear search and filters" button is shown'}]},
+        { id:"CB-15", u:1, title:"Filter coffee beans by shop", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"when", s:"one or more shops are selected"},
+          {t:"and",  s:'the "Apply" button is tapped/clicked'},
+          {t:"then", s:"only beans from the selected shops are shown"},
+          {t:"and",  s:"the number of results is shown"},
+          {t:"and",  s:"each selected shop is shown as a removable chip above the list"},
+          {t:"and",  s:'the "Filters" button shows the number of active filters'}]},
+        { id:"CB-16", u:1, title:"Filter coffee beans by container", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"when", s:"one or more containers are selected"},
+          {t:"and",  s:'the "Apply" button is tapped/clicked'},
+          {t:"then", s:"only beans assigned to the selected containers are shown"},
+          {t:"and",  s:"the number of results is shown"},
+          {t:"and",  s:'the "Filters" button shows the number of active filters'}]},
+        { id:"CB-17", u:1, title:"Filter coffee beans by unassigned container", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"when", s:'the "Unassigned" container option is selected'},
+          {t:"and",  s:'the "Apply" button is tapped/clicked'},
+          {t:"then", s:"only beans not assigned to any container are shown"},
+          {t:"and",  s:"the number of results is shown"},
+          {t:"and",  s:'the "Filters" button shows the number of active filters'}]},
+        { id:"CB-18", u:1, title:"Filter coffee beans by country of origin", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"when", s:"one or more countries of origin are selected"},
+          {t:"and",  s:'the "Apply" button is tapped/clicked'},
+          {t:"then", s:"only beans matching the selected countries of origin are shown"},
+          {t:"and",  s:"the number of results is shown"},
+          {t:"and",  s:'the "Filters" button shows the number of active filters'}]},
+        { id:"CB-19", u:1, title:"Filter coffee beans by multiple filter types", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"when", s:"a selection is made in two or more filter types"},
+          {t:"and",  s:'the "Apply" button is tapped/clicked'},
+          {t:"then", s:"only beans that match all selected filter criteria are shown"},
+          {t:"and",  s:"the number of results is shown"},
+          {t:"and",  s:'the "Filters" button shows the number of active filter types'}]},
+        { id:"CB-20", u:1, title:"Show no results state when filters match nothing", steps:[
+          {t:"given",s:"one or more filters are applied"},
+          {t:"and",  s:"no beans match the selected filter criteria"},
+          {t:"then", s:'a "No beans match" message is shown'},
+          {t:"and",  s:'a "Clear search and filters" button is shown'}]},
+        { id:"CB-21", title:"Clear a single filter selection", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"and",  s:"one or more options are selected in a filter type"},
+          {t:"when", s:"a selected option is tapped/clicked"},
+          {t:"then", s:"the option is deselected"}]},
+        { id:"CB-22", title:"Clear all filters from the filter panel", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"and",  s:"one or more filter options are selected"},
+          {t:"when", s:'the "Clear filters" button is tapped/clicked'},
+          {t:"then", s:"all selected filter options are deselected"}]},
+        { id:"CB-23", u:1, title:"Clear all filters from the coffee beans list", steps:[
+          {t:"given",s:"one or more filters are active"},
+          {t:"when", s:'the "All" quick filter chip is tapped/clicked'},
+          {t:"then", s:"all active filters are cleared"},
+          {t:"and",  s:"all coffee beans are shown"}]},
+        { id:"CB-24", title:"Close filter panel without applying changes", steps:[
+          {t:"given",s:"the filter panel is shown"},
+          {t:"and",  s:"one or more filter options have been changed"},
+          {t:"when", s:'the filter panel is dismissed without tapping/clicking "Apply"'},
+          {t:"then", s:"the filter panel is closed"},
+          {t:"and",  s:"the previously active filters remain unchanged"},
+          {t:"and",  s:"the coffee beans list reflects the previously active filters"}]},
+        { id:"CB-74", u:1, title:"Toggle favourites with the quick filter chip", steps:[
+          {t:"given",s:"the coffee beans list is shown"},
+          {t:"when", s:'the "Favourites" chip is tapped/clicked'},
+          {t:"then", s:"only beans marked as favourite are shown"},
+          {t:"when", s:'the "Favourites" chip is tapped/clicked again'},
+          {t:"then", s:"the favourites filter is removed"}]},
+        { id:"CB-75", u:1, title:"Show only beans in containers with the quick filter chip", steps:[
+          {t:"given",s:"at least one bean is assigned to a container"},
+          {t:"when", s:'the "In containers" chip is tapped/clicked'},
+          {t:"then", s:"only beans assigned to a container are shown"},
+          {t:"and",  s:"tapping/clicking the chip again shows all beans again"}]},
+        { id:"CB-76", u:1, title:"Remove a shop filter chip", steps:[
+          {t:"given",s:"a shop filter is active and shown as a chip above the list"},
+          {t:"when", s:"the × on the shop chip is tapped/clicked"},
+          {t:"then", s:"that shop is removed from the active filters"}]},
+      ]},
+      { id:"cb-hero", title:"Container Dial (Beans tab)", scenarios:[
+        { id:"CB-77", u:1, title:"Show the bean in a container on the dial", steps:[
+          {t:"given",s:"at least one bean is assigned to a container"},
+          {t:"and",  s:"no search text and no filters are active"},
+          {t:"when", s:"the Beans tab is shown"},
+          {t:"then", s:'a round dial is shown above the list with "Container N" at the top'},
+          {t:"and",  s:"the dial's rim has the colour of that container (as in the list rings)"},
+          {t:"and",  s:"the dial shows the double-shot ratio (e.g. 1:2.0) and dose → yield · time · temperature"},
+          {t:"and",  s:"the bean name and shop · country · process are shown below the dial"}]},
+        { id:"CB-78", u:1, title:"Show SCA score on the dial when the bean has no recipe", steps:[
+          {t:"given",s:"the bean shown on the dial has no double-shot recipe"},
+          {t:"and",  s:"it has an SCA score"},
+          {t:"then", s:'the dial shows the SCA score with "SCA score · no recipe yet"'}]},
+        { id:"CB-79", u:1, title:"Switch the dial to another container", steps:[
+          {t:"given",s:"two or more containers hold a bean"},
+          {t:"then", s:"a round button per filled container (its number in its colour) is shown under the dial"},
+          {t:"when", s:"the button of container 2 is tapped/clicked"},
+          {t:"then", s:"the dial shows the bean in container 2"},
+          {t:"and",  s:"container 2 stays selected the next time the app is opened on this device"}]},
+        { id:"CB-80", u:1, title:"Hide the container switcher with only one filled container", steps:[
+          {t:"given",s:"exactly one container holds a bean"},
+          {t:"then", s:"no container switcher buttons are shown under the dial"}]},
+        { id:"CB-81", u:1, title:"Open the bean from the dial", steps:[
+          {t:"given",s:"the dial is shown"},
+          {t:"when", s:"the dial is tapped/clicked"},
+          {t:"then", s:"the bean page of that bean is shown"}]},
+        { id:"CB-82", u:1, title:"Hide the dial while searching or filtering", steps:[
+          {t:"given",s:"the dial is shown"},
+          {t:"when", s:"text is typed in the search bar or a filter is applied"},
+          {t:"then", s:"the dial is hidden so the results are directly visible"}]},
+      ]},
+      { id:"cb-add", title:"Adding a Bean", scenarios:[
+        { id:"CB-25", u:1, title:"Add a bean", steps:[
+          {t:"given",s:"any main tab (Beans, Containers, Shops) is shown"},
+          {t:"when", s:'the "+" button in the bottom navigation is tapped/clicked'},
+          {t:"then", s:'the "Add a bean" page with empty fields is shown'},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an inactive "Save bean" button is shown'}]},
+        { id:"CB-26", u:1, title:"Cancel adding a bean before filling required fields", steps:[
+          {t:"given",s:'the "Add a bean" page with empty fields is shown'},
+          {t:"when", s:'the "Cancel" button is tapped/clicked'},
+          {t:"then", s:"the previous page is shown again"},
+          {t:"and",  s:"nothing is added to the DB"}]},
+        { id:"CB-27", title:"Activate Save button when required fields are filled", steps:[
+          {t:"given",s:'the "Add a bean" page with empty fields is shown'},
+          {t:"when", s:"bean name, shop and country of origin are filled"},
+          {t:"then", s:'the "Save bean" button becomes active'}]},
+        { id:"CB-28", title:"Deactivate Save button when a required field is cleared", steps:[
+          {t:"given",s:'the "Add a bean" page with all required fields filled is shown'},
+          {t:"and",  s:'the "Save bean" button is active'},
+          {t:"when", s:"a required field is cleared"},
+          {t:"then", s:'the "Save bean" button becomes inactive'}]},
+        { id:"CB-29", u:1, title:"Cancel adding a bean after filling required fields", steps:[
+          {t:"given",s:'the "Add a bean" page with all required fields filled is shown'},
+          {t:"when", s:'the "Cancel" button is tapped/clicked'},
+          {t:"then", s:"the previous page is shown again"},
+          {t:"and",  s:"nothing is added to the DB"}]},
+        { id:"CB-30", title:"Suggest existing shops when filling in the shop field", steps:[
+          {t:"given",s:'the "Add a bean" page is shown'},
+          {t:"and",  s:"shops exist in the DB"},
+          {t:"when", s:"the shop field is tapped/clicked or typed in"},
+          {t:"then", s:"a list of matching existing shops (with their bean counts) is shown"}]},
+        { id:"CB-31", title:"Fill shop field by selecting a suggested shop", steps:[
+          {t:"given",s:"a list of existing shops is shown below the shop field"},
+          {t:"when", s:"a shop is selected from the list"},
+          {t:"then", s:"the shop field is filled with the selected shop name"}]},
+        { id:"CB-32", title:"Warn when saving a new bean that already exists", steps:[
+          {t:"given",s:"a bean named X already exists"},
+          {t:"and",  s:'the "Add a bean" page with all required fields filled is shown'},
+          {t:"and",  s:"the bean name is X"},
+          {t:"when", s:'the "Save bean" button is tapped/clicked'},
+          {t:"then", s:"a warning dialogue is shown stating that bean X already exists"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an active "View existing" button is shown'}]},
+        { id:"CB-33", u:1, title:"View existing bean from duplicate warning dialogue", steps:[
+          {t:"given",s:"a warning dialogue is shown stating that bean X already exists"},
+          {t:"when", s:'the "View existing" button is tapped/clicked'},
+          {t:"then", s:"the warning dialogue is dismissed"},
+          {t:"and",  s:'the "Add a bean" page is closed'},
+          {t:"and",  s:"the bean page of the existing bean X is shown"}]},
+        { id:"CB-34", title:"Cancel saving a duplicate bean", steps:[
+          {t:"given",s:"a warning dialogue is shown stating that bean X already exists"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked'},
+          {t:"then", s:"the warning dialogue is dismissed"},
+          {t:"and",  s:'the "Add a bean" page with the filled fields is shown again'},
+          {t:"and",  s:"nothing is added to the DB"}]},
+        { id:"CB-35", u:1, title:"Save a new bean without container assignment", steps:[
+          {t:"given",s:"no bean named X exists"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:'container "None" is selected'},
+          {t:"when", s:'the "Save bean" button is tapped/clicked'},
+          {t:"then", s:"the new bean is added to the DB"},
+          {t:"and",  s:"the bean page of the new bean is shown"},
+          {t:"and",  s:"the favourite star is shown as inactive"}]},
+        { id:"CB-36", title:"Add shop to shops list when saving a new bean with a new shop", steps:[
+          {t:"given",s:"no bean named X exists"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:'the shop name entered does not exist in the DB (the field hint says "New shop")'},
+          {t:"when", s:'the "Save bean" button is tapped/clicked'},
+          {t:"then", s:"the new bean is added to the DB"},
+          {t:"and",  s:"the shop is added to the DB"},
+          {t:"and",  s:"the shop is shown in the shops list"}]},
+        { id:"CB-37", title:"Do not duplicate shop when saving a new bean with an existing shop", steps:[
+          {t:"given",s:"no bean named X exists"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:"the shop name entered already exists in the DB"},
+          {t:"when", s:'the "Save bean" button is tapped/clicked'},
+          {t:"then", s:"the new bean is added to the DB"},
+          {t:"and",  s:"no duplicate shop is added to the DB"},
+          {t:"and",  s:"the existing shop remains in the shops list"}]},
+        { id:"CB-38", u:1, title:"Save a new bean with container assignment", steps:[
+          {t:"given",s:"no bean named X exists"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:"the container 1 tile is selected"},
+          {t:"and",  s:"container 1 is empty"},
+          {t:"when", s:'the "Save bean" button is tapped/clicked'},
+          {t:"then", s:"the new bean is added to the DB"},
+          {t:"and",  s:"the bean page of the new bean is shown"},
+          {t:"and",  s:"the bean is assigned to container 1"}]},
+        { id:"CB-39", u:1, title:"Warn when saving a new bean to an occupied container", steps:[
+          {t:"given",s:"no bean named X exists"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:'the container 1 tile is selected (it shows "has Y")'},
+          {t:"and",  s:"bean Y is already assigned to container 1"},
+          {t:"when", s:'the "Save bean" button is tapped/clicked'},
+          {t:"then", s:"a warning dialogue is shown stating that container 1 holds bean Y and asking whether to replace it"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an active "Replace" button is shown'}]},
+        { id:"CB-40", u:1, title:"Replace the bean assigned to a container", steps:[
+          {t:"given",s:"bean Y is already assigned to container 1"},
+          {t:"and",  s:"a new bean is being saved and assigned to container 1"},
+          {t:"when", s:'the "Replace" button is tapped/clicked'},
+          {t:"then", s:"the new bean is added to the DB"},
+          {t:"and",  s:"the bean page of the new bean is shown"},
+          {t:"and",  s:"bean Y is unassigned from container 1 and stays in the bean list"},
+          {t:"and",  s:"the new bean is assigned to container 1"}]},
+        { id:"CB-41", title:"Cancel replacing the bean assigned to a container", steps:[
+          {t:"given",s:"bean Y is already assigned to container 1"},
+          {t:"and",  s:"a new bean is being saved and assigned to container 1"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked'},
+          {t:"then", s:'the "Add a bean" page with the filled fields is shown again and nothing is added to the DB'},
+          {t:"and",  s:"bean Y remains assigned to container 1"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an active "Save bean" button is shown'}]},
+      ]},
+      { id:"cb-page", title:"Bean Page (replaces card expand / collapse)", scenarios:[
+        { id:"CB-42", u:1, title:"Open the bean page from the list", steps:[
+          {t:"given",s:"the coffee beans list is shown"},
+          {t:"when", s:"a bean row is tapped/clicked"},
+          {t:"then", s:"the bean page of that bean is shown"}]},
+        { id:"CB-43", u:1, title:"Show bean details on the bean page", steps:[
+          {t:"given",s:"the bean page is shown"},
+          {t:"then", s:"the SCA score is shown on a small dial (when set)"},
+          {t:"and",  s:"country, name, process and variety are shown"},
+          {t:"and",  s:"the shop (with a link to the product page or shop website) and the container are shown"},
+          {t:"and",  s:"flavour tags, region, altitude, variety, process, farm / producer and tasting notes are shown"},
+          {t:"and",  s:'empty origin fields show "+ Add", which opens the edit page'},
+          {t:"and",  s:"the espresso recipe (dose, yield, time, temperature, ratio, notes) is shown"}]},
+        { id:"CB-44", u:1, title:"Show favourite star in the list row", steps:[
+          {t:"given",s:"a bean is marked as favourite"},
+          {t:"when", s:"the coffee beans list is shown"},
+          {t:"then", s:"a star is shown next to the bean's name in its row"}]},
+        { id:"CB-45", u:1, title:"Return from the bean page", steps:[
+          {t:"given",s:"the bean page is shown"},
+          {t:"when", s:"the back button is tapped/clicked"},
+          {t:"then", s:"the previous page is shown again (or the bean list when opened directly)"}]},
+        { id:"CB-46", u:1, title:"Switch the recipe between double and single shot", steps:[
+          {t:"given",s:"the bean page of a bean with a double-shot recipe is shown"},
+          {t:"when", s:'"Single" is selected in the recipe switch'},
+          {t:"then", s:"dose and yield are shown halved"},
+          {t:"and",  s:'the time is shown as "?" with a note that time is not halved'},
+          {t:"when", s:'"Double" is selected again'},
+          {t:"then", s:"the saved double-shot values are shown"}]},
+        { id:"CB-83", u:1, title:"Read long tasting notes", steps:[
+          {t:"given",s:"the bean page is shown"},
+          {t:"and",  s:"the tasting notes are longer than three lines"},
+          {t:"then", s:'the notes are cut off after three lines with a "Read all" button'},
+          {t:"when", s:'"Read all" is tapped/clicked'},
+          {t:"then", s:'the full notes are shown with a "Show less" button'}]},
+        { id:"CB-84", u:1, title:"Reveal Edit and Delete by swiping a list row", steps:[
+          {t:"given",s:"the coffee beans list is shown on a touch screen"},
+          {t:"when", s:"a bean row is swiped to the left"},
+          {t:"then", s:'"Edit" and "Delete" actions are revealed on that row'},
+          {t:"and",  s:"any other open row closes"},
+          {t:"when", s:"the open row is tapped"},
+          {t:"then", s:"the row closes without opening the bean page"}]},
+      ]},
+      { id:"cb-fav", title:"Favourites", scenarios:[
+        { id:"CB-47", u:1, title:"Mark a bean as favourite", steps:[
+          {t:"given",s:"the bean page is shown"},
+          {t:"and",  s:"the bean is not marked as favourite"},
+          {t:"when", s:"the star button is tapped/clicked"},
+          {t:"then", s:"the bean is marked as favourite in the DB"},
+          {t:"and",  s:"the star is shown as active (filled)"}]},
+        { id:"CB-48", u:1, title:"Unmark a bean as favourite", steps:[
+          {t:"given",s:"the bean page is shown"},
+          {t:"and",  s:"the bean is marked as favourite"},
+          {t:"when", s:"the star button is tapped/clicked"},
+          {t:"then", s:"the bean is unmarked as favourite in the DB"},
+          {t:"and",  s:"the star is shown as inactive (outline)"}]},
+        { id:"CB-49", u:1, title:"Favourite status is shown in the list after returning from the bean page", steps:[
+          {t:"given",s:"a bean was marked as favourite on its bean page"},
+          {t:"when", s:"the coffee beans list is shown again"},
+          {t:"then", s:"the bean is shown with a star near the top of the list"}]},
+        { id:"CB-50", u:1, title:"Favourite status is shown when the bean page opens", steps:[
+          {t:"given",s:"a bean is marked as favourite"},
+          {t:"when", s:"its bean page is opened"},
+          {t:"then", s:"the star is shown as active"}]},
+        { id:"CB-51", u:1, title:"Favourite status is preserved when editing a bean", steps:[
+          {t:"given",s:"a bean is marked as favourite"},
+          {t:"and",  s:"its edit page is open"},
+          {t:"when", s:'the "Save changes" button is tapped/clicked'},
+          {t:"then", s:"the updated bean is saved to the DB"},
+          {t:"and",  s:"the bean page shows the star as active"}]},
+        { id:"CB-52", u:1, title:"Favourite beans are shown at the top of the list", steps:[
+          {t:"given",s:"coffee beans exist in the DB"},
+          {t:"and",  s:"one or more beans are marked as favourite"},
+          {t:"when", s:"the coffee beans list is shown"},
+          {t:"then", s:"all favourite beans are shown at the top of the single list, each with a star"},
+          {t:"and",  s:"all other beans are shown below them (no separate section headings)"}]},
+      ]},
+      { id:"cb-edit", title:"Editing a Bean", scenarios:[
+        { id:"CB-53", u:1, title:"Open a bean for editing", steps:[
+          {t:"given",s:"the bean page is shown (or a list row is swiped open)"},
+          {t:"when", s:'the edit (pencil) button or "Edit" swipe action is tapped/clicked'},
+          {t:"then", s:"the edit page with the bean's current values is shown"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an active "Save changes" button is shown'}]},
+        { id:"CB-54", u:1, title:"Cancel editing a bean before making changes", steps:[
+          {t:"given",s:"the edit page is open"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked'},
+          {t:"then", s:"the previous page is shown with the original values"},
+          {t:"and",  s:"nothing is changed in the DB"}]},
+        { id:"CB-55", title:"Deactivate Save button when a required field is cleared during editing", steps:[
+          {t:"given",s:"the edit page is open"},
+          {t:"when", s:"a required field is cleared"},
+          {t:"then", s:'the "Save changes" button becomes inactive'}]},
+        { id:"CB-56", title:"Cancel editing a bean after making changes", steps:[
+          {t:"given",s:"the edit page is open"},
+          {t:"and",  s:"one or more fields have been changed"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked'},
+          {t:"then", s:"a warning dialogue is shown asking whether to discard the changes"},
+          {t:"and",  s:'an active "Keep editing" button is shown'},
+          {t:"and",  s:'an active "Discard" button is shown'}]},
+        { id:"CB-57", u:1, title:"Discard changes when cancelling editing a bean", steps:[
+          {t:"given",s:"a warning dialogue is shown asking whether to discard the changes"},
+          {t:"when", s:'the "Discard" button is tapped/clicked'},
+          {t:"then", s:"the previous page is shown with the original values"},
+          {t:"and",  s:"nothing is changed in the DB"}]},
+        { id:"CB-58", title:"Keep editing when cancelling editing a bean", steps:[
+          {t:"given",s:"a warning dialogue is shown asking whether to discard the changes"},
+          {t:"when", s:'the "Keep editing" button is tapped/clicked'},
+          {t:"then", s:"the warning dialogue is dismissed"},
+          {t:"and",  s:"the edit page is shown with the changed values intact"}]},
+        { id:"CB-59", u:1, title:"Save an edited bean without container change", steps:[
+          {t:"given",s:"the edit page is open"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:"the container selection is unchanged"},
+          {t:"when", s:'the "Save changes" button is tapped/clicked'},
+          {t:"then", s:"the updated bean is saved to the DB"},
+          {t:"and",  s:"the bean page is shown with the new values"}]},
+        { id:"CB-60", title:"Add shop to shops list when saving an edited bean with a new shop", steps:[
+          {t:"given",s:"the edit page is open"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:"the shop name has been changed to a shop that does not exist in the DB"},
+          {t:"when", s:'the "Save changes" button is tapped/clicked'},
+          {t:"then", s:"the updated bean is saved to the DB"},
+          {t:"and",  s:"the new shop is added to the DB"},
+          {t:"and",  s:"the new shop is shown in the shops list"}]},
+        { id:"CB-61", title:"Do not duplicate shop when saving an edited bean with an existing shop", steps:[
+          {t:"given",s:"the edit page is open"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:"the shop name has been changed to a shop that already exists in the DB"},
+          {t:"when", s:'the "Save changes" button is tapped/clicked'},
+          {t:"then", s:"the updated bean is saved to the DB"},
+          {t:"and",  s:"no duplicate shop is added to the DB"},
+          {t:"and",  s:"the existing shop remains in the shops list"}]},
+        { id:"CB-62", u:1, title:"Save an edited bean with container assignment removed", steps:[
+          {t:"given",s:"the edit page is open"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:"container 1 was previously selected"},
+          {t:"and",  s:'the "None" container tile is selected'},
+          {t:"when", s:'the "Save changes" button is tapped/clicked'},
+          {t:"then", s:"the updated bean is saved to the DB"},
+          {t:"and",  s:"the bean page is shown"},
+          {t:"and",  s:"the bean is unassigned from container 1"}]},
+        { id:"CB-63", u:1, title:"Save an edited bean with container assignment added", steps:[
+          {t:"given",s:"the edit page is open"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:"no container was previously selected"},
+          {t:"and",  s:"the container 1 tile is selected"},
+          {t:"and",  s:"container 1 is empty"},
+          {t:"when", s:'the "Save changes" button is tapped/clicked'},
+          {t:"then", s:"the updated bean is saved to the DB"},
+          {t:"and",  s:"the bean page is shown"},
+          {t:"and",  s:"the bean is assigned to container 1"}]},
+        { id:"CB-64", title:"Warn when saving an edited bean to an occupied container", steps:[
+          {t:"given",s:"the edit page is open"},
+          {t:"and",  s:"all required fields are filled"},
+          {t:"and",  s:"the container 1 tile is selected"},
+          {t:"and",  s:"another bean is already assigned to container 1"},
+          {t:"when", s:'the "Save changes" button is tapped/clicked'},
+          {t:"then", s:"a warning dialogue is shown stating which bean is in container 1 and asking whether to replace it"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an active "Replace" button is shown'}]},
+        { id:"CB-65", u:1, title:"Replace the bean in a container when saving an edited bean", steps:[
+          {t:"given",s:"another bean is already assigned to container 1"},
+          {t:"and",  s:"an edited bean is being saved and assigned to container 1"},
+          {t:"when", s:'the "Replace" button is tapped/clicked'},
+          {t:"then", s:"the updated bean is saved to the DB"},
+          {t:"and",  s:"the bean page is shown"},
+          {t:"and",  s:"the previously assigned bean is unassigned from container 1"},
+          {t:"and",  s:"the edited bean is assigned to container 1"}]},
+        { id:"CB-66", title:"Cancel replacing the bean in a container when saving an edited bean", steps:[
+          {t:"given",s:"another bean is already assigned to container 1"},
+          {t:"and",  s:"an edited bean is being saved and assigned to container 1"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked'},
+          {t:"then", s:"the warning dialogue is dismissed"},
+          {t:"and",  s:"the edit page is shown with the changed values intact"},
+          {t:"and",  s:"the previously assigned bean remains assigned to container 1"},
+          {t:"and",  s:"nothing is changed in the DB"}]},
+        { id:"CB-85", u:1, title:"Add and remove flavour tags as chips", steps:[
+          {t:"given",s:"the add or edit page is open"},
+          {t:"when", s:"a tag is typed in the flavour tags box followed by Enter or a comma"},
+          {t:"then", s:"the tag is shown as a chip"},
+          {t:"when", s:"the × on a chip is tapped/clicked"},
+          {t:"then", s:"the tag is removed"},
+          {t:"and",  s:"a tag still being typed when saving is saved too"}]},
+        { id:"CB-86", u:1, title:"Pick the process from quick picks", steps:[
+          {t:"given",s:"the add or edit page is open"},
+          {t:"when", s:'one of "Washed", "Natural", "Honey" or "Anaerobic" is tapped/clicked'},
+          {t:"then", s:"the process field is filled with that value"},
+          {t:"and",  s:"any other process can still be typed in the field"}]},
+        { id:"CB-87", u:1, title:"Show the ratio while entering the recipe", steps:[
+          {t:"given",s:"the add or edit page is open"},
+          {t:"when", s:'"In" and "Out" are both filled in the espresso recipe'},
+          {t:"then", s:"the ratio (e.g. 1:2.0) is shown next to the recipe heading"}]},
+      ]},
+      { id:"cb-dial", title:"Dial-in", scenarios:[
+        { id:"CB-88", u:1, title:"Open dial-in from the bean page", steps:[
+          {t:"given",s:"the bean page of a bean with a double-shot recipe is shown"},
+          {t:"when", s:'"Dial in this bean" is tapped/clicked'},
+          {t:"then", s:"the dial-in page is shown with Yield on the big dial"},
+          {t:"and",  s:'tiles for "In", "Out", "Time" and "Temp" with the current values are shown'},
+          {t:"and",  s:'"Reset" and "Save recipe" are shown inactive'}]},
+        { id:"CB-89", u:1, title:"Set up a recipe for a bean without one", steps:[
+          {t:"given",s:"the bean page of a bean without a recipe is shown"},
+          {t:"when", s:'"Set up a recipe" is tapped/clicked'},
+          {t:"then", s:"the dial-in page is shown with 18 g in, 36 g out, 28 s and 93 °C as starting values"}]},
+        { id:"CB-90", u:1, title:"Choose which value is on the dial", steps:[
+          {t:"given",s:"the dial-in page is shown"},
+          {t:"when", s:"a value tile (In, Out, Time or Temp) is tapped/clicked"},
+          {t:"then", s:"that value is shown on the big dial"},
+          {t:"and",  s:"the tile is shown as selected"}]},
+        { id:"CB-91", u:1, title:"Adjust the value on the dial", steps:[
+          {t:"given",s:"a value is shown on the big dial"},
+          {t:"when", s:"the ring is dragged, ± is tapped/clicked, or the arrow keys are used"},
+          {t:"then", s:"the value changes in steps (dose 0.1 g, yield 0.5 g, time 1 s, temperature 0.5 °C)"},
+          {t:"and",  s:"the ratio updates straight away"},
+          {t:"and",  s:"the changed tile is marked with a dot"},
+          {t:"and",  s:'"Reset" and "Save recipe" become active'}]},
+        { id:"CB-92", u:1, title:"Save the dialled-in recipe", steps:[
+          {t:"given",s:"one or more recipe values have been changed on the dial-in page"},
+          {t:"when", s:'"Save recipe" is tapped/clicked'},
+          {t:"then", s:"the double-shot recipe is saved to the DB with the new ratio"},
+          {t:"and",  s:"the recipe notes and all other bean details stay unchanged"},
+          {t:"and",  s:"the bean page is shown with the new values"}]},
+        { id:"CB-93", u:1, title:"Reset changes on the dial-in page", steps:[
+          {t:"given",s:"one or more recipe values have been changed on the dial-in page"},
+          {t:"when", s:'"Reset" is tapped/clicked'},
+          {t:"then", s:"all values return to the saved recipe"}]},
+        { id:"CB-94", u:1, title:"Leave dial-in with unsaved changes", steps:[
+          {t:"given",s:"one or more recipe values have been changed on the dial-in page"},
+          {t:"when", s:"the back button is tapped/clicked"},
+          {t:"then", s:'a "Discard changes?" dialogue with "Keep editing" and "Discard" is shown'},
+          {t:"when", s:'"Discard" is tapped/clicked'},
+          {t:"then", s:"the previous page is shown and nothing is changed in the DB"}]},
+      ]},
+      { id:"cb-delete", title:"Deleting a Bean", scenarios:[
+        { id:"CB-67", u:1, title:"Delete a bean", steps:[
+          {t:"given",s:"the bean page is shown (or a list row is swiped open)"},
+          {t:"when", s:'"Delete bean" (or the "Delete" swipe action) is tapped/clicked'},
+          {t:"then", s:"a confirmation dialogue is shown asking whether to delete the bean"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an active "Delete" button is shown'}]},
+        { id:"CB-68", u:1, title:"Cancel deleting a bean", steps:[
+          {t:"given",s:"a confirmation dialogue is shown asking whether to delete the bean"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked'},
+          {t:"then", s:"the confirmation dialogue is dismissed"},
+          {t:"and",  s:"the bean page (or list) is shown unchanged"},
+          {t:"and",  s:"nothing is changed in the DB"}]},
+        { id:"CB-69", title:"Confirm deleting a bean without container assignment", steps:[
+          {t:"given",s:"a confirmation dialogue is shown asking whether to delete the bean"},
+          {t:"and",  s:"the bean is not assigned to any container"},
+          {t:"when", s:'the "Delete" button is tapped/clicked'},
+          {t:"then", s:"the bean is removed from the DB"},
+          {t:"and",  s:"the coffee beans list is shown"}]},
+        { id:"CB-70", u:1, title:"Confirm deleting a bean with container assignment", steps:[
+          {t:"given",s:"a confirmation dialogue is shown asking whether to delete the bean"},
+          {t:"and",  s:"the bean is assigned to container 1"},
+          {t:"then", s:"the dialogue mentions that container 1 will be freed"},
+          {t:"when", s:'the "Delete" button is tapped/clicked'},
+          {t:"then", s:"the bean is removed from the DB"},
+          {t:"and",  s:"container 1 is empty"},
+          {t:"and",  s:"the coffee beans list is shown"}]},
+        { id:"CB-71", title:"Shop remains in list when a bean is deleted", steps:[
+          {t:"given",s:"a confirmation dialogue is shown asking whether to delete bean X"},
+          {t:"and",  s:"the shop where bean X was bought exists in the DB"},
+          {t:"when", s:'the "Delete" button is tapped/clicked'},
+          {t:"then", s:"the bean is removed from the DB"},
+          {t:"and",  s:"the shop remains in the DB"},
+          {t:"and",  s:"the shop remains in the shops list"}]},
+      ]},
+      { id:"cb-qr", title:"QR Code", scenarios:[
+        { id:"CB-72", u:1, title:"Show the container's bean when its QR code is scanned", steps:[
+          {t:"given",s:"bean X is assigned to container 1"},
+          {t:"when", s:"the QR code of container 1 (…/beans/container/1) is scanned"},
+          {t:"then", s:"a page with one big dial is shown, labelled with container 1 and its colour"},
+          {t:"and",  s:"the dial shows the ratio of bean X's recipe (or its SCA score)"},
+          {t:"and",  s:"bean X's name, shop · country · process, recipe values, recipe notes and flavour tags are shown"},
+          {t:"and",  s:'"Open bean" and (with a double-shot recipe) "Dial in" buttons are shown'}]},
+        { id:"CB-73", u:1, title:"Show empty state when the QR code of an empty container is scanned", steps:[
+          {t:"given",s:"no bean is assigned to container 1"},
+          {t:"when", s:"the QR code of container 1 is scanned"},
+          {t:"then", s:'the dial shows "Empty" with the message that no beans are in this container'},
+          {t:"and",  s:'a "Fill with one of your beans" button is shown, which opens the fill list for container 1'},
+          {t:"and",  s:'an "Add a new bean" button is shown'}]},
+      ]},
+    ]
+  },
+  {
+    id:"containers", title:"Containers", icon:"📦",
+    groups:[
+      { id:"con-list", title:"List Display", scenarios:[
+        { id:"CON-01", u:1, title:"Show empty containers list", steps:[
+          {t:"given",s:"no containers exist in the DB"},
+          {t:"when", s:"the Containers tab is shown"},
+          {t:"then", s:"an empty state message is shown"},
+          {t:"and",  s:'an "Add container" button is shown'}]},
+        { id:"CON-02", u:1, title:"Show containers list with existing containers", steps:[
+          {t:"given",s:"containers exist in the DB"},
+          {t:"when", s:"the Containers tab is shown"},
+          {t:"then", s:"each container is shown as a round card with its number in a ring"},
+          {t:"and",  s:"the ring is coloured from a colour word in the container's name (grey, green, azul, groen…)"},
+          {t:"and",  s:'each card shows the bean it holds, or "Empty · tap to fill"'},
+          {t:"and",  s:'the number of containers and filled containers and a "New" button are shown at the top'}]},
+      ]},
+      { id:"con-add", title:"Adding a Container", scenarios:[
+        { id:"CON-03", u:1, title:"Add a container", steps:[
+          {t:"given",s:"the containers list is shown"},
+          {t:"when", s:'"New" (or "Add container") is tapped/clicked'},
+          {t:"then", s:"a sheet with an empty name field is shown"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an inactive "Save" button is shown'}]},
+        { id:"CON-04", title:"Activate Save button when container name is filled", steps:[
+          {t:"given",s:"the new container sheet with an empty name field is shown"},
+          {t:"when", s:"the container name field is filled"},
+          {t:"then", s:'the "Save" button becomes active'}]},
+        { id:"CON-05", u:1, title:"Cancel adding a container", steps:[
+          {t:"given",s:"the new container sheet is shown"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked (or the sheet is dismissed)'},
+          {t:"then", s:"the sheet is closed"},
+          {t:"and",  s:"nothing is added to the DB"}]},
+        { id:"CON-06", u:1, title:"Warn when saving a container with an already existing name", steps:[
+          {t:"given",s:"the new container sheet with the name field filled is shown"},
+          {t:"and",  s:"a container with the same name already exists in the DB"},
+          {t:"when", s:'the "Save" button is tapped/clicked'},
+          {t:"then", s:"an error message under the name field states that a container with that name already exists"},
+          {t:"and",  s:"nothing is added to the DB"}]},
+        { id:"CON-07", u:1, title:"Correct a duplicate container name", steps:[
+          {t:"given",s:"the duplicate-name error is shown under the name field"},
+          {t:"when", s:"the name is changed"},
+          {t:"then", s:"the error message disappears"},
+          {t:"and",  s:"the sheet stays open with the changed name"}]},
+        { id:"CON-08", title:"Save a new container", steps:[
+          {t:"given",s:"the new container sheet with the name field filled is shown"},
+          {t:"and",  s:"no container with the same name exists in the DB"},
+          {t:"when", s:'the "Save" button is tapped/clicked'},
+          {t:"then", s:"the new container is added to the DB"},
+          {t:"and",  s:"the container is shown in the containers list"}]},
+      ]},
+      { id:"con-edit", title:"Renaming a Container", scenarios:[
+        { id:"CON-09", u:1, title:"Rename a container", steps:[
+          {t:"given",s:"a container is shown in the containers list"},
+          {t:"when", s:'⋯ on the container card and then "Rename" are tapped/clicked'},
+          {t:"then", s:"a sheet with the container name field filled in is shown"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an active "Save" button is shown'}]},
+        { id:"CON-10", u:1, title:"Cancel renaming a container before making changes", steps:[
+          {t:"given",s:"the rename sheet is open"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked'},
+          {t:"then", s:"the sheet is closed and the container keeps its original name"},
+          {t:"and",  s:"nothing is changed in the DB"}]},
+        { id:"CON-11", u:1, title:"Cancel renaming a container after making changes", steps:[
+          {t:"given",s:"the rename sheet is open"},
+          {t:"and",  s:"the container name has been changed"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked (or the sheet is dismissed)'},
+          {t:"then", s:"a warning dialogue is shown asking whether to discard the changes"},
+          {t:"and",  s:'an active "Keep editing" button is shown'},
+          {t:"and",  s:'an active "Discard" button is shown'}]},
+        { id:"CON-12", u:1, title:"Discard changes when cancelling renaming a container", steps:[
+          {t:"given",s:"a warning dialogue is shown asking whether to discard the changes to a container name"},
+          {t:"when", s:'the "Discard" button is tapped/clicked'},
+          {t:"then", s:"the sheet is closed and the container keeps its original name"},
+          {t:"and",  s:"nothing is changed in the DB"}]},
+        { id:"CON-13", u:1, title:"Keep editing when cancelling renaming a container", steps:[
+          {t:"given",s:"a warning dialogue is shown asking whether to discard the changes to a container name"},
+          {t:"when", s:'the "Keep editing" button is tapped/clicked'},
+          {t:"then", s:"the warning dialogue is dismissed"},
+          {t:"and",  s:"the rename sheet is shown with the changed name intact"}]},
+        { id:"CON-14", u:1, title:"Warn when saving a new container name that already exists", steps:[
+          {t:"given",s:"the rename sheet is open"},
+          {t:"and",  s:"the name has been changed to match another container's name"},
+          {t:"when", s:'the "Save" button is tapped/clicked'},
+          {t:"then", s:"an error message under the name field states that a container with that name already exists"},
+          {t:"and",  s:"nothing is changed in the DB"}]},
+        { id:"CON-15", u:1, title:"Correct a duplicate name when renaming", steps:[
+          {t:"given",s:"the duplicate-name error is shown in the rename sheet"},
+          {t:"when", s:"the name is changed"},
+          {t:"then", s:"the error message disappears"},
+          {t:"and",  s:"nothing is changed in the DB until Save"}]},
+        { id:"CON-16", title:"Save a renamed container", steps:[
+          {t:"given",s:"the rename sheet is open"},
+          {t:"and",  s:"the container name has been changed"},
+          {t:"and",  s:"no container with the same name exists in the DB"},
+          {t:"when", s:'the "Save" button is tapped/clicked'},
+          {t:"then", s:"the new name is saved to the DB"},
+          {t:"and",  s:"the container is shown in the containers list with the new name"}]},
+      ]},
+      { id:"con-remove", title:"Removing a Container", scenarios:[
+        { id:"CON-17", u:1, title:"Remove a container without a bean assigned", steps:[
+          {t:"given",s:"a container is shown in the containers list"},
+          {t:"and",  s:"no bean is assigned to the container"},
+          {t:"when", s:'⋯ and then "Remove container" are tapped/clicked'},
+          {t:"then", s:"a confirmation dialogue is shown asking whether to remove the container"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an active "Remove" button is shown'}]},
+        { id:"CON-18", u:1, title:"Remove a container with a bean assigned", steps:[
+          {t:"given",s:"a container is shown in the containers list"},
+          {t:"and",  s:"a bean is assigned to the container"},
+          {t:"when", s:'⋯ and then "Remove container" are tapped/clicked'},
+          {t:"then", s:"a confirmation dialogue is shown asking whether to remove the container and stating which bean is in it"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an active "Remove" button is shown'}]},
+        { id:"CON-19", title:"Cancel removing a container", steps:[
+          {t:"given",s:"a confirmation dialogue is shown asking whether to remove the container"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked'},
+          {t:"then", s:"the confirmation dialogue is dismissed"},
+          {t:"and",  s:"the container remains in the containers list"},
+          {t:"and",  s:"nothing is changed in the DB"}]},
+        { id:"CON-20", title:"Confirm removing a container without a bean assigned", steps:[
+          {t:"given",s:"a confirmation dialogue is shown asking whether to remove the container"},
+          {t:"and",  s:"no bean is assigned to the container"},
+          {t:"when", s:'the "Remove" button is tapped/clicked'},
+          {t:"then", s:"the container is removed from the DB"},
+          {t:"and",  s:"the containers list is shown"}]},
+        { id:"CON-21", title:"Confirm removing a container with a bean assigned", steps:[
+          {t:"given",s:"a confirmation dialogue is shown asking whether to remove the container"},
+          {t:"and",  s:"a bean is assigned to the container"},
+          {t:"when", s:'the "Remove" button is tapped/clicked'},
+          {t:"then", s:"the container is removed from the DB"},
+          {t:"and",  s:"the bean is unassigned from the container and stays in the bean list"},
+          {t:"and",  s:"the containers list is shown"}]},
+      ]},
+      { id:"con-fill", title:"Filling a Container", scenarios:[
+        { id:"CON-22", u:1, title:"Open the bean in a filled container", steps:[
+          {t:"given",s:"container 1 holds bean X"},
+          {t:"when", s:"the card of container 1 is tapped/clicked"},
+          {t:"then", s:"the bean page of bean X is shown"}]},
+        { id:"CON-23", u:1, title:"Fill an empty container", steps:[
+          {t:"given",s:"container 2 is empty"},
+          {t:"when", s:"the card of container 2 is tapped/clicked"},
+          {t:"then", s:"a sheet lists your beans (beans without a container first) with a search box"},
+          {t:"when", s:"bean Y is tapped/clicked"},
+          {t:"then", s:"bean Y is assigned to container 2 in the DB"},
+          {t:"and",  s:"the card of container 2 shows bean Y"}]},
+        { id:"CON-24", u:1, title:"Move a bean from another container", steps:[
+          {t:"given",s:"bean Y is in container 1"},
+          {t:"and",  s:"the fill sheet of container 2 is open"},
+          {t:"then", s:'bean Y is listed with "now in container 1"'},
+          {t:"when", s:"bean Y is tapped/clicked"},
+          {t:"then", s:"bean Y is assigned to container 2"},
+          {t:"and",  s:"container 1 is empty"}]},
+        { id:"CON-25", u:1, title:"Change the bean in a filled container", steps:[
+          {t:"given",s:"container 1 holds bean X"},
+          {t:"when", s:'⋯ and then "Change bean" are tapped/clicked'},
+          {t:"and",  s:"bean Y is chosen in the sheet"},
+          {t:"then", s:"bean Y is assigned to container 1"},
+          {t:"and",  s:"bean X is unassigned and stays in the bean list"}]},
+        { id:"CON-26", u:1, title:"Empty a container", steps:[
+          {t:"given",s:"container 1 holds bean X"},
+          {t:"when", s:'⋯ and then "Empty container" are tapped/clicked'},
+          {t:"then", s:"a confirmation dialogue says bean X stays in the bean list"},
+          {t:"when", s:'"Empty" is tapped/clicked'},
+          {t:"then", s:"bean X is unassigned from container 1"},
+          {t:"and",  s:"container 1 is shown as empty"}]},
+        { id:"CON-27", u:1, title:"Copy a container's QR code link", steps:[
+          {t:"given",s:"a container is shown in the containers list"},
+          {t:"when", s:'⋯ and then "Copy QR code link" are tapped/clicked'},
+          {t:"then", s:"the link …/beans/container/{number} is copied to the clipboard"},
+          {t:"and",  s:'the button reads "QR link copied"'}]},
+        { id:"CON-28", u:1, title:"Fill a container from its QR page", steps:[
+          {t:"given",s:"the QR page of empty container 2 is shown"},
+          {t:"when", s:'"Fill with one of your beans" is tapped/clicked'},
+          {t:"then", s:"the Containers tab is shown with the fill sheet of container 2 open"}]},
+      ]},
+    ]
+  },
+  {
+    id:"shops", title:"Shops", icon:"🏪",
+    groups:[
+      { id:"sh-list", title:"List Display", scenarios:[
+        { id:"SH-01", u:1, title:"Show empty shops list", steps:[
+          {t:"given",s:"no shops exist in the DB"},
+          {t:"when", s:"the Shops tab is shown"},
+          {t:"then", s:"an empty state message is shown"},
+          {t:"and",  s:'an "Add shop" button is shown'}]},
+        { id:"SH-02", u:1, title:"Show shops list with existing shops", steps:[
+          {t:"given",s:"shops exist in the DB"},
+          {t:"when", s:"the Shops tab is shown"},
+          {t:"then", s:"all shops are listed with an initial ring, name, website (host name only) and bean count"},
+          {t:"and",  s:'shops without beans are shown dimmed with "No beans yet"'},
+          {t:"and",  s:'the number of shops and beans and a "New" button are shown at the top'}]},
+        { id:"SH-09", u:1, title:"Sort the shops list", steps:[
+          {t:"given",s:"the shops list is shown"},
+          {t:"when", s:'"Most beans" or "A–Z" is selected'},
+          {t:"then", s:"the shops are sorted by bean count (ties A–Z) or alphabetically"},
+          {t:"and",  s:"the choice is remembered on this device"}]},
+        { id:"SH-10", u:1, title:"Show a shop's beans", steps:[
+          {t:"given",s:"the shops list is shown"},
+          {t:"when", s:"a shop row is tapped/clicked"},
+          {t:"then", s:"the coffee beans list is shown filtered to that shop"},
+          {t:"and",  s:"the shop is shown as a removable chip above the list"}]},
+        { id:"SH-11", u:1, title:"Open a shop's website", steps:[
+          {t:"given",s:"a shop has a website"},
+          {t:"when", s:"the ↗ button on its row is tapped/clicked"},
+          {t:"then", s:"the website opens in a new tab"}]},
+      ]},
+      { id:"sh-add", title:"Adding a Shop", scenarios:[
+        { id:"SH-03", u:1, title:"Add a shop directly", steps:[
+          {t:"given",s:"the shops list is shown"},
+          {t:"when", s:'"New" (or "Add shop") is tapped/clicked'},
+          {t:"then", s:"a sheet with empty name and website fields is shown"},
+          {t:"and",  s:'an active "Cancel" button is shown'},
+          {t:"and",  s:'an inactive "Save" button is shown'}]},
+        { id:"SH-04", title:"Activate Save button when shop name is filled", steps:[
+          {t:"given",s:"the new shop sheet with an empty name field is shown"},
+          {t:"when", s:"the shop name field is filled"},
+          {t:"then", s:'the "Save" button becomes active'}]},
+        { id:"SH-05", u:1, title:"Cancel adding a shop directly", steps:[
+          {t:"given",s:"the new shop sheet is shown"},
+          {t:"when", s:'the "Cancel" button is tapped/clicked (or the sheet is dismissed)'},
+          {t:"then", s:"the sheet is closed"},
+          {t:"and",  s:"nothing is added to the DB"}]},
+        { id:"SH-06", u:1, title:"Warn when saving a shop that already exists", steps:[
+          {t:"given",s:"the new shop sheet with the name field filled is shown"},
+          {t:"and",  s:"a shop with the same name already exists in the DB"},
+          {t:"when", s:'the "Save" button is tapped/clicked'},
+          {t:"then", s:"an error message under the name field states that a shop with that name already exists"},
+          {t:"and",  s:"nothing is added to the DB"}]},
+        { id:"SH-07", u:1, title:"Correct a duplicate shop name", steps:[
+          {t:"given",s:"the duplicate-name error is shown under the shop name field"},
+          {t:"when", s:"the name is changed"},
+          {t:"then", s:"the error message disappears"},
+          {t:"and",  s:"the sheet stays open with the changed name"}]},
+        { id:"SH-08", title:"Save a new shop directly", steps:[
+          {t:"given",s:"the new shop sheet with the name field filled is shown"},
+          {t:"and",  s:"no shop with the same name exists in the DB"},
+          {t:"when", s:'the "Save" button is tapped/clicked'},
+          {t:"then", s:"the new shop is added to the DB"},
+          {t:"and",  s:"the shop is shown in the shops list"}]},
+      ]},
+      { id:"sh-edit", title:"Editing and Removing a Shop", scenarios:[
+        { id:"SH-12", u:1, title:"Edit a shop", steps:[
+          {t:"given",s:"the shops list is shown"},
+          {t:"when", s:"⋯ on a shop row is tapped/clicked"},
+          {t:"then", s:"a sheet with the shop's name and website is shown"},
+          {t:"when", s:'the values are changed and "Save" is tapped/clicked'},
+          {t:"then", s:"the shop is updated in the DB and in the list"}]},
+        { id:"SH-13", u:1, title:"Removing a shop with beans is not possible", steps:[
+          {t:"given",s:"the edit sheet of a shop with one or more beans is shown"},
+          {t:"then", s:'the "Remove shop" button is inactive'},
+          {t:"and",  s:"a note says how many beans use the shop and that they must be moved or deleted first"}]},
+        { id:"SH-14", u:1, title:"Remove a shop without beans", steps:[
+          {t:"given",s:"the edit sheet of a shop without beans is shown"},
+          {t:"when", s:'"Remove shop" is tapped/clicked'},
+          {t:"then", s:'a confirmation dialogue with "Cancel" and "Remove" is shown'},
+          {t:"when", s:'"Remove" is tapped/clicked'},
+          {t:"then", s:"the shop is removed from the DB and from the list"}]},
+      ]},
+    ]
+  },
+];
+
+// ── Build UI ──────────────────────────────────────────────────────────────────
+
+const LABEL = { given:"GIVEN", when:"WHEN", then:"THEN", and:"AND" };
+
+const allScenarios = () => DATA.flatMap(s => s.groups.flatMap(g => g.scenarios));
+
+function buildSummary() {
+  const el = document.getElementById("summary");
+  DATA.forEach(section => {
+    const total = section.groups.reduce((a,g)=>a+g.scenarios.length,0);
+    const pill = document.createElement("div");
+    pill.className = "summary-pill";
+    pill.innerHTML = `<span>${section.icon}</span><span class="section-name">${section.title}</span><span class="pill-count">${total}</span>` +
+      section.groups.map(g=>`<span class="summary-divider">·</span><span class="summary-group">${g.title} (${g.scenarios.length})</span>`).join("");
+    el.appendChild(pill);
+  });
+}
+
+function buildScenario(sc) {
+  const div = document.createElement("div");
+  div.className = "scenario";
+  div.dataset.updated = sc.u ? "1" : "";
+  div.dataset.searchText = (sc.id + " " + sc.title + " " + sc.steps.map(s=>s.s).join(" ")).toLowerCase();
+
+  const hdr = document.createElement("button");
+  hdr.className = "scenario-header";
+  hdr.innerHTML = `<span class="scenario-id">${sc.id}</span><span class="scenario-title">${sc.title}</span>` +
+    (sc.u ? `<span class="scenario-upd">Nov 2026</span>` : "") +
+    `<span class="scenario-steps-count">${sc.steps.length} steps</span><span class="scenario-chevron">▶</span>`;
+  hdr.addEventListener("click", () => {
+    const open = body.classList.toggle("open");
+    hdr.classList.toggle("open", open);
+    hdr.querySelector(".scenario-chevron").classList.toggle("open", open);
+  });
+
+  const body = document.createElement("div");
+  body.className = "scenario-body";
+  sc.steps.forEach(step => {
+    const row = document.createElement("div");
+    row.className = `step ${step.t}`;
+    row.innerHTML = `<span class="step-label">${LABEL[step.t]}</span><span class="step-text">${step.s}</span>`;
+    body.appendChild(row);
+  });
+
+  div.appendChild(hdr);
+  div.appendChild(body);
+  return div;
+}
+
+function buildGroup(group) {
+  const div = document.createElement("div");
+  div.className = "group";
+
+  const hdr = document.createElement("button");
+  hdr.className = "group-header";
+  hdr.innerHTML = `<span class="group-title">${group.title}</span><span class="group-count">${group.scenarios.length}</span><span class="group-line"></span><span class="group-toggle">collapse</span>`;
+  const body = document.createElement("div");
+  body.className = "group-body";
+
+  hdr.addEventListener("click", () => {
+    const closed = body.classList.toggle("closed");
+    hdr.querySelector(".group-toggle").textContent = closed ? "expand" : "collapse";
+  });
+
+  group.scenarios.forEach(sc => body.appendChild(buildScenario(sc)));
+  div.appendChild(hdr);
+  div.appendChild(body);
+  return div;
+}
+
+function buildSection(section) {
+  const div = document.createElement("div");
+  div.className = "section";
+
+  const total = section.groups.reduce((a,g)=>a+g.scenarios.length,0);
+  const hdr = document.createElement("button");
+  hdr.className = "section-header";
+  hdr.innerHTML = `<span class="section-icon">${section.icon}</span><span class="section-title">${section.title}</span><span class="section-count">${total} scenarios</span><span class="section-chevron open">▶</span>`;
+
+  const body = document.createElement("div");
+  body.className = "section-body open";
+  section.groups.forEach(g => body.appendChild(buildGroup(g)));
+
+  hdr.addEventListener("click", () => {
+    const open = body.classList.toggle("open");
+    hdr.querySelector(".section-chevron").classList.toggle("open", open);
+  });
+
+  div.appendChild(hdr);
+  div.appendChild(body);
+  return div;
+}
+
+function buildCatalogue() {
+  const cat = document.getElementById("catalogue");
+  DATA.forEach(section => cat.appendChild(buildSection(section)));
+  const all = allScenarios();
+  document.getElementById("total-badge").textContent = all.length + " scenarios";
+  document.getElementById("upd-badge").textContent = all.filter(s => s.u).length + " new or changed in Nov 2026";
+}
+
+// ── Search + "only changes" filter ───────────────────────────────────────────
+
+let onlyUpdated = false;
+
+function applyVisibility() {
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const countEl = document.getElementById("search-count");
+  let visible = 0;
+
+  document.querySelectorAll(".scenario").forEach(sc => {
+    const match = (!q || sc.dataset.searchText.includes(q)) && (!onlyUpdated || sc.dataset.updated);
+    sc.style.display = match ? "" : "none";
+    if (match) visible++;
+  });
+
+  document.querySelectorAll(".group, .section").forEach(box => {
+    const anyVisible = [...box.querySelectorAll(".scenario")].some(sc => sc.style.display !== "none");
+    box.style.display = anyVisible ? "" : "none";
+  });
+
+  countEl.textContent = (q || onlyUpdated) ? visible + " result" + (visible !== 1 ? "s" : "") : "";
+
+  const noResults = document.getElementById("no-results");
+  if (visible === 0) {
+    if (!noResults) {
+      const el = document.createElement("div");
+      el.id = "no-results";
+      el.className = "no-results";
+      el.textContent = "No scenarios match";
+      document.getElementById("catalogue").after(el);
+    }
+  } else if (noResults) noResults.remove();
+}
+
+document.getElementById("search").addEventListener("input", applyVisibility);
+
+function toggleOnlyUpdated() {
+  onlyUpdated = !onlyUpdated;
+  document.getElementById("only-upd").setAttribute("aria-pressed", String(onlyUpdated));
+  applyVisibility();
+}
+
+// ── Expand / Collapse all ────────────────────────────────────────────────────
+
+function setAll(open) {
+  document.querySelectorAll(".section-body").forEach(b => b.classList.toggle("open", open));
+  document.querySelectorAll(".section-chevron").forEach(c => c.classList.toggle("open", open));
+  document.querySelectorAll(".group-body").forEach(b => b.classList.toggle("closed", !open));
+  document.querySelectorAll(".group-toggle").forEach(t => t.textContent = open ? "collapse" : "expand");
+  if (open) {
+    document.querySelectorAll(".scenario-body").forEach(b => b.classList.remove("open"));
+    document.querySelectorAll(".scenario-header").forEach(h => { h.classList.remove("open"); h.querySelector(".scenario-chevron").classList.remove("open"); });
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+buildSummary();
+buildCatalogue();
+</script>
+</body>
+</html>

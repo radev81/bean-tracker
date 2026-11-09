@@ -28,7 +28,8 @@ Auth:
 
 - Frontend and backend live in a single Docker container — Express serves the built React app as static files
 - Auth handled by Logto (shared with other NAS apps) — JWT Bearer tokens, no session cookies for API calls
-- QR codes are plain URLs: `https://ra-homelab.synology.me:3200/container/1`
+- The app lives under the `/beans/` sub-path: `https://ra-homelab.synology.me:3200/beans/`
+- QR codes are plain URLs: `https://ra-homelab.synology.me:3200/beans/container/1` (copy one from Containers → ⋯ → "Copy QR code link")
 - The `.db` file never goes into Git — bind-mounted from `/volume1/docker/bean-tracker/data/`
 - Caddy handles HTTPS using the shared Synology certificate
 - No Nginx container, no Authelia container, no GitHub Pages deployment
@@ -40,7 +41,7 @@ Auth:
 | Layer         | Choice                  | Notes                                              |
 | ------------- | ----------------------- | -------------------------------------------------- |
 | Frontend      | React + Vite            | No CSS framework — plain CSS with variables        |
-| Routing       | React Router            | Handles QR code URLs (`/container/:id`)            |
+| Routing       | React Router            | `basename` = Vite base `/beans`; routes below it    |
 | Backend       | Node + Express (ESM)    | REST API + serves built frontend as static files   |
 | Database      | SQLite (better-sqlite3) | Single `.db` file, WAL mode                        |
 | Auth          | Logto                   | Shared NAS instance, OIDC/JWT Bearer tokens        |
@@ -53,89 +54,75 @@ Auth:
 
 ## Design
 
-**Theme:** Neon Espresso — updated April 2026
-**Reference file:** `frontend/public/design-reference.html`
-**Mockup:** `mockups/theme-preview.html` (combined dark/light toggle — kept for fine-tuning)
+**Theme:** Dial — November 2026 (replaces Neon Espresso)
+**Inspiration:** the round gauge screen of an espresso machine — dark, monochrome, one round readout per screen, one signal colour.
+**Reference:** design canvas "Bean Log — specialty coffee tracker UX" (claude.ai artifact) — 8 phone screens + design-language board
+**Plan and rationale:** `claude/UX-MIGRATION-PLAN.md` in the claude.ai project
 
-### Tokens — Dark theme (`:root`, default)
+### Tokens (`frontend/src/index.css` — source of truth; `theme.js` mirrors them)
 
-```css
-/* Backgrounds */
---color-bg:        #1E1D2A; /* list/page background — purple-grey */
---color-surface:   #08080A; /* cards, header — near-black */
---color-surface-2: #252436; /* hover states, toggle buttons */
---color-border:    #2E2C3E;
---color-border-hi: #3E3C52;
+| Token | Dark (default) | Light | Use |
+|---|---|---|---|
+| `--ground` | `#0B0B0A` | `#F4F1EA` | page background |
+| `--face` | `#121211` | `#FFFFFF` | cards, dial faces |
+| `--raised` | `#161614` | `#FAF8F3` | sheets, selected tiles |
+| `--line` | `#2A2A27` | `#E2DDD2` | borders, dial track |
+| `--line-hi` | `#3A3935` | `#CFC8BA` | stronger borders, minor ticks |
+| `--ink` | `#F3EFE6` | `#141311` | text **and primary buttons** |
+| `--ink-2` | `#D9D4C8` | `#3F3B35` | secondary text |
+| `--muted` | `#A39E93` | `#6B665D` | labels, metadata (≥ 4.5:1) |
+| `--ghost` | `#4A4844` | `#C9C3B7` | inactive icons |
+| `--signal` | `#F2A65A` | `#B8661A` | the one accent: live / selected / suggestion |
+| `--on-ink` | `#0B0B0A` | `#FAF8F3` | text on ink buttons |
+| `--danger` / `--on-danger` | `#E06A4E` / `#0B0B0A` | `#B4402A` / `#FFFFFF` | delete / remove |
 
-/* Text */
---color-text:   #EEE9E0; /* primary */
---color-text-2: #B8B6C4; /* secondary — metadata, values */
---color-text-3: #908EA0; /* tertiary — uppercase labels */
---color-text-4: #4A4860; /* ghost — inactive icons */
-
-/* Accent — Neon Espresso amber (bright for dark bg) */
---accent-start:  #F5A020;
---accent-end:    #C46010;
---accent-mid:    #F5A020;
---accent-bg:     rgba(245, 160, 32, 0.15);
---accent-border: rgba(245, 160, 32, 0.28);
---grad:   linear-gradient(135deg, #F5A020, #C46010);
---grad-v: linear-gradient(180deg, #F5A020, #C46010);
-
-/* Blue accent */
---blue:           #3DBFF5;
---blue-dim:       rgba(61, 191, 245, 0.14);
---blue-border:    rgba(61, 191, 245, 0.28);
---blue-toggle-bg: rgba(61, 191, 245, 0.08);
---grad-blue: linear-gradient(135deg, #3DBFF5, #0E8FC4);
-```
-
-### Tokens — Light theme (`[data-theme="light"]`)
-
-```css
---color-bg:      #f4f2ee; /* warm paper */
---color-surface: #ffffff;
---accent-mid:    #B86A00;
---grad:   linear-gradient(135deg, #D97E00, #8A4000);
---blue:   #0578A8;
-/* (full override set in index.css) */
-```
+Radii: cards `--r-card` 20px · sheets `--r-sheet` 28px · inputs `--r-input` 14px · buttons, chips, badges 999px (pills).
+The old names (`--color-*`, `--accent-*`, `--grad*`, `--blue*`) still exist as aliases onto the new palette — new code uses the short names.
 
 ### Typography
 
-- **Font:** Outfit only (Google Fonts)
-- **700** — brand name, recipe values
-- **600** — bean names, add button
-- **500** — active tab, count pills
-- **400** — body, metadata, values
-- **300 italic** — tasting notes
+- **Font:** Manrope (Google Fonts), `font-variant-numeric: tabular-nums` on `body`
+- **300** — big dial readouts and numbers (ratio, recipe values, SCA, counts)
+- **500** — page titles (30px), bean names
+- **600** — primary buttons, small-caps labels (11px, `letter-spacing: 0.14em`, uppercase)
+- **400** — body text
+- Inputs are 16px so iOS doesn't zoom in on focus
+
+### Building blocks (`frontend/src/components/ui/`)
+
+| Component | What it is |
+|---|---|
+| `Dial` | 270° round gauge: ticks, value arc, optional knob, optional coloured `rimColor`; read-only or interactive (drag, ±, arrow keys — a `role="slider"`) |
+| `RingBadge` | small circle with a number/initial; ring colour or progress arc |
+| `containerColor()` | ring colour from a colour word in a container name (EN / ES / NL) |
+| `BottomNav` | Beans · Containers · (+) · Shops; optional Shots tab |
+| `Sheet` | bottom sheet (centred on desktop); Esc / backdrop / × close |
+| `Button`, `Chip`, `Segmented`, `Field`, `PageHeader`, `SectionLabel` | controls in `controls.jsx` |
+| `AccountButton` | opens the account sheet (theme + sign out) via `ShellContext` |
+| `icons.jsx` | stroke icons — no emoji in the UI |
 
 ### Key UI rules
 
-- Neon Espresso amber gradient on: tab underline, card left bar (expanded), flavour tags, Edit/Add buttons, filter badge, "Tracker" brand word
-- Blue accent (`--blue`) on: container badge, shop link, recipe Double/Single toggle
-- Expanded card: 1.5px `--accent-mid` border + 3px left bar gradient
-- Add button always fixed at bottom with border-top separator
-- Favourite icon uses gradient text clip when active
-- Pipes `|` between tab labels
-- App icon (`favicon-96x96.png` dark / `favicon-96x96-light.png` light) in header — 44px, no glow filter
-- Bean count pill at right end of tab bar (`margin-left: auto`)
-- Dark/light toggle button (☀️/🌙) in header; preference stored in `localStorage` as `bt-theme`; default is dark
-- `data-theme` attribute set on `<html>` synchronously from localStorage before React hydrates (no flash)
+- One main number per screen, on a dial or as a light 300-weight readout
+- Primary actions are **ink** pills (cream on dark, near-black on light); amber `--signal` only marks what is live, selected or suggested
+- Bottom navigation on the three main tabs; full-screen pages (bean, edit, dial-in, QR) have a back button and no bottom bar
+- Each page draws its own header: small-caps eyebrow (counts) + 30px title + actions (New, account)
+- Container colour (from its name) appears as ring colour everywhere: list rows, container cards, form tiles, hero dial rim
+- Touch targets ≥ 44px; visible focus ring in `--signal`; respects `prefers-reduced-motion`
+- Theme: dark by default; `localStorage` key `bt-theme`, applied to `<html data-theme>` before React loads (no flash)
+- Other device-local preferences: `bt-shop-sort` (Shops sort), `bt-hero-container` (container shown on the Beans dial)
 
 ---
 
 ## BDD Scenario Catalogue
 
-Full specification lives in `frontend/public/scenario-catalogue.html`.
+Full specification: `docs/scenario-catalogue.html` (also in the claude.ai project). Open it in a browser; "Show only Nov 2026 changes" lists what the Dial redesign changed.
 
-**73 scenarios across 3 sections:**
+**136 scenarios across 3 sections** (Nov 2026; was 102):
 
-- **Coffee Beans (CB-01 to CB-73):** List display, search, filtering, add, expand/collapse, favourites, edit, delete, QR code
-- **Containers (CON-01 to CON-21):** List display, add, edit, remove
-- **Shops (SH-01 to SH-08):** List display, add, edit, remove (edit/remove added beyond spec)
-
-Build order follows the catalogue section by section.
+- **Coffee Beans (CB-01 – CB-94):** list, search, filtering + quick chips, container dial, add, bean page (replaces card expand/collapse), favourites, edit, dial-in, delete, QR code
+- **Containers (CON-01 – CON-28):** list, add, rename, remove, filling a container
+- **Shops (SH-01 – SH-14):** list, sort, show a shop's beans, add, edit, remove
 
 ---
 
@@ -159,6 +146,33 @@ Key rules:
 
 ## Phase Status
 
+### ✅ Phase 12 — Dial UX redesign (November 2026)
+
+New look and navigation for the whole frontend. **No backend, database or deployment changes.** Deployed to the NAS on 5 Nov 2026.
+
+| Commit | What |
+|---|---|
+| `f5f0c61` | `.gitattributes` — store text files with LF (stops Windows CRLF noise) |
+| `568a6a1` | Dial design tokens + Manrope font (old token names kept as aliases) |
+| `437a98d` | UI building blocks (`components/ui/`) + **router fix**: `BrowserRouter basename` = `/beans`, so refreshing on Containers/Shops and QR links work |
+| `27c5eb0` | Bottom navigation, account sheet, add/edit bean pages |
+| `e92cbf0` | All screens rebuilt (Beans + container dial, bean page, dial-in, form, Containers, Shops, QR page); 409 conflict dialogs fixed |
+| `748009b` | Temporary `/kit` preview page removed |
+
+**Routes** (all under `/beans/`): `/` beans · `/containers` · `/shops` · `/new` · `/bean/:id` · `/bean/:id/edit` · `/bean/:id/dial` · `/container/:id` (QR)
+
+**Bug fixes found on the way:**
+- `api.js` now keeps the server reply on errors (`error.data`). Before, 409 conflicts lost their details, so the duplicate-name and container-in-use dialogs never appeared and saving failed silently.
+- The bean count in the header updates after adding/deleting.
+- QR page used undefined CSS variables (old Mocha names) — fixed.
+- Whole frontend passes ESLint.
+
+**Follow-ups (Nov 2026):** search clear button (CB-06/08) and discard-changes dialog when renaming a container (CON-11–13) restored to match the spec; `backups/` and database files excluded in `.gitignore` / `.dockerignore`.
+
+**Possible next steps (need small, additive backend changes — back up `bean.db` first):** roast date + bag size (days-off-roast dial), single-shot recipe saving, grind setting, shot log (`shots` table) with dial-in map. See `claude/UX-MIGRATION-PLAN.md`, "Phase B".
+
+---
+
 ### ✅ Espresso recipe notes field
 
 Added a free-text **Notes** textarea to the Espresso Recipe section of BeanForm (below the auto-calculated Ratio). Notes are stored in `bean_recipes.notes` (TEXT, nullable).
@@ -176,7 +190,9 @@ Added a free-text **Notes** textarea to the Espresso Recipe section of BeanForm 
 
 ---
 
-### 🔲 Phase 11 — Swipe-to-reveal actions on bean cards (DRAFT)
+### ✅ Phase 11 — Swipe-to-reveal actions on bean cards
+
+> Done in April 2026 and carried into the Dial redesign: the bean **list rows** now swipe (140 px strip, Edit | Delete); BeanCard no longer exists. The hook `useSwipeReveal.js` was simplified (position follows `isOpen` when not dragging).
 
 Touch-only swipe left on a collapsed BeanCard to reveal **Edit** and **Delete** action buttons behind the card header.
 
@@ -219,7 +235,7 @@ Make Beans Tracker installable on mobile and desktop with offline app-shell cach
 | `frontend/public/icon-maskable.png` | Maskable icon for Android adaptive icons — safe zone is inner 80% |
 | `frontend/public/apple-touch-icon.png` | iOS home screen icon — 180×180px, no transparency |
 
-All icons should use the Mocha Deep gradient (`#6a3828 → #0e0806`) as background with a white coffee bean or cup mark centred in the safe zone.
+All icons should use the Dial ground colour (`#0B0B0A`) as background with a cream (`#F3EFE6`) bean or cup mark centred in the safe zone. `site.webmanifest` already uses `#0B0B0A` for `theme_color` and `background_color`. Note the app is served under `/beans/`, so `start_url`, `scope`, icon paths and the `navigateFallback` must include that prefix.
 
 #### Files to modify
 
@@ -334,12 +350,12 @@ padding: env(safe-area-inset-top) env(safe-area-inset-right)
 - `backend/.env` — `PORT=3001`, `ALLOWED_ORIGIN=http://localhost:5173`
 - All routes tested with REST Client
 
-### ✅ Design — Mocha Deep locked
+### ✅ Design — Mocha Deep locked (superseded: Neon Espresso, Apr 2026 → Dial, Nov 2026)
 
 - 4 design concept rounds explored
 - Final design: light minimal catalog aesthetic, Outfit font, Mocha Deep gradient accent
 - Design reference committed: `frontend/public/design-reference.html`
-- Scenario catalogue committed: `frontend/public/scenario-catalogue.html`
+- Scenario catalogue committed: `frontend/public/scenario-catalogue.html` *(now `docs/scenario-catalogue.html`)*
 
 ### ✅ Phase 8 — Supabase data migration (done early)
 
@@ -369,17 +385,17 @@ padding: env(safe-area-inset-top) env(safe-area-inset-right)
 15. ✅ `ContainerList.jsx` — CON-01–CON-21 (list, add, edit, remove)
 16. ✅ `ShopList.jsx` — SH-01–SH-08 + edit and remove (beyond spec)
 
-**App routing notes:**
+**App routing notes:** *(updated Nov 2026 — see Phase 12 for the current routes)*
 
-- `/container/:id` is a standalone route — bypasses AppShell (no header/tabs)
-- All other routes rendered inside AppShell via React Router layout route pattern
-- Components folder is `frontend/src/components/common/` (not shared/)
-- `BrowserRouter` uses `basename="/bean-tracker"` — required for correct GitHub Pages routing
+- Full-screen routes (`/container/:id`, `/new`, `/bean/:id`, `/bean/:id/edit`, `/bean/:id/dial`) bypass AppShell (no bottom navigation)
+- `/`, `/containers` and `/shops` render inside AppShell via the React Router layout route pattern
+- Components folder is `frontend/src/components/common/` (not shared/); design-system pieces in `components/ui/`
+- `BrowserRouter` uses `basename={import.meta.env.BASE_URL}` without the trailing slash → `/beans`
 
 **API notes:**
 
 - `apiFetch` always throws on non-ok responses, with `error.status` set
-- 409 responses are caught in component `catch` blocks to show duplicate dialogs
+- 409 responses are caught in component `catch` blocks; the server's JSON is on `error.data` (e.g. `{ conflict: "duplicate_name", existingBean }`)
 - `VITE_API_URL` must NOT include `/api` suffix — api.js appends route paths directly
 
 ### ✅ Phase 5 — Docker on the NAS (COMPLETE)
@@ -438,7 +454,7 @@ Replaced Authelia + Nginx + GitHub Pages with Logto + Caddy + single container.
 
 ### ✅ Phase 4 — QR codes
 
-- QR code URLs follow the pattern: `https://ra-homelab.synology.me/container/:id`
+- QR code URLs follow the pattern: `https://ra-homelab.synology.me:3200/beans/container/:id` *(corrected Nov 2026 — codes without `/beans` don't open the container page)*
 - No code changes needed — handled by `ContainerQRPage.jsx`
 - Generate QR codes and print/attach to physical containers as needed
 
@@ -461,14 +477,15 @@ Structure:
   ├── frontend/   (Vite + React, React Router, @logto/react)
   └── backend/    (Node + Express ESM + SQLite, @logto/express, port 3000)
 
-Design: Outfit font, Neon Espresso amber gradient accent (#D97E00 → #8A4000),
-warm paper background #F4F2EE, white surfaces, 14px card radius.
-App icon in header (favicon-96x96-light.png, 44px). Bean count pill in tab bar.
-Full token set and design reference: frontend/public/design-reference.html
-Full BDD scenario catalogue: frontend/public/scenario-catalogue.html
+Design: "Dial" — dark-first, machine-gauge look. Manrope font, ground #0B0B0A,
+ink #F3EFE6 (also primary buttons), one signal accent #F2A65A, light theme too.
+Round Dial component, bottom navigation (Beans · Containers · + · Shops),
+full-screen bean page, dial-in page and QR page.
+Tokens: frontend/src/index.css · building blocks: frontend/src/components/ui/
+Full BDD scenario catalogue: docs/scenario-catalogue.html
 Full build plan: ROADMAP.MD (project root)
 
-Live URL: https://ra-homelab.synology.me:3200
+Live URL: https://ra-homelab.synology.me:3200/beans/
 
 Current status: All phases complete. App is fully live.
 
@@ -491,10 +508,18 @@ git add .
 git commit -m "feat: description"
 git push
 
-# On NAS — pull latest code and rebuild
+# On NAS — deploy the latest main (back up the database first)
 cd /volume1/docker/bean-tracker
-git pull
-docker compose up -d --build
+sudo git status                         # must say "nothing to commit"
+sudo docker compose stop
+sudo mkdir -p backups && sudo cp -p data/bean.db* backups/
+sudo git fetch origin
+sudo git merge --ff-only origin/main
+sudo git --no-pager log --oneline -1    # check you're on the expected commit
+sudo docker compose up -d --build
+sudo docker inspect bean-tracker --format 'created {{.Created}}'   # should be now
+
+# Tip: git on the NAS has no pager — add --no-pager to log/diff
 
 # On NAS — view live logs
 docker logs -f bean-tracker
@@ -517,6 +542,8 @@ scp -O backend/data/bean.db user@nas-ip:/volume1/docker/bean-tracker/data/bean.d
 bean-tracker/
 ├── .gitignore
 ├── ROADMAP.MD                               ← this file
+├── docs/
+│   └── scenario-catalogue.html              ← BDD spec (136 scenarios)
 ├── Dockerfile                               ✅ Phase 9 — multi-stage build
 ├── .dockerignore                            ✅ Phase 9
 ├── docker-compose.yml                       ✅ Phase 9 — single service, port 3201:3000
@@ -535,35 +562,39 @@ bean-tracker/
 │   ├── test.http
 │   └── package.json
 └── frontend/
-    ├── public/
-    │   ├── design-reference.html            ← locked design
-    │   └── scenario-catalogue.html          ← BDD spec
+    ├── public/                              ← favicons + site.webmanifest
     ├── src/
-    │   ├── theme.js                         ✅
-    │   ├── index.css                        ✅
+    │   ├── theme.js                         ✅ Dial tokens for JS
+    │   ├── index.css                        ✅ Dial tokens (source of truth)
     │   ├── api.js                           ✅ createApiClient + ApiContext + useApi
-    │   ├── main.jsx                         ✅ LogtoProvider + callback handler
-    │   ├── App.jsx                          ✅ auth gate + ApiContext.Provider
-    │   ├── App.css                          ✅
+    │   ├── beanUtils.js                     ✅ ratio, host name, full-payload helpers
+    │   ├── shell.js                         ✅ ShellContext (account sheet)
+    │   ├── main.jsx                         ✅ LogtoProvider + basename /beans
+    │   ├── Root.jsx                         ✅ sign-in callback
+    │   ├── App.jsx                          ✅ auth gate, routes, AppShell
+    │   ├── App.css                          ✅ shell + sign-in
     │   ├── pages/
+    │   │   ├── BeanDetail.jsx               ✅ CB-42–CB-52, CB-67–CB-71, CB-83
+    │   │   ├── BeanFormPage.jsx             ✅ /new, /bean/:id/edit
+    │   │   ├── DialIn.jsx                   ✅ CB-88–CB-94
     │   │   └── ContainerQRPage.jsx          ✅ CB-72, CB-73
     │   └── components/
+    │       ├── ui/                          ✅ Dial, RingBadge, BottomNav, Sheet, controls, icons
     │       ├── beans/
-    │       │   ├── BeanList.jsx             ✅ CB-01, CB-02
-    │       │   ├── BeanCard.jsx             ✅ CB-42–CB-52
-    │       │   ├── BeanSearch.jsx           ✅ CB-03–CB-08
+    │       │   ├── BeanList.jsx             ✅ CB-01–CB-24, CB-74–CB-82, CB-84
     │       │   ├── BeanFilter.jsx           ✅ CB-09–CB-24
-    │       │   └── BeanForm.jsx             ✅ CB-25–CB-66
+    │       │   ├── BeanForm.jsx             ✅ CB-25–CB-41, CB-53–CB-66, CB-85–CB-87
+    │       │   └── useSwipeReveal.js        ✅ CB-84
     │       ├── containers/
-    │       │   └── ContainerList.jsx        ✅ CON-01–CON-21
+    │       │   └── ContainerList.jsx        ✅ CON-01–CON-28
     │       ├── shops/
-    │       │   └── ShopList.jsx             ✅ SH-01–SH-08 + edit/remove
+    │       │   └── ShopList.jsx             ✅ SH-01–SH-14
     │       └── common/
     │           ├── EmptyState.jsx           ✅
     │           └── Dialog.jsx               ✅
     ├── .env                                 ← not in Git (dev Logto config)
     ├── .env.production                      ← committed (no secrets, Vite bakes at build)
     ├── index.html
-    ├── vite.config.js                       ✅ no base path (serves from root)
+    ├── vite.config.js                       ✅ base: "/beans/" (must match Express + Logto URIs)
     └── package.json
 ```
