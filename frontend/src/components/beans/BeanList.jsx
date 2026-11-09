@@ -491,16 +491,30 @@ export default function BeanList() {
 
       {/* ── Search + filter ─────────────────────────────────────────────── */}
       <div className="bl-tools">
-        <label className="bl-search">
+        <div className="bl-search">
           <SearchIcon />
-          <span className="sr-only">Search beans</span>
+          <label htmlFor="bl-search-input" className="sr-only">
+            Search beans
+          </label>
           <input
+            id="bl-search-input"
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search name, origin, shop…"
           />
-        </label>
+          {/* CB-06 / CB-08: clear the search (browsers' own × isn't shown everywhere) */}
+          {searchQuery && (
+            <button
+              type="button"
+              className="bl-search__clear"
+              aria-label="Clear search"
+              onClick={() => setSearchQuery("")}
+            >
+              ×
+            </button>
+          )}
+        </div>
         <Button
           icon
           variant={activeFilterCount > 0 ? "primary" : "secondary"}

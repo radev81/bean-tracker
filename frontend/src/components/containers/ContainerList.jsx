@@ -41,6 +41,11 @@ function NameSheet({ container, onClose, onSaved }) {
   const [name, setName] = useState(container?.name ?? "");
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
+  // CON-11: renaming and then cancelling asks before throwing the change away
+  const changed = !isNew && name !== container.name;
+  const handleClose = () => (changed ? setConfirmDiscard(true) : onClose());
 
   async function handleSave(e) {
     e.preventDefault();
@@ -64,30 +69,44 @@ function NameSheet({ container, onClose, onSaved }) {
   }
 
   return (
-    <Sheet open onClose={onClose} title={isNew ? "New container" : `Rename ${container.name}`}>
-      <form className="ctr-form" onSubmit={handleSave}>
-        <Field
-          label="Name"
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-            setError(null);
-          }}
-          error={error}
-          hint="Tip: a colour word (Grey, Green, Azul…) colours its ring"
-          autoFocus
-          required
+    <>
+      <Sheet open onClose={handleClose} title={isNew ? "New container" : `Rename ${container.name}`}>
+        <form className="ctr-form" onSubmit={handleSave}>
+          <Field
+            label="Name"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setError(null);
+            }}
+            error={error}
+            hint="Tip: a colour word (Grey, Green, Azul…) colours its ring"
+            autoFocus
+            required
+          />
+          <div className="ctr-form__actions">
+            <Button variant="secondary" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={!name.trim() || saving}>
+              {saving ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </form>
+      </Sheet>
+
+      {/* CON-11 – CON-13 */}
+      {confirmDiscard && (
+        <Dialog
+          title="Discard changes?"
+          body={`The new name for ${container.name} hasn't been saved.`}
+          actions={[
+            { label: "Keep editing", variant: "secondary", onClick: () => setConfirmDiscard(false) },
+            { label: "Discard", variant: "danger", onClick: onClose },
+          ]}
         />
-        <div className="ctr-form__actions">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" type="submit" disabled={!name.trim() || saving}>
-            {saving ? "Saving…" : "Save"}
-          </Button>
-        </div>
-      </form>
-    </Sheet>
+      )}
+    </>
   );
 }
 
