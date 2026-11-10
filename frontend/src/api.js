@@ -6,6 +6,22 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 export const ApiContext = createContext(null);
 export const useApi = () => useContext(ApiContext);
 
+// ── Public, no login ─────────────────────────────────────────────────────────
+// The QR code page for visitors without an account (CB-105).
+// Uses the read-only route GET /api/public/containers/:id — no token sent.
+export async function fetchPublicContainer(id) {
+  const res = await fetch(
+    `${API_BASE}/api/public/containers/${encodeURIComponent(id)}`,
+  );
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    const error = new Error(data?.error || `API error ${res.status}`);
+    error.status = res.status;
+    throw error;
+  }
+  return data;
+}
+
 export function createApiClient(getAccessToken) {
   async function request(method, path, body) {
     const token = await getAccessToken(API_RESOURCE);

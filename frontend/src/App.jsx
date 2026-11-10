@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLogto } from "@logto/react";
 import { ApiContext, createApiClient } from "./api";
 import { ShellContext } from "./shell";
+import { rememberReturnPath } from "./authReturn";
 import BeanList from "./components/beans/BeanList";
 import ContainerQRPage from "./pages/ContainerQRPage";
 import ContainerList from "./components/containers/ContainerList";
@@ -125,12 +126,23 @@ export default function App() {
   if (authLoading) return null;
 
   if (!isAuthenticated) {
+    const startSignIn = () => {
+      // Come back to this page after signing in (e.g. a scanned container)
+      rememberReturnPath();
+      signIn(`${window.location.origin}${import.meta.env.BASE_URL}callback`);
+    };
+
     return (
-      <SignIn
-        onSignIn={() =>
-          signIn(`${window.location.origin}${import.meta.env.BASE_URL}callback`)
-        }
-      />
+      <Routes>
+        {/* Visitors without an account can see what's in a container by
+            scanning its QR code — read-only (CB-105 – CB-108) */}
+        <Route
+          path="/container/:id"
+          element={<ContainerQRPage publicView onSignIn={startSignIn} />}
+        />
+        {/* Everything else needs an account */}
+        <Route path="*" element={<SignIn onSignIn={startSignIn} />} />
+      </Routes>
     );
   }
 

@@ -1,24 +1,30 @@
 // pages/ContainerQRPage.jsx
 // ─────────────────────────────────────────────────────────────────────────────
 // What opens when you scan the QR code on a container:
-//   /beans/container/:id   (CB-72, CB-73)
+//   /beans/container/:id   (CB-72, CB-73, CB-105 – CB-108)
 //
 //  • One big dial with the container's bean and its espresso ratio — the
 //    "machine screen" view, readable at arm's length next to the grinder
-//  • The recipe numbers, flavour tags and shortcuts to the bean / dial-in
-//  • Empty container → fill it with one of your beans, or add a new bean
+//  • The recipe numbers, flavour tags and tasting notes
+//
+// Two versions of the same page:
+//  • Signed in  → loads via the protected API and offers Open bean / Dial in,
+//                 or Fill / Add for an empty container
+//  • publicView → for visitors without an account (no login needed). Loads
+//                 from the public read-only route GET /api/public/containers/:id
+//                 and only shows information — plus a small "Sign in" link.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { useApi } from "../api";
+import { fetchPublicContainer, useApi } from "../api";
 import { fmt, getDoubleRecipe, metaLine, ratioNumber } from "../beanUtils";
 import { Button, Chip, Dial, containerColor } from "../components/ui";
 import { BackIcon, DialIcon } from "../components/ui/icons";
 import "./ContainerQRPage.css";
 
-export default function ContainerQRPage() {
-  const api = useApi();
+export default function ContainerQRPage({ publicView = false, onSignIn }) {
+  const api = useApi(); // null for visitors (no ApiContext when signed out)
   const { id } = useParams(); // the container number from the URL
   const navigate = useNavigate();
 
@@ -29,8 +35,10 @@ export default function ContainerQRPage() {
 
   useEffect(() => {
     let cancelled = false;
-    api
-      .getContainerCurrentBean(id)
+    const load = publicView
+      ? fetchPublicContainer(id)
+      : api.getContainerCurrentBean(id);
+    load
       .then((data) => !cancelled && setResult({ forId: id, ...data }))
       .catch((err) =>
         !cancelled &&
@@ -45,12 +53,17 @@ export default function ContainerQRPage() {
     return () => {
       cancelled = true;
     };
-  }, [api, id]);
+  }, [api, id, publicView]);
 
   const current = result?.forId === id ? result : null;
   const error = failure?.forId === id ? failure.message : null;
 
-  const bar = (
+  // Top bar: back to the app when signed in; the app name for visitors
+  const bar = publicView ? (
+    <header className="qr-bar qr-bar--public">
+      <span className="ui-eyebrow">Beans Tracker</span>
+    </header>
+  ) : (
     <header className="qr-bar">
       <Link to="/" className="ui-btn ui-btn--secondary qr-bar__back">
         <BackIcon size={18} /> All beans
@@ -58,11 +71,22 @@ export default function ContainerQRPage() {
     </header>
   );
 
+  // Small sign-in link at the bottom of the visitor view (CB-108)
+  const signInFooter = publicView && (
+    <p className="qr-signin">
+      Is this your coffee?{" "}
+      <button type="button" className="qr-signin__btn" onClick={onSignIn}>
+        Sign in
+      </button>
+    </p>
+  );
+
   if (error || !current) {
     return (
       <div className="app-fullscreen qr">
         {bar}
         <p className="app-page-message">{error || "Loading…"}</p>
+        {error && signInFooter}
       </div>
     );
   }
@@ -71,13 +95,13 @@ export default function ContainerQRPage() {
   const label = `Container ${container.id} · ${container.name}`;
   const ring = containerColor(container.name);
 
-  // ── CB-73: empty container ─────────────────────────────────────────────────
+  // ── CB-73 / CB-107: empty container ───────────────────────────────────────
   if (!bean) {
     return (
       <div className="app-fullscreen qr">
         {bar}
         <section className="qr-dial">
-          <Dial value={0} min={0} max={1} size={280} ariaLabel={`${label}: empty`}>
+          <Dial value={0} min={0} max={1} size={280} rimColor={ring} ariaLabel={`${label}: empty`}>
             <span className="qr-dial__label">
               <span className="qr-dot" style={{ background: ring }} aria-hidden="true" />
               {label}
@@ -86,23 +110,27 @@ export default function ContainerQRPage() {
           </Dial>
         </section>
         <p className="qr-empty">No beans in this container yet.</p>
-        <div className="qr-actions">
-          <Button
-            variant="primary"
-            block
-            onClick={() => navigate("/containers", { state: { fillId: container.id } })}
-          >
-            Fill with one of your beans
-          </Button>
-          <Link to="/new" className="ui-btn ui-btn--secondary ui-btn--block">
-            Add a new bean
-          </Link>
-        </div>
+        {publicView ? (
+          signInFooter
+        ) : (
+          <div className="qr-actions">
+            <Button
+              variant="primary"
+              block
+              onClick={() => navigate("/containers", { state: { fillId: container.id } })}
+            >
+              Fill with one of your beans
+            </Button>
+            <Link to="/new" className="ui-btn ui-btn--secondary ui-btn--block">
+              Add a new bean
+            </Link>
+          </div>
+        )}
       </div>
     );
   }
 
-  // ── CB-72: container holds a bean ─────────────────────────────────────────
+  // ── CB-72 / CB-105: container holds a bean ────────────────────────────────
   const double = getDoubleRecipe(bean);
   const recipe = double || bean.recipes?.find((r) => r.shot_type === "single") || null;
   const ratio = recipe ? ratioNumber(recipe.dose_in_g, recipe.yield_out_g) : null;
@@ -114,6 +142,17 @@ export default function ContainerQRPage() {
         { label: "sec", value: recipe.time_seconds },
         { label: "°C", value: fmt(recipe.temp_celsius) },
       ]
+    : [];
+
+  // Origin details — shown to visitors, who can't open the full bean page
+  const origin = publicView
+    ? [
+        { label: "Region", value: bean.region },
+        { label: "Altitude", value: bean.altitude },
+        { label: "Variety", value: bean.variety },
+        { label: "Producer", value: bean.farm_producer },
+        { label: "SCA", value: bean.sca_score },
+      ].filter((o) => o.value != null && o.value !== "")
     : [];
 
   return (
@@ -128,6 +167,7 @@ export default function ContainerQRPage() {
           ticks={ratio ? 60 : 20}
           majorEvery={ratio ? 10 : 5}
           knob={Boolean(ratio || bean.sca_score)}
+          rimColor={ring}
           size={280}
           ariaLabel={
             ratio
@@ -174,16 +214,40 @@ export default function ContainerQRPage() {
         </div>
       )}
 
-      <div className="qr-actions">
-        <Link to={`/bean/${bean.id}`} className="ui-btn ui-btn--primary ui-btn--block">
-          Open bean
-        </Link>
-        {double && (
-          <Link to={`/bean/${bean.id}/dial`} className="ui-btn ui-btn--secondary ui-btn--block">
-            <DialIcon /> Dial in
+      {origin.length > 0 && (
+        <dl className="qr-origin">
+          {origin.map((o) => (
+            <div key={o.label} className="qr-origin__item">
+              <dt className="ui-eyebrow">{o.label}</dt>
+              <dd>{o.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      {publicView && bean.notes && (
+        <section className="qr-tasting" aria-labelledby="qr-tasting-title">
+          <h2 id="qr-tasting-title" className="ui-eyebrow">
+            Tasting notes
+          </h2>
+          <p>{bean.notes}</p>
+        </section>
+      )}
+
+      {publicView ? (
+        signInFooter
+      ) : (
+        <div className="qr-actions">
+          <Link to={`/bean/${bean.id}`} className="ui-btn ui-btn--primary ui-btn--block">
+            Open bean
           </Link>
-        )}
-      </div>
+          {double && (
+            <Link to={`/bean/${bean.id}/dial`} className="ui-btn ui-btn--secondary ui-btn--block">
+              <DialIcon /> Dial in
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

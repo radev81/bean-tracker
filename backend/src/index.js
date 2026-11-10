@@ -10,6 +10,7 @@ import { fileURLToPath } from "url";
 import beansRouter from "./routes/beans.js";
 import containersRouter from "./routes/containers.js";
 import shopsRouter from "./routes/shops.js";
+import publicRouter from "./routes/public.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,6 +75,10 @@ app.get("/api/health", (req, res) => {
 app.get("/", (req, res) => {
   res.redirect("/beans/");
 });
+
+// Public, read-only routes — no login (QR code page for visitors, CB-105).
+// Must come BEFORE the protected routes below.
+app.use("/api/public", publicRouter);
 
 // Protected API routes
 app.use("/api/beans", requireAuth, beansRouter);

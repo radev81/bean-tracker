@@ -118,6 +118,85 @@
   color: var(--muted);
 }
 
+.qr-bar--public {
+  display: flex;
+  justify-content: center;
+  padding-top: 20px;
+}
+
+/* ── Visitor view: origin + tasting notes + sign-in link ── */
+.qr-origin {
+  margin: 16px 16px 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  overflow: hidden;
+}
+
+.qr-origin__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  min-width: 0;
+}
+
+.qr-origin__item:nth-child(odd) {
+  border-right: 1px solid var(--line);
+}
+
+.qr-origin__item dt {
+  font-size: 10px;
+}
+
+.qr-origin__item dd {
+  margin: 0;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.qr-tasting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 24px 0;
+}
+
+.qr-tasting p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  white-space: pre-line;
+}
+
+.qr-signin {
+  margin: 28px 24px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.qr-signin__btn {
+  min-height: 44px;
+  padding: 0 6px;
+  border: none;
+  background: transparent;
+  color: var(--signal);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.qr-signin__btn:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
 .qr-actions {
   display: flex;
   flex-direction: column;
