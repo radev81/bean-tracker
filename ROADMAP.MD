@@ -118,9 +118,9 @@ The old names (`--color-*`, `--accent-*`, `--grad*`, `--blue*`) still exist as a
 
 Full specification: `docs/scenario-catalogue.html` (also in the claude.ai project). Open it in a browser; "Show only Nov 2026 changes" lists what the Dial redesign changed.
 
-**136 scenarios across 3 sections** (Nov 2026; was 102):
+**146 scenarios across 3 sections** (Nov 2026; was 102):
 
-- **Coffee Beans (CB-01 – CB-94):** list, search, filtering + quick chips, container dial, add, bean page (replaces card expand/collapse), favourites, edit, dial-in, delete, QR code
+- **Coffee Beans (CB-01 – CB-104):** list, search, filtering + quick chips, container dial, add, bean page (replaces card expand/collapse), favourites, edit, dial-in, import bean details (CB-95 – CB-104), delete, QR code
 - **Containers (CON-01 – CON-28):** list, add, rename, remove, filling a container
 - **Shops (SH-01 – SH-14):** list, sort, show a shop's beans, add, edit, remove
 
@@ -145,6 +145,53 @@ Key rules:
 ---
 
 ## Phase Status
+
+### 🔄 Phase 13 — Import bean from shop page (November 2026)
+
+Add a new bean by importing its details from the shop's product page instead of typing them.
+
+**Stage 1 — done on branch `feature/bean-import` (frontend only, no backend or database changes):**
+
+1. **Claude skill `bean-import`** (saved in Rolf's Claude account): give it a product-page URL (or paste the page text if the site blocks fetching) → it returns ONE JSON object in the `POST /api/beans` shape, as a code block and a `.json` file. Rules: never guess (missing → key left out); country, process and flavour tags in English; tasting notes in the page's language; `shop_name` from the Shops list (domain → shop table in the skill); only the roaster's espresso recipe, as `shot_type: "double"`; time ranges → lower value, full range in recipe notes.
+2. **"Import bean details"** button on the new-bean page → sheet with paste box, Paste button (when the browser allows clipboard access) and `.json` upload → **Fill the form**. The JSON is validated first (`frontend/src/beanImport.js`): invalid JSON, unknown fields, wrong types and non-double recipes give a clear error list. Only fields in the JSON are filled; shop spelling is matched to the Shops list; a banner shows what was imported and what's still needed. Nothing is saved until you tap Save bean; the container is always picked in the form (a `container_id` in the JSON is ignored).
+
+**Import JSON format** (all keys optional; unknown keys are rejected):
+
+```json
+{
+  "name": "Rwenzori Mountains",
+  "shop_name": "Ineffable",
+  "country": "Uganda",
+  "region": "Rwenzori",
+  "altitude": "1400 - 2000 m",
+  "variety": "SL28, SL14",
+  "processing": "Washed",
+  "farm_producer": "Pequeños productores",
+  "sca_score": 85,
+  "url": "https://ineffablecoffee.com/products/rwenzori-mountains",
+  "notes": "Tasting notes in the page's language…",
+  "flavour_tags": ["White Chocolate", "Pear", "Almond"],
+  "recipes": [{ "shot_type": "double", "dose_in_g": 18, "yield_out_g": 38,
+                "time_seconds": 30, "temp_celsius": 94, "notes": "…" }]
+}
+```
+
+Text fields: string or null · `sca_score`: number 0–100 · `flavour_tags`: list of strings · `recipes`: at most one, `shot_type` must be `"double"`, numbers ≥ 0, `ratio` is ignored (the form calculates it). `container_id`, `skipDuplicateCheck`, `replaceContainer` are accepted but ignored.
+
+| File | Change |
+|---|---|
+| `frontend/src/beanImport.js` | **New** — `parseBeanImport(text)`: extracts the `{…}` from pasted text (```json fences, curly quotes), validates, returns a clean bean or a list of errors |
+| `frontend/src/components/beans/BeanImportSheet.jsx` | **New** — the import sheet (paste box, Paste, Choose .json file) |
+| `frontend/src/components/beans/BeanForm.jsx` | Import button (new beans only), `applyImport()`, review banner |
+| `frontend/src/components/beans/BeanForm.css` | `.bfm-import__*`, `.bfm-imported` styles |
+| `frontend/src/components/ui/icons.jsx` | `ImportIcon` |
+| `docs/scenario-catalogue.html` | CB-95 – CB-104 "Importing bean details" (146 scenarios) |
+
+Tested on: Ineffable *Rwenzori Mountains* (recipe as text), Nomad *Timbuyacu* (recipe only as an image), Hidden *Tembo* (filter coffee, no espresso recipe) — all three JSONs pass the app's validator.
+
+**Stage 2 (later):** paste only the URL in the form; the NAS fetches the page and produces the same JSON (backend route, same `parseBeanImport` checks on the result).
+
+---
 
 ### ✅ Phase 12 — Dial UX redesign (November 2026)
 
@@ -543,7 +590,7 @@ bean-tracker/
 ├── .gitignore
 ├── ROADMAP.MD                               ← this file
 ├── docs/
-│   └── scenario-catalogue.html              ← BDD spec (136 scenarios)
+│   └── scenario-catalogue.html              ← BDD spec (146 scenarios)
 ├── Dockerfile                               ✅ Phase 9 — multi-stage build
 ├── .dockerignore                            ✅ Phase 9
 ├── docker-compose.yml                       ✅ Phase 9 — single service, port 3201:3000
@@ -568,6 +615,7 @@ bean-tracker/
     │   ├── index.css                        ✅ Dial tokens (source of truth)
     │   ├── api.js                           ✅ createApiClient + ApiContext + useApi
     │   ├── beanUtils.js                     ✅ ratio, host name, full-payload helpers
+    │   ├── beanImport.js                    ✅ validate imported bean JSON (Phase 13)
     │   ├── shell.js                         ✅ ShellContext (account sheet)
     │   ├── main.jsx                         ✅ LogtoProvider + basename /beans
     │   ├── Root.jsx                         ✅ sign-in callback
@@ -583,7 +631,8 @@ bean-tracker/
     │       ├── beans/
     │       │   ├── BeanList.jsx             ✅ CB-01–CB-24, CB-74–CB-82, CB-84
     │       │   ├── BeanFilter.jsx           ✅ CB-09–CB-24
-    │       │   ├── BeanForm.jsx             ✅ CB-25–CB-41, CB-53–CB-66, CB-85–CB-87
+    │       │   ├── BeanForm.jsx             ✅ CB-25–CB-41, CB-53–CB-66, CB-85–CB-87, CB-95–CB-104
+    │       │   ├── BeanImportSheet.jsx      ✅ CB-95–CB-104 (import sheet)
     │       │   └── useSwipeReveal.js        ✅ CB-84
     │       ├── containers/
     │       │   └── ContainerList.jsx        ✅ CON-01–CON-28

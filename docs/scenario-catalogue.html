@@ -275,7 +275,7 @@
       <span class="total-badge" id="total-badge"></span>
       <span class="upd-badge" id="upd-badge"></span>
     </div>
-    <p class="header-note">Updated November 2026 for the Dial redesign. Scenarios marked <span class="scenario-upd">Nov 2026</span> are new or changed. The expanding bean card was replaced by a bean page; adding and editing open their own page; containers can be filled from the Containers tab.</p>
+    <p class="header-note">Updated November 2026 for the Dial redesign. Scenarios marked <span class="scenario-upd">Nov 2026</span> are new or changed. The expanding bean card was replaced by a bean page; adding and editing open their own page; containers can be filled from the Containers tab. Also new: importing bean details from a shop page's JSON (CB-95 – CB-104).</p>
   </div>
 
   <div class="search-wrap">
@@ -845,6 +845,68 @@ const DATA = [
           {t:"then", s:'a "Discard changes?" dialogue with "Keep editing" and "Discard" is shown'},
           {t:"when", s:'"Discard" is tapped/clicked'},
           {t:"then", s:"the previous page is shown and nothing is changed in the DB"}]},
+      ]},
+      { id:"cb-import", title:"Importing bean details", scenarios:[
+        { id:"CB-95", u:1, title:"Show the import option when adding a bean", steps:[
+          {t:"given",s:"the add page (\"Add a bean\") is open"},
+          {t:"then", s:'an "Import bean details" button is shown below the title'},
+          {t:"and",  s:"the button is not shown on the edit page"}]},
+        { id:"CB-96", u:1, title:"Open and close the import sheet", steps:[
+          {t:"given",s:"the add page is open"},
+          {t:"when", s:'"Import bean details" is tapped/clicked'},
+          {t:"then", s:'an "Import bean details" sheet is shown with a "Bean JSON" box, a "Choose .json file" button, "Cancel" and an inactive "Fill the form" button'},
+          {t:"and",  s:'a "Paste" button is shown when the browser allows reading the clipboard'},
+          {t:"when", s:'"Cancel", the ×, the dimmed background or Escape is used'},
+          {t:"then", s:"the sheet closes and the form is unchanged"}]},
+        { id:"CB-97", u:1, title:"Fill the form from pasted bean JSON", steps:[
+          {t:"given",s:"the import sheet is open"},
+          {t:"when", s:'valid bean JSON is pasted (long-press → Paste, or the "Paste" button)'},
+          {t:"and",  s:'"Fill the form" is tapped/clicked'},
+          {t:"then", s:"the sheet closes and the fields in the JSON are filled in: name, shop, country, region, altitude, variety, process, farm / producer, SCA score, tasting notes and product page"},
+          {t:"and",  s:"the flavour tags are shown as chips"},
+          {t:"and",  s:"the double-shot recipe (In, Out, Time, Temp, recipe notes) is filled in and the ratio is calculated"},
+          {t:"and",  s:'a banner says how many details were imported and asks to check them, pick a container and tap "Save bean"'}]},
+        { id:"CB-98", u:1, title:"Paste JSON copied together with other text", steps:[
+          {t:"given",s:"the import sheet is open"},
+          {t:"when", s:"the pasted text has the JSON inside a ```json block or with a sentence before or after it"},
+          {t:"and",  s:"or the phone turned the quotes into curly quotes"},
+          {t:"and",  s:'"Fill the form" is tapped/clicked'},
+          {t:"then", s:"the bean JSON is found and the form is filled as in CB-97"}]},
+        { id:"CB-99", u:1, title:"Import from a .json file", steps:[
+          {t:"given",s:"the import sheet is open"},
+          {t:"when", s:'"Choose .json file" is tapped/clicked and a bean .json file is chosen'},
+          {t:"then", s:"the file's content is shown in the box with \"From <file name>\" below it"},
+          {t:"when", s:'"Fill the form" is tapped/clicked'},
+          {t:"then", s:"the form is filled as in CB-97"}]},
+        { id:"CB-100", u:1, title:"Reject text that is not valid JSON", steps:[
+          {t:"given",s:"the import sheet is open"},
+          {t:"when", s:"the box contains text that is not a valid JSON object (e.g. a missing quote or comma)"},
+          {t:"and",  s:'"Fill the form" is tapped/clicked'},
+          {t:"then", s:'"Can\'t use this JSON" is shown with the reason'},
+          {t:"and",  s:"the sheet stays open and the form is unchanged"}]},
+        { id:"CB-101", u:1, title:"Reject unknown fields and wrong types", steps:[
+          {t:"given",s:"the import sheet is open"},
+          {t:"when", s:'the JSON has a field the bean form doesn\'t know (e.g. "roast_date"), a value of the wrong type (e.g. "sca_score": "88"), tags that are not a list of text, or a recipe that is not "shot_type": "double"'},
+          {t:"and",  s:'"Fill the form" is tapped/clicked'},
+          {t:"then", s:'"Can\'t use this JSON" is shown with one line per problem, naming the field'},
+          {t:"and",  s:"nothing is filled in"}]},
+        { id:"CB-102", u:1, title:"Match the imported shop to the Shops list", steps:[
+          {t:"given",s:'"Ineffable" is in the shops list'},
+          {t:"when", s:'bean JSON with "shop_name": "ineffable" is imported'},
+          {t:"then", s:'the shop field shows "Ineffable" (the spelling from the list)'},
+          {t:"when", s:"bean JSON with a shop that is not in the list is imported"},
+          {t:"then", s:"the banner says the shop isn't in Shops yet and will be added when saving (CB-36)"}]},
+        { id:"CB-103", u:1, title:"Import JSON with missing details", steps:[
+          {t:"given",s:"the add page is open and some fields are already typed"},
+          {t:"when", s:"bean JSON without some fields (e.g. no country, no recipe) is imported"},
+          {t:"then", s:"only the fields in the JSON are changed; the others keep what was typed"},
+          {t:"and",  s:'if a required field is still empty the banner says "Still needed: …" and "Save bean" stays inactive (CB-27)'}]},
+        { id:"CB-104", u:1, title:"Imported details are not saved automatically", steps:[
+          {t:"given",s:"bean JSON has been imported into the add page"},
+          {t:"then", s:"nothing is saved in the DB yet"},
+          {t:"and",  s:"no container is selected — a container in the JSON is ignored and the banner says so"},
+          {t:"when", s:'a container is picked and "Save bean" is tapped/clicked'},
+          {t:"then", s:"the bean is saved as in CB-25, including the duplicate-name (CB-32) and container-in-use (CB-39) checks"}]},
       ]},
       { id:"cb-delete", title:"Deleting a Bean", scenarios:[
         { id:"CB-67", u:1, title:"Delete a bean", steps:[
