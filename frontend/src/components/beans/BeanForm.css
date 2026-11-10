@@ -280,3 +280,69 @@
 .bfm-foot > :last-child {
   flex: 1;
 }
+
+/* ── Import bean details (CB-95 – CB-104) ── */
+.bfm-head__import {
+  align-self: flex-start;
+  margin-top: 10px;
+}
+
+.bfm-import__intro {
+  margin: 0 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.bfm-import__box textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 16px; /* 16px: no iOS zoom on focus */
+  line-height: 1.4;
+}
+
+.bfm-import__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.bfm-import__actions > * {
+  flex: 1;
+}
+
+.bfm-import__errors {
+  padding: 12px 14px;
+  border-radius: var(--r-input);
+  border: 1px solid var(--danger);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.bfm-import__errors strong {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.bfm-import__errors ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.bfm-import__errors li + li {
+  margin-top: 4px;
+}
+
+/* Banner after an import: amber = "suggested, please check" */
+.bfm-imported {
+  margin: 12px 16px 0;
+  padding: 12px 14px;
+  border-radius: var(--r-input);
+  border: 1px solid var(--signal);
+  background: var(--face);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.bfm-imported strong {
+  color: var(--signal);
+  font-weight: 600;
+}

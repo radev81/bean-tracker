@@ -88,3 +88,10 @@ export const CopyIcon = ({ size = 16 }) => (
     <path d="M5 15V5a1 1 0 0 1 1-1h10" />
   </svg>
 );
+
+export const ImportIcon = ({ size = 16 }) => (
+  <svg {...base} width={size} height={size}>
+    <path d="M12 4v11M7.5 10.5L12 15l4.5-4.5" />
+    <path d="M5 19h14" />
+  </svg>
+);

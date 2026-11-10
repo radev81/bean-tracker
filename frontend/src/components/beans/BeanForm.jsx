@@ -17,6 +17,10 @@
 //     flavour tags as removable chips
 //   • Conflicts (409) are now actually shown — before, the error details
 //     were lost in api.js and saving silently failed.
+// New in Nov 2026:
+//   • "Import bean details" (new beans only, CB-95 – CB-104): paste or upload
+//     the JSON from the bean-import Claude skill; it fills the form, you
+//     review it, pick a container and save as usual.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,6 +28,8 @@ import { useApi } from "../../api";
 import { getDoubleRecipe } from "../../beanUtils";
 import Dialog from "../common/Dialog";
 import { Button, Chip, Field, RingBadge, SectionLabel, containerColor } from "../ui";
+import { ImportIcon } from "../ui/icons";
+import BeanImportSheet from "./BeanImportSheet";
 import "./BeanForm.css";
 
 const PROCESS_PICKS = ["Washed", "Natural", "Honey", "Anaerobic"];
@@ -129,6 +135,10 @@ export default function BeanForm({ bean = null, onClose, onSaved, onViewExisting
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
+  // ── Import bean details (CB-95 – CB-104) ──────────────────────────────────
+  const [showImport, setShowImport] = useState(false);
+  const [importSummary, setImportSummary] = useState(null);
+
   // CB-27 / CB-55: Save enabled only when required fields are filled
   const canSave = Boolean(name.trim() && shopInput.trim() && country.trim());
 
@@ -180,6 +190,69 @@ export default function BeanForm({ bean = null, onClose, onSaved, onViewExisting
     } else if (e.key === "Backspace" && tagDraft === "" && tags.length > 0) {
       setTags(tags.slice(0, -1));
     }
+  }
+
+  // ── Import: put a checked bean (from parseBeanImport) into the form ──────
+  // Only the fields in the JSON are changed; everything else stays as typed.
+  // Nothing is saved — the summary banner asks you to review first.
+  function applyImport({ bean: data, ignored }) {
+    const setters = {
+      name: setName,
+      country: setCountry,
+      region: setRegion,
+      altitude: setAltitude,
+      variety: setVariety,
+      processing: setProcessing,
+      farm_producer: setFarmProducer,
+      url: setUrl,
+      notes: setNotes,
+    };
+    let count = 0;
+    Object.entries(setters).forEach(([key, set]) => {
+      if (data[key] != null) {
+        set(data[key]);
+        count++;
+      }
+    });
+
+    // Shop: use the spelling from your Shops list when it's the same shop
+    let newShop = null;
+    if (data.shop_name) {
+      const known = shops.find((s) => s.name.toLowerCase() === data.shop_name.toLowerCase());
+      setShopInput(known ? known.name : data.shop_name);
+      if (!known && shops.length > 0) newShop = data.shop_name;
+      count++;
+    }
+    if (data.sca_score != null) {
+      setScaScore(String(data.sca_score));
+      count++;
+    }
+    if (data.flavour_tags) {
+      setTagsInput(data.flavour_tags.join(", "));
+      setTagDraft("");
+      count++;
+    }
+    if (data.recipe) {
+      const r = data.recipe;
+      if (r.dose_in_g != null) setRecipeIn(String(r.dose_in_g));
+      if (r.yield_out_g != null) setRecipeOut(String(r.yield_out_g));
+      if (r.time_seconds != null) setRecipeTime(String(r.time_seconds));
+      if (r.temp_celsius != null) setRecipeTemp(String(r.temp_celsius));
+      if (r.notes != null) setRecipeNotes(r.notes);
+      count++;
+    }
+
+    // Required fields the JSON didn't have (they may already be typed)
+    const missing = [
+      !(data.name || name.trim()) && "bean name",
+      !(data.shop_name || shopInput.trim()) && "shop",
+      !(data.country || country.trim()) && "country",
+    ].filter(Boolean);
+
+    setImportSummary({ count, newShop, missing, ignored, hasRecipe: Boolean(data.recipe) });
+    setShowImport(false);
+    setSaveError(null);
+    window.scrollTo({ top: 0 });
   }
 
   // ── Change detection ──────────────────────────────────────────────────────
@@ -295,7 +368,26 @@ export default function BeanForm({ bean = null, onClose, onSaved, onViewExisting
       <header className="bfm-head">
         <span className="ui-eyebrow">{isEditing ? "Edit bean" : "New bean"}</span>
         <h1 className="bfm-head__title">{isEditing ? bean.name : "Add a bean"}</h1>
+        {!isEditing && (
+          <Button variant="secondary" className="bfm-head__import" onClick={() => setShowImport(true)}>
+            <ImportIcon />
+            Import bean details
+          </Button>
+        )}
       </header>
+
+      {/* ── After an import: what happened, what's left to do ─────────── */}
+      {importSummary && (
+        <div className="bfm-imported" role="status">
+          <strong>
+            Imported {importSummary.count} {importSummary.count === 1 ? "detail" : "details"}
+          </strong>{" "}
+          — check them, pick a container and tap Save bean.
+          {importSummary.missing.length > 0 && <> Still needed: {importSummary.missing.join(", ")}.</>}
+          {importSummary.newShop && <> “{importSummary.newShop}” isn’t in your Shops yet — it will be added.</>}
+          {importSummary.ignored.length > 0 && <> The container in the JSON was ignored.</>}
+        </div>
+      )}
 
       {/* ── Required ─────────────────────────────────────────────────── */}
       <section className="bfm-card" aria-labelledby="bfm-req">
@@ -552,6 +644,11 @@ export default function BeanForm({ bean = null, onClose, onSaved, onViewExisting
           {saving ? "Saving…" : isEditing ? "Save changes" : "Save bean"}
         </Button>
       </div>
+
+      {/* ── Import bean details (CB-95 – CB-104) ── */}
+      {showImport && (
+        <BeanImportSheet onClose={() => setShowImport(false)} onImport={applyImport} />
+      )}
 
       {/* ── Discard changes (CB-56) ── */}
       {showDiscardDialog && (
