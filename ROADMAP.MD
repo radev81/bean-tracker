@@ -118,9 +118,9 @@ The old names (`--color-*`, `--accent-*`, `--grad*`, `--blue*`) still exist as a
 
 Full specification: `docs/scenario-catalogue.html` (also in the claude.ai project). Open it in a browser; "Show only Nov 2026 changes" lists what the Dial redesign changed.
 
-**146 scenarios across 3 sections** (Nov 2026; was 102):
+**150 scenarios across 3 sections** (Nov 2026; was 102):
 
-- **Coffee Beans (CB-01 – CB-104):** list, search, filtering + quick chips, container dial, add, bean page (replaces card expand/collapse), favourites, edit, dial-in, import bean details (CB-95 – CB-104), delete, QR code
+- **Coffee Beans (CB-01 – CB-108):** list, search, filtering + quick chips, container dial, add, bean page (replaces card expand/collapse), favourites, edit, dial-in, import bean details (CB-95 – CB-104), delete, QR code (public visitor view: CB-105 – CB-108)
 - **Containers (CON-01 – CON-28):** list, add, rename, remove, filling a container
 - **Shops (SH-01 – SH-14):** list, sort, show a shop's beans, add, edit, remove
 
@@ -145,6 +145,31 @@ Key rules:
 ---
 
 ## Phase Status
+
+### 🔄 Phase 14 — Public container pages (November 2026)
+
+Anyone can scan a container's QR code and see what's in it **without an account**. The existing links keep working (`…/beans/container/1`), so printed QR codes don't change. Branch `feature/public-container-page`.
+
+**How it works**
+- **Backend:** new public, read-only route `GET /api/public/containers/:id` (`backend/src/routes/public.js`), mounted in `index.js` **before** the protected routes. It returns the container (number, name) and its bean: name, shop name, country, region, altitude, variety, process, producer, SCA score, tasting notes, flavour tags and recipes. **Not returned:** bean/shop ids, product links, favourites, timestamps. No write routes. `Cache-Control: no-store`.
+- **Frontend:** when not signed in, `App.jsx` renders only `/container/:id` (as `ContainerQRPage` with `publicView`) and the sign-in screen for every other path. The visitor view hides Open bean / Dial in / Fill / Add, adds origin details and tasting notes, and a "Sign in" link.
+- **Back after sign-in:** `authReturn.js` remembers the page in `sessionStorage` (`bt-return-to`) when "Sign in" is tapped; `Root.jsx` returns there after the Logto callback (only paths under `/beans/` are accepted).
+- **No changes** to Logto, Caddy, Docker or the database.
+
+**Trade-off (accepted):** container numbers are sequential, so anyone who knows the link pattern can try other numbers. Only coffee details are exposed. Unguessable links would need a new column and reprinted QR codes.
+
+| File | Change |
+|---|---|
+| `backend/src/routes/public.js` | **New** — public read-only container route |
+| `backend/src/index.js` | Mount `/api/public` before the protected routes |
+| `frontend/src/api.js` | `fetchPublicContainer(id)` — no token |
+| `frontend/src/authReturn.js` | **New** — remember / restore the page across sign-in |
+| `frontend/src/App.jsx` | Signed-out routes: container page or sign-in |
+| `frontend/src/Root.jsx` | Return to the remembered page after sign-in |
+| `frontend/src/pages/ContainerQRPage.jsx` / `.css` | `publicView` mode, origin + tasting notes, sign-in link |
+| `docs/scenario-catalogue.html` | CB-105 – CB-108 (150 scenarios) |
+
+---
 
 ### 🔄 Phase 13 — Import bean from shop page (November 2026)
 
@@ -590,7 +615,7 @@ bean-tracker/
 ├── .gitignore
 ├── ROADMAP.MD                               ← this file
 ├── docs/
-│   └── scenario-catalogue.html              ← BDD spec (146 scenarios)
+│   └── scenario-catalogue.html              ← BDD spec (150 scenarios)
 ├── Dockerfile                               ✅ Phase 9 — multi-stage build
 ├── .dockerignore                            ✅ Phase 9
 ├── docker-compose.yml                       ✅ Phase 9 — single service, port 3201:3000
@@ -602,7 +627,8 @@ bean-tracker/
 │   │   ├── routes/
 │   │   │   ├── beans.js                     ✅ full CRUD, ESM
 │   │   │   ├── containers.js                ✅ full CRUD + QR endpoint, ESM
-│   │   │   └── shops.js                     ✅ full CRUD, ESM
+│   │   │   ├── shops.js                     ✅ full CRUD, ESM
+│   │   │   └── public.js                    ✅ public read-only container route (Phase 14)
 │   │   └── index.js                         ✅ Logto auth, static serving, ESM
 │   ├── data/                                ← bean.db lives here locally (not in Git)
 │   ├── .env                                 ← not in Git
@@ -616,6 +642,7 @@ bean-tracker/
     │   ├── api.js                           ✅ createApiClient + ApiContext + useApi
     │   ├── beanUtils.js                     ✅ ratio, host name, full-payload helpers
     │   ├── beanImport.js                    ✅ validate imported bean JSON (Phase 13)
+    │   ├── authReturn.js                    ✅ back to the same page after sign-in (Phase 14)
     │   ├── shell.js                         ✅ ShellContext (account sheet)
     │   ├── main.jsx                         ✅ LogtoProvider + basename /beans
     │   ├── Root.jsx                         ✅ sign-in callback
@@ -625,7 +652,7 @@ bean-tracker/
     │   │   ├── BeanDetail.jsx               ✅ CB-42–CB-52, CB-67–CB-71, CB-83
     │   │   ├── BeanFormPage.jsx             ✅ /new, /bean/:id/edit
     │   │   ├── DialIn.jsx                   ✅ CB-88–CB-94
-    │   │   └── ContainerQRPage.jsx          ✅ CB-72, CB-73
+    │   │   └── ContainerQRPage.jsx          ✅ CB-72, CB-73, CB-105 – CB-108
     │   └── components/
     │       ├── ui/                          ✅ Dial, RingBadge, BottomNav, Sheet, controls, icons
     │       ├── beans/

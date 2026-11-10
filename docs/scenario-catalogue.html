@@ -957,6 +957,29 @@ const DATA = [
           {t:"then", s:'the dial shows "Empty" with the message that no beans are in this container'},
           {t:"and",  s:'a "Fill with one of your beans" button is shown, which opens the fill list for container 1'},
           {t:"and",  s:'an "Add a new bean" button is shown'}]},
+        { id:"CB-105", u:1, title:"Visitor without an account scans a container's QR code", steps:[
+          {t:"given",s:"the person scanning is not signed in"},
+          {t:"and",  s:"bean X is assigned to container 1"},
+          {t:"when", s:"the QR code of container 1 (…/beans/container/1) is scanned"},
+          {t:"then", s:"the container page is shown without asking to sign in"},
+          {t:"and",  s:"the dial, bean X's name, shop · country · process, recipe values, recipe notes and flavour tags are shown"},
+          {t:"and",  s:"region, altitude, variety, producer, SCA score (when known) and the tasting notes are shown"},
+          {t:"and",  s:'no "Open bean", "Dial in", "Fill" or "Add" buttons are shown'}]},
+        { id:"CB-106", u:1, title:"Visitors can only see the scanned container", steps:[
+          {t:"given",s:"the person is not signed in"},
+          {t:"when", s:"any other page of the app is opened (bean list, bean page, Containers, Shops, add/edit)"},
+          {t:"then", s:"the sign-in screen is shown"},
+          {t:"and",  s:"the public data contains no product links, favourites or other beans, and nothing can be changed"}]},
+        { id:"CB-107", u:1, title:"Visitor scans the QR code of an empty container", steps:[
+          {t:"given",s:"the person is not signed in"},
+          {t:"and",  s:"no bean is assigned to container 1"},
+          {t:"when", s:"the QR code of container 1 is scanned"},
+          {t:"then", s:'the dial shows "Empty" with the message that no beans are in this container'},
+          {t:"and",  s:"no buttons to fill the container or add a bean are shown"}]},
+        { id:"CB-108", u:1, title:"Sign in from a container page and come back to it", steps:[
+          {t:"given",s:"a visitor is on the page of container 1"},
+          {t:"when", s:'"Sign in" at the bottom is tapped/clicked and the sign-in is completed'},
+          {t:"then", s:"the page of container 1 is shown again, now with the signed-in buttons"}]},
       ]},
     ]
   },
